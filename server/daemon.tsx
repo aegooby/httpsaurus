@@ -6,14 +6,14 @@ import App from "../components/App.tsx";
 import * as Oak from "oak";
 import * as yargs from "@yargs/yargs";
 
-import type { Resolvers } from "./types.d.tsx";
+import type { Resolvers } from "../graphql/types.d.tsx";
 
 const args = yargs.default(Deno.args)
     .usage("usage: $0 server/daemon.tsx --hostname <host> [--domain <name>] [--tls <path>]")
     .hide("help")
     .hide("version")
     .hide("hostname")
-    .demandOption([ "hostname" ])
+    .demandOption(["hostname"])
     .parse();
 
 try

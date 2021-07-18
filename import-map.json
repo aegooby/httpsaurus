@@ -18,6 +18,8 @@
         "apollo-graphql": "https://esm.sh/apollo-graphql",
         "graphql": "https://esm.sh/graphql",
         "graphql-playground": "https://esm.sh/graphql-playground-html",
+        "jsonwebtoken": "https://esm.sh/jsonwebtoken",
+        "keypair": "https://esm.sh/keypair",
         "denoflate": "https://deno.land/x/denoflate@1.2.1/mod.ts",
         "@yargs/types": "https://deno.land/x/yargs@v17.0.1-deno/deno-types.ts",
         "@yargs/yargs": "https://deno.land/x/yargs@v17.0.1-deno/deno.ts",

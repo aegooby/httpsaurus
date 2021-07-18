@@ -9,6 +9,8 @@ import * as ReactDOMServer from "react-dom/server";
 import * as ReactRouterServer from "react-router-dom/server";
 import * as Oak from "oak";
 import * as denoflate from "denoflate";
+import * as jwt from "jsonwebtoken";
+import * as keypair from "keypair";
 
 import { GraphQL } from "./graphql.tsx";
 import { Console } from "./console.tsx";
@@ -44,11 +46,11 @@ interface ListenTlsOptions extends Deno.ListenTlsOptions
 type ListenOptions = ListenBaseOptions | ListenTlsOptions;
 type ConnectionAsyncIter =
     {
-        [ Symbol.asyncIterator ](): AsyncGenerator<Deno.Conn, never, unknown>;
+        [Symbol.asyncIterator](): AsyncGenerator<Deno.Conn, never, unknown>;
     };
 class Listener
 {
-    private nativeListeners: Map<number, [ boolean, Deno.Listener ]> = new Map<number, [ boolean, Deno.Listener ]>();
+    private nativeListeners: Map<number, [boolean, Deno.Listener]> = new Map<number, [boolean, Deno.Listener]>();
     private options: Array<ListenOptions> = [];
 
     constructor(options?: Array<ListenOptions>)
@@ -63,22 +65,22 @@ class Listener
         this.keys = this.keys.bind(this);
         this.close = this.close.bind(this);
     }
-    private create(options: ListenOptions): [ boolean, Deno.Listener ]
+    private create(options: ListenOptions): [boolean, Deno.Listener]
     {
         if (options.secure)
         {
             const listener = Deno.listenTls(options as Deno.ListenTlsOptions);
-            this.nativeListeners.set(listener.rid, [ options.secure, listener ]);
-            return [ options.secure, listener ];
+            this.nativeListeners.set(listener.rid, [options.secure, listener]);
+            return [options.secure, listener];
         }
         else
         {
             const listener = Deno.listen(options as Deno.ListenOptions);
-            this.nativeListeners.set(listener.rid, [ options.secure, listener ]);
-            return [ options.secure, listener ];
+            this.nativeListeners.set(listener.rid, [options.secure, listener]);
+            return [options.secure, listener];
         }
     }
-    public listen(options?: Array<ListenOptions>): Array<[ boolean, Deno.Listener ]>
+    public listen(options?: Array<ListenOptions>): Array<[boolean, Deno.Listener]>
     {
         if (!options)
             return this.options.map(this.create);
@@ -89,10 +91,10 @@ class Listener
     {
         if (!this.nativeListeners.has(key))
             throw new Error("Listener not found");
-        const [ _, nativeListener ] = this.nativeListeners.get(key) as [ boolean, Deno.Listener ];
+        const [_, nativeListener] = this.nativeListeners.get(key) as [boolean, Deno.Listener];
         const iterable =
         {
-            async *[ Symbol.asyncIterator ]()
+            async *[Symbol.asyncIterator]()
             {
                 while (true)
                 {
@@ -111,14 +113,14 @@ class Listener
     {
         if (!this.nativeListeners.has(key))
             throw new Error("Listener not found");
-        const [ secure, _ ] = this.nativeListeners.get(key) as [ boolean, Deno.Listener ];
+        const [secure, _] = this.nativeListeners.get(key) as [boolean, Deno.Listener];
         return secure;
     }
     public listener(key: number): Deno.Listener
     {
         if (!this.nativeListeners.has(key))
             throw new Error("Listener not found");
-        const [ _, native ] = this.nativeListeners.get(key) as [ boolean, Deno.Listener ];
+        const [_, native] = this.nativeListeners.get(key) as [boolean, Deno.Listener];
         return native;
     }
     public keys(): Array<number>
@@ -129,13 +131,13 @@ class Listener
     {
         if (key && this.nativeListeners.has(key))
         {
-            const [ _, listener ] = this.nativeListeners.get(key) as [ boolean, Deno.Listener ];
+            const [_, listener] = this.nativeListeners.get(key) as [boolean, Deno.Listener];
             this.nativeListeners.delete(listener.rid);
             listener.close();
         }
         else
         {
-            for (const [ _1, [ _2, listener ] ] of this.nativeListeners)
+            for (const [_1, [_2, listener]] of this.nativeListeners)
                 listener.close();
             this.nativeListeners.clear();
         }
@@ -168,9 +170,14 @@ export interface ServerAttributes
     dgraph: boolean;
 }
 
+interface State 
+{
+    data: jwt.Jwt | string | undefined;
+    keypair: keypair.KeypairResults;
+}
 interface OakServer
 {
-    app: Oak.Application;
+    app: Oak.Application<State>;
     router: Oak.Router;
 }
 
@@ -197,6 +204,8 @@ export class Server
     private App: React.ReactElement;
     private headElements: Array<React.ReactElement>;
 
+    private keypair: keypair.KeypairResults;
+
     constructor(attributes: ServerAttributes)
     {
         this.secure = attributes.secure;
@@ -214,7 +223,7 @@ export class Server
                 case "/graphql/custom":
                     throw new Error("Cannot reroute /graphql/custom URL");
                 default:
-                    this.routes.set(key, attributes.routes[ key ]);
+                    this.routes.set(key, attributes.routes[key]);
                     break;
             }
         }
@@ -240,7 +249,7 @@ export class Server
                 port: attributes.portTls as number,
                 certFile: path.join(attributes.cert ?? "", "fullchain.pem"),
                 keyFile: path.join(attributes.cert ?? "", "privkey.pem"),
-                alpnProtocols: [ "http/1.1", "h2" ],
+                alpnProtocols: ["http/1.1", "h2"],
                 transport: "tcp",
                 secure: true,
             };
@@ -262,7 +271,10 @@ export class Server
         else
             this.domain = `https://${this.hostname}:${this.port}`;
 
+        this.keypair = keypair.keypair();
+
         this.www = this.www.bind(this);
+        this.jwt = this.jwt.bind(this);
 
         this.static = this.static.bind(this);
         this.react = this.react.bind(this);
@@ -301,6 +313,25 @@ export class Server
             const redirect = `${protocol}://${wwwhost}${context.request.url.pathname}`;
             context.response.redirect(redirect);
         }
+        await next();
+    }
+    private async jwt(context: Oak.Context<State>, next: () => Promise<unknown>): Promise<void>
+    {
+        context.state.keypair = this.keypair;
+        try
+        {
+            const accessToken = context.cookies.get("access-token");
+            if (!accessToken)
+                throw new Error();
+            const verifyOptions: jwt.VerifyOptions & { complete: true; } =
+            {
+                algorithms: ["RS256"],
+                complete: true
+            };
+            const data = jwt.verify(accessToken, this.keypair.public, verifyOptions);
+            context.state.data = data;
+        }
+        catch { undefined; }
         await next();
     }
     private async static(context: Oak.Context): Promise<void>
@@ -444,7 +475,7 @@ export class Server
     }
     private async compress(): Promise<void>
     {
-        const ext = [ ".js", ".map", ".txt", ".css" ];
+        const ext = [".js", ".map", ".txt", ".css"];
         const folder = path.join(".", this.public, "**", "*");
         for await (const file of fs.expandGlob(folder))
         {
@@ -462,7 +493,7 @@ export class Server
         for await (const file of fs.expandGlob(folder))
         {
             const basename = path.basename(file.path);
-            const [ name, id, _ ] = basename.split(".", 3);
+            const [name, id, _] = basename.split(".", 3);
             if (name !== id)
                 this.scriptElements.push(<script src={`/scripts/webpack/${basename}`} defer></script>);
         }
@@ -496,6 +527,7 @@ export class Server
 
         this.oak.app.proxy = true;
         this.oak.app.use(this.www);
+        this.oak.app.use(this.jwt);
         this.oak.app.use(this.oak.router.routes());
         this.oak.app.use(this.oak.router.allowedMethods());
         this.oak.app.use(Oak.etag.factory());

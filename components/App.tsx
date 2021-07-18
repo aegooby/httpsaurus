@@ -6,6 +6,7 @@ import { GraphQL } from "./Core/Core.tsx";
 
 import Index from "./Pages/Index.tsx";
 import MobileProf from "./Pages/MobileProf.tsx";
+import Login from "./Pages/Login.tsx";
 import Error from "./Pages/Error.tsx";
 
 interface Props
@@ -21,6 +22,7 @@ export default function App(props: Props)
                 <ReactRouter.Routes>
                     <ReactRouter.Route path="/" element={<Index />} />
                     <ReactRouter.Route path="/mobile-prof" element={<MobileProf />} />
+                    <ReactRouter.Route path="/login" element={<Login />} />
                     <ReactRouter.Route path="*" element={<Error code={404} text="Not Found" />} />
                 </ReactRouter.Routes>
             </GraphQL.Provider>
