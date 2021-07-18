@@ -271,7 +271,7 @@ export class Server
         else
             this.domain = `https://${this.hostname}:${this.port}`;
 
-        this.keypair = keypair.keypair();
+        this.keypair = keypair.default();
 
         this.www = this.www.bind(this);
         this.jwt = this.jwt.bind(this);
