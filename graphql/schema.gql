@@ -23,7 +23,7 @@ type Query
     (
         http: 
         {
-            url: "http://localhost:3080/graphql/custom"
+            url: "${SERVER_GRAPHQL}"
             method: "POST"
             graphql: "query { request }"
         }

@@ -37,9 +37,12 @@ export class GraphQL
     private secure: boolean;
     private dgraph: boolean;
 
-    private static dgraphEndpoint: URL = new URL("http://localhost/");
+    private static dgraphEndpoint: URL = new URL("http://localhost:8080/");
     private static dgraphAdminSchema: URL;
     private static dgraphGraphQL: URL;
+
+    private static serverEndpoint: URL = new URL("http://localhost:3080/");
+    private static serverGraphQL: URL;
 
     constructor(attributes: GraphQLAttributes)
     {
@@ -54,10 +57,16 @@ export class GraphQL
             if (!Deno.env.get("DGRAPH_URL"))
                 throw new Error("DGRAPH_URL environment variable not found, but option \"--dgraph\" is set");
             GraphQL.dgraphEndpoint = new URL(Deno.env.get("DGRAPH_URL") as string);
+
+            if (!Deno.env.get("WEB_URL"))
+                throw new Error("WEB_URL environment variable not found, but option \"--dgraph\" is set");
+            GraphQL.serverEndpoint = new URL(Deno.env.get("WEB_URL") as string);
         }
+
         GraphQL.dgraphAdminSchema = new URL("/admin/schema", GraphQL.dgraphEndpoint);
         GraphQL.dgraphGraphQL = new URL("/graphql", GraphQL.dgraphEndpoint);
 
+        GraphQL.serverGraphQL = new URL("/graphql/custom", GraphQL.serverEndpoint);
 
         this.buildSchema = this.buildSchema.bind(this);
         this.urlPlayground = this.urlPlayground.bind(this);
@@ -78,12 +87,18 @@ export class GraphQL
         this.customSchema.schema = graphql.buildSchema(customSchema);
         Apollo.addResolversToSchema(this.customSchema.schema!, this.resolvers);
 
-        const schema = await Deno.readFile(this.schema);
+        const schema = await Deno.readTextFile(this.schema);
+        schema.replaceAll("${SERVER_GRAPHQL}", GraphQL.serverGraphQL.href);
+        const schemaBinary = (new TextEncoder()).encode(schema);
         const requestInit: RequestInit =
         {
-            body: schema,
+            body: schemaBinary,
             method: "POST",
-            headers: { "content-length": schema.byteLength.toString(), "content-type": "multipart/form-data" }
+            headers:
+            {
+                "content-length": schemaBinary.byteLength.toString(),
+                "content-type": "multipart/form-data"
+            }
         };
 
         const loadSchema = async function ()
