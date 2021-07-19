@@ -95,6 +95,7 @@ export class GraphQL
                         const decoder = new TextDecoder();
                         for await (const bytes of response.body)
                             body += decoder.decode(bytes);
+                        Console.log(body);
                         const json = JSON.parse(body);
                         if (!json.errors)
                             return;
