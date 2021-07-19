@@ -128,7 +128,7 @@ export class GraphQL
                         {
                             for (const error of json.errors)
                             {
-                                if (error.message.includes("dial tcp:"))
+                                if (error.message.includes("dial tcp"))
                                 {
                                     if (retries > GraphQL.MAX_RETRIES)
                                     {
