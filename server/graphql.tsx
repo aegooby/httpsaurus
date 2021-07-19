@@ -44,6 +44,8 @@ export class GraphQL
     private static serverEndpoint: URL = new URL("http://localhost:3080/");
     private static serverGraphQL: URL;
 
+    private static MAX_RETRIES: number = 10 as const;
+
     constructor(attributes: GraphQLAttributes)
     {
         this.customSchema.path = attributes.customSchema;
@@ -123,15 +125,21 @@ export class GraphQL
                         {
                             for (const error of json.errors)
                             {
-                                if (!error.message.includes("Unavailable: Server not ready."))
+                                if (error.message.includes("connect: connection refused"))
+                                {
+                                    if (retries > GraphQL.MAX_RETRIES)
+                                    {
+                                        Console.error("Unable to reach custom GraphQL endpoint");
+                                        return;
+                                    }
+                                    retries++;
+                                    Console.warn(error.message);
+                                    Console.log("Retrying...");
+                                }
+                                else if (!error.message.includes("Unavailable: Server not ready."))
                                 {
                                     Console.error(error.message);
                                     return;
-                                }
-                                if (error.message.includes("connect: connection refused") && retries < 20)
-                                {
-                                    Console.warn(error.message);
-                                    Console.log(`retries: ${retries++}`);
                                 }
                             }
                         }
