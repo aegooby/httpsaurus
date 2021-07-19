@@ -103,6 +103,7 @@ export class GraphQL
 
         const loadSchema = async function ()
         {
+            let retries = 0;
             while (true)
             {
                 await async.delay(1500);
@@ -121,11 +122,18 @@ export class GraphQL
                         else
                         {
                             for (const error of json.errors)
+                            {
                                 if (!error.message.includes("Unavailable: Server not ready."))
                                 {
                                     Console.error(error.message);
                                     return;
                                 }
+                                if (error.message.includes("connect: connection refused") && retries < 20)
+                                {
+                                    Console.warn(error.message);
+                                    Console.log(`retries: ${retries++}`);
+                                }
+                            }
                         }
                     }
                 }
