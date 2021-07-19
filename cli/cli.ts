@@ -423,7 +423,7 @@ export async function prune(args: Arguments)
         return containerStatus.code;
 
     const imageProcess =
-        Deno.run({ cmd: ["docker", "container", "prune", "--force"] });
+        Deno.run({ cmd: ["docker", "image", "prune", "--force"] });
     const imageStatus = await imageProcess.status();
     imageProcess.close();
     if (!imageStatus.success)
