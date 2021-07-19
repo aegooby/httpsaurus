@@ -77,17 +77,18 @@ export class GraphQL
 
         const loadSchema = async function ()
         {
+            if (!Deno.env.get("DGRAPH_URL"))
+            {
+                Console.error("DGRAPH_URL environment variable not found");
+                throw new Error();
+            }
+            const dgraphUrl = Deno.env.get("DGRAPH_URL") as string;
             while (true)
             {
                 await async.delay(1500);
                 try 
                 {
-                    if (!Deno.env.get("DGRAPH_URL"))
-                    {
-                        Console.error("DGRAPH_URL environment variable not found");
-                        throw new Error();
-                    }
-                    const response = await fetch(Deno.env.get("DGRAPH_URL") as string, requestInit);
+                    const response = await fetch(dgraphUrl, requestInit);
                     if (response.ok && response.body)
                     {
                         let body = "";
@@ -108,7 +109,7 @@ export class GraphQL
                         }
                     }
                 }
-                catch { undefined; }
+                catch (error) { Console.error(error); }
             }
         };
         if (this.dgraph)
