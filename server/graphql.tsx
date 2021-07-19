@@ -82,7 +82,12 @@ export class GraphQL
                 await async.delay(1500);
                 try 
                 {
-                    const response = await fetch(GraphQL.dgraphAdminSchema, requestInit);
+                    if (!Deno.env.get("DGRAPH_URL"))
+                    {
+                        Console.error("DGRAPH_URL environment variable not found");
+                        throw new Error();
+                    }
+                    const response = await fetch(Deno.env.get("DGRAPH_URL") as string, requestInit);
                     if (response.ok && response.body)
                     {
                         let body = "";
@@ -217,7 +222,7 @@ export class GraphQL
             const jsonError =
             {
                 data: null,
-                errors: [ { message: error.message ?? error } ],
+                errors: [{ message: error.message ?? error }],
             };
             context.response.status = Oak.Status.OK;
             context.response.body = JSON.stringify(jsonError);
