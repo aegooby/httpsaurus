@@ -473,10 +473,10 @@ export async function container(args: Arguments)
     {
         cmd:
             [
-                "docker", "run", "--init", "-itd",
-                "-p", "80:3080", "-p", "5080:5080", "-p", "6080:6080",
-                "-p", "8080:8080", "-p", "9080:9080", "-p", "8000:8000",
-                "-v", "dgraph:/root/dgraph", `${args.tag}:latest`
+                "docker", "run", "--init", "-itd", "--memory", "512m",
+                "--memory-swap", "-1", "-p", "80:3080", "-p", "5080:5080",
+                "-p", "6080:6080", "-p", "8080:8080", "-p", "9080:9080", "-p",
+                "8000:8000", `${args.tag}:latest`
             ]
     };
     const containerProcess = Deno.run(containerRunOptions);
