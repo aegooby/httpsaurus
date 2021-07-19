@@ -37,8 +37,9 @@ export class GraphQL
     private secure: boolean;
     private dgraph: boolean;
 
-    private static dgraphAdminSchema: string = "http://localhost:8080/admin/schema" as const;
-    private static dgraphGraphQL: string = "http://localhost:8080/graphql" as const;
+    private static dgraphEndpoint: URL = new URL("http://localhost/");
+    private static dgraphAdminSchema: URL;
+    private static dgraphGraphQL: URL;
 
     constructor(attributes: GraphQLAttributes)
     {
@@ -47,6 +48,16 @@ export class GraphQL
         this.resolvers = attributes.resolvers as Apollo.GraphQLResolverMap;
         this.secure = attributes.secure;
         this.dgraph = attributes.dgraph;
+
+        if (this.dgraph)
+        {
+            if (!Deno.env.get("DGRAPH_URL"))
+                throw new Error("DGRAPH_URL environment variable not found, but option \"--dgraph\" is set");
+            GraphQL.dgraphEndpoint = new URL(Deno.env.get("DGRAPH_URL") as string);
+        }
+        GraphQL.dgraphAdminSchema = new URL("/admin/schema", GraphQL.dgraphEndpoint);
+        GraphQL.dgraphGraphQL = new URL("/graphql", GraphQL.dgraphEndpoint);
+
 
         this.buildSchema = this.buildSchema.bind(this);
         this.urlPlayground = this.urlPlayground.bind(this);
@@ -77,25 +88,18 @@ export class GraphQL
 
         const loadSchema = async function ()
         {
-            if (!Deno.env.get("DGRAPH_URL"))
-            {
-                Console.error("DGRAPH_URL environment variable not found");
-                throw new Error();
-            }
-            const dgraphUrl = Deno.env.get("DGRAPH_URL") as string;
             while (true)
             {
                 await async.delay(1500);
                 try 
                 {
-                    const response = await fetch(dgraphUrl, requestInit);
+                    const response = await fetch(GraphQL.dgraphAdminSchema, requestInit);
                     if (response.ok && response.body)
                     {
                         let body = "";
                         const decoder = new TextDecoder();
                         for await (const bytes of response.body)
                             body += decoder.decode(bytes);
-                        Console.log(body);
                         const json = JSON.parse(body);
                         if (!json.errors)
                             return;
