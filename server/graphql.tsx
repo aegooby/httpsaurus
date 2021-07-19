@@ -125,7 +125,7 @@ export class GraphQL
                         {
                             for (const error of json.errors)
                             {
-                                if (error.message.includes("connect: connection refused"))
+                                if (error.message.includes("dial tcp:"))
                                 {
                                     if (retries > GraphQL.MAX_RETRIES)
                                     {
