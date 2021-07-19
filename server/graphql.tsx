@@ -128,22 +128,20 @@ export class GraphQL
                         {
                             for (const error of json.errors)
                             {
-                                if (error.message.includes("dial tcp"))
+                                if (!error.message.includes("Unavailable: Server not ready."))
                                 {
-                                    if (retries > GraphQL.MAX_RETRIES)
+                                    if (retries < GraphQL.MAX_RETRIES)
                                     {
-                                        Console.error("Unable to reach custom GraphQL endpoint");
+                                        Console.warn(error.message, { clear: retries > 0 });
+                                        Console.log("Retrying...", { clear: true });
+
+                                        retries++;
+                                    }
+                                    else
+                                    {
+                                        Console.error(error.message);
                                         return;
                                     }
-                                    Console.warn(error.message, { clear: retries > 0 });
-                                    Console.log("Retrying...", { clear: true });
-
-                                    retries++;
-                                }
-                                else if (!error.message.includes("Unavailable: Server not ready."))
-                                {
-                                    Console.error(error.message);
-                                    return;
                                 }
                             }
                         }
