@@ -384,7 +384,8 @@ export async function docker(args: Arguments)
         catch { undefined; }
         serverProcess.close();
     };
-    await Promise.race([server(), zero(), alpha()]);
+    await server();
+    // await Promise.race([server(), zero(), alpha()]);
 }
 export async function test(args: Arguments)
 {
