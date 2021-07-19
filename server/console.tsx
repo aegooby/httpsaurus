@@ -4,8 +4,8 @@ import * as datetime from "@std/datetime";
 
 export interface ConsoleAttributes
 {
-    time?: true;
-    clear?: true;
+    time?: boolean;
+    clear?: boolean;
 }
 
 type Stream = Deno.Writer & Deno.WriterSync & Deno.Closer & { readonly rid: number; };

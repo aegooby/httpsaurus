@@ -120,7 +120,10 @@ export class GraphQL
                             body += decoder.decode(bytes);
                         const json = JSON.parse(body);
                         if (!json.errors)
+                        {
+                            Console.success("Loaded GraphQL schema to DGraph", { clear: retries > 0 });
                             return;
+                        }
                         else
                         {
                             for (const error of json.errors)
@@ -132,9 +135,10 @@ export class GraphQL
                                         Console.error("Unable to reach custom GraphQL endpoint");
                                         return;
                                     }
+                                    Console.warn(error.message, { clear: retries > 0 });
+                                    Console.log("Retrying...", { clear: true });
+
                                     retries++;
-                                    Console.warn(error.message);
-                                    Console.log("Retrying...");
                                 }
                                 else if (!error.message.includes("Unavailable: Server not ready."))
                                 {
