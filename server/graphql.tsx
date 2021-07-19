@@ -88,8 +88,8 @@ export class GraphQL
         Apollo.addResolversToSchema(this.customSchema.schema!, this.resolvers);
 
         const schema = await Deno.readTextFile(this.schema);
-        schema.replaceAll("${SERVER_GRAPHQL}", GraphQL.serverGraphQL.href);
-        const schemaBinary = (new TextEncoder()).encode(schema);
+        const parsedSchema = schema.replaceAll("${SERVER_GRAPHQL}", GraphQL.serverGraphQL.href);
+        const schemaBinary = (new TextEncoder()).encode(parsedSchema);
         const requestInit: RequestInit =
         {
             body: schemaBinary,
