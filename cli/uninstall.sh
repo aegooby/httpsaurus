@@ -1,2 +1,2 @@
 #!/bin/sh
-rm -rf $(which deno-cli)
+rm -rf $(which turtle)
