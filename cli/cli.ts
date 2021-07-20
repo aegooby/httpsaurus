@@ -132,7 +132,12 @@ export async function cache(args: Arguments)
             {
                 const reloadNames = args.reload.split(",");
                 const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
-                const urlReloads = reloadNames.map(function (value: string) { return importMap.imports[value]; });
+                const map = function (value: string) 
+                {
+                    try { return (new URL(value)).href; }
+                    catch { return importMap.imports[value]; }
+                };
+                const urlReloads = reloadNames.map(map);
                 const filteredReloads = urlReloads.filter(function (value: unknown) { return value !== undefined; });
                 const reloads = filteredReloads.join(",");
                 if (!filteredReloads.length)
