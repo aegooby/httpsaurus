@@ -286,12 +286,12 @@ export async function dockerBundle(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} docker:bundle --target <target> --domain <domain>`);
+        Console.log(`usage: ${command} docker:bundle --target <target>`);
         return;
     }
     if (!args.target || !(["localhost", "dev", "live"].includes(args.target)))
     {
-        Console.error(`usage: ${command} docker:bundle --target <target> --domain <domain>`);
+        Console.error(`usage: ${command} docker:bundle --target <target>`);
         return;
     }
     const snowpackRunOptions: Deno.RunOptions =
