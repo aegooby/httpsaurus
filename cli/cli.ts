@@ -103,7 +103,7 @@ export async function pkgUpdate(args: Arguments)
                             url.pathname = response.headers.get("location") as string;
                         else
                             url.pathname = (new URL(response.url)).pathname;
-                        importMap.imports[key] = url.toString();
+                        importMap.imports[key] = url.href;
                         break;
                     }
                 default:
