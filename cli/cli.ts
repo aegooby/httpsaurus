@@ -168,12 +168,7 @@ export async function bundle(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} bundle --graphql <endpoint>`);
-        return;
-    }
-    if (!args.graphql)
-    {
-        Console.error(`usage: ${command} bundle --graphql <endpoint>`);
+        Console.log(`usage: ${command} bundle`);
         return;
     }
 
@@ -291,12 +286,12 @@ export async function dockerBundle(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} docker:bundle --target <localhost | dev | live> --domain <domain>`);
+        Console.log(`usage: ${command} docker:bundle --target <target> --domain <domain>`);
         return;
     }
     if (!args.target || !(["localhost", "dev", "live"].includes(args.target)))
     {
-        Console.error(`usage: ${command} docker:bundle --target <localhost | dev | live> --domain <domain>`);
+        Console.error(`usage: ${command} docker:bundle --target <target> --domain <domain>`);
         return;
     }
     const snowpackRunOptions: Deno.RunOptions =

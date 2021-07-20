@@ -44,7 +44,7 @@ export class GraphQL
     private static serverEndpoint: URL = new URL("http://localhost:3080/");
     private static serverGraphQL: URL;
 
-    private static MAX_RETRIES: number = 10 as const;
+    private static MAX_RETRIES: number = 25 as const;
 
     constructor(attributes: GraphQLAttributes)
     {
@@ -130,13 +130,15 @@ export class GraphQL
                         {
                             for (const error of json.errors)
                             {
-                                if (!error.message.includes("Unavailable: Server not ready."))
+                                let message = error.message as string;
+                                if (!message.includes("Unavailable: Server not ready."))
                                 {
                                     if (retries < GraphQL.MAX_RETRIES)
                                     {
-                                        Console.warn(error.message, { clear: retries > 0 });
+                                        if (message.includes("dial tcp"))
+                                            message = message.substring(message.indexOf("dial tcp"));
+                                        Console.warn(message, { clear: retries > 0 });
                                         Console.log("Retrying...", { clear: true });
-
                                         retries++;
                                     }
                                     else
