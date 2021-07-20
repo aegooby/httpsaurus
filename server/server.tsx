@@ -400,8 +400,6 @@ export class Server
     }
     private async get(context: Oak.Context): Promise<void>
     {
-        /** @todo CORS. */
-
         /* Redirect HTTP to HTTPS if it's available. */
         if (!context.request.secure && this.secure)
         {

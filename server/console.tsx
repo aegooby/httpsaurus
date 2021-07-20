@@ -62,4 +62,8 @@ export class Console
         const token = colors.bold(colors.red("[!]"));
         this.write(Deno.stderr, token, message, attributes);
     }
+    public static print(message: unknown, attributes?: ConsoleAttributes): void
+    {
+        this.write(Deno.stdout, "   ", message, attributes);
+    }
 }

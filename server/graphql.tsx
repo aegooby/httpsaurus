@@ -57,12 +57,14 @@ export class GraphQL
         if (this.dgraph)
         {
             if (!Deno.env.get("DGRAPH_URL"))
-                throw new Error("DGRAPH_URL environment variable not found, but option \"--dgraph\" is set");
-            GraphQL.dgraphEndpoint = new URL(Deno.env.get("DGRAPH_URL") as string);
+                Console.warn(`DGRAPH_URL environment variable not found, using ${GraphQL.dgraphEndpoint.href}`);
+            else
+                GraphQL.dgraphEndpoint = new URL(Deno.env.get("DGRAPH_URL") as string);
 
             if (!Deno.env.get("WEB_URL"))
-                throw new Error("WEB_URL environment variable not found, but option \"--dgraph\" is set");
-            GraphQL.serverEndpoint = new URL(Deno.env.get("WEB_URL") as string);
+                Console.warn(`WEB_URL environment variable not found, using ${GraphQL.serverEndpoint.href}`);
+            else
+                GraphQL.serverEndpoint = new URL(Deno.env.get("WEB_URL") as string);
         }
 
         GraphQL.dgraphAdminSchema = new URL("/admin/schema", GraphQL.dgraphEndpoint);

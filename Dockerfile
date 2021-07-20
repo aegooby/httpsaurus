@@ -7,16 +7,23 @@ EXPOSE 3080
 WORKDIR /root/httpsaurus
 ADD . /root/httpsaurus
 RUN cli/install.sh
-RUN deno-cli upgrade
+RUN turtle upgrade
+RUN turtle cache
 
 FROM httpsaurus AS localhost
 
-CMD [ "deno-cli", "docker", "--target", "localhost", "--domain", "localhost" ]
+RUN turtle clean --dist
+RUN turtle docker:bundle --target localhost --domain localhost
+CMD [ "turtle", "docker:server" ]
 
 FROM httpsaurus AS dev
 
-CMD [ "deno-cli", "docker", "--target", "dev", "--domain", "dev.example.com" ]
+RUN turtle clean --dist
+RUN turtle docker:bundle --target dev --domain dev.example.com
+CMD [ "turtle", "docker:server" ]
 
 FROM httpsaurus AS live
 
-CMD [ "deno-cli", "docker", "--target", "live", "--domain", "example.com" ]
+RUN turtle clean --dist
+RUN turtle docker:bundle --target live --domain example.com
+CMD [ "turtle", "docker:server" ]

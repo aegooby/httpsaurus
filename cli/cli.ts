@@ -10,29 +10,7 @@ import { Console, version } from "../server/server.tsx";
 export { version } from "../server/server.tsx";
 
 Deno.env.set("DENO_DIR", ".cache/");
-function createCommand(): [string[], string]
-{
-    const targetIndex = Deno.args.indexOf("--target");
-    const targetValueIndex = targetIndex + 1;
-    const defaultCommand =
-        "deno run --unstable --import-map import-map.json --allow-all cli/cli.ts";
-    if (targetIndex < 0 || targetValueIndex >= Deno.args.length)
-        return [Deno.args, defaultCommand];
-    const target = Deno.args[targetValueIndex];
-    const args = Deno.args.slice(targetValueIndex + 1);
-    switch (target)
-    {
-        case "windows":
-            return [args, "build/windows.exe"];
-        case "macos":
-            return [args, "build/macos"];
-        case "linux":
-            return [args, "build/linux"];
-        default:
-            return [Deno.args, defaultCommand];
-    }
-}
-export const [args, command] = createCommand();
+const [args, command] = [Deno.args, "turtle"];
 
 export function all(_: Arguments)
 {
@@ -152,14 +130,15 @@ export async function cache(args: Arguments)
     {
         case "string":
             {
-                const reloads = args.reload.split(",");
+                const reloadNames = args.reload.split(",");
                 const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
-                const urlReloads = reloads.map(function (value: string) { return importMap.imports[value]; });
+                const urlReloads = reloadNames.map(function (value: string) { return importMap.imports[value]; });
                 const filteredReloads = urlReloads.filter(function (value: unknown) { return value !== undefined; });
+                const reloads = filteredReloads.join(",");
                 if (!filteredReloads.length)
                     flags.pop();
                 else
-                    flags.push(filteredReloads.join(","));
+                    flags[0] += "=" + reloads;
                 break;
             }
         default:
@@ -231,104 +210,95 @@ export async function codegen(args: Arguments)
     process.close();
     return status.code;
 }
-export async function localhost(args: Arguments)
+export function localhost(_args: Arguments)
 {
-    if (args.help)
+    Console.log(`commands:`);
+    Console.print(`  ${command} localhost:snowpack\t${colors.italic(colors.black("(runs Snowpack dev server)"))}`);
+    Console.print(`  ${command} localhost:deno\t${colors.italic(colors.black("(runs Deno live server)"))}`);
+    return;
+}
+export async function localhostSnowpack(_args: Arguments)
+{
+    const runOptions: Deno.RunOptions =
     {
-        Console.log(`usage: ${command} localhost --server <snowpack | deno>`);
-        return;
-    }
-    if (!args.server)
+        cmd:
+            [
+                "yarn", "run", "snowpack", "--config",
+                "config/base.snowpack.js", "dev", "--secure"
+            ]
+    };
+    const process = Deno.run(runOptions);
+    await process.status();
+    process.close();
+    return;
+}
+export async function localhostDeno(_args: Arguments)
+{
+    const snowpackRunOptions: Deno.RunOptions =
     {
-        Console.error(`usage: ${command} localhost --server <snowpack | deno>`);
-        return;
-    }
+        cmd:
+            [
+                "yarn", "run", "snowpack", "--config",
+                "config/localhost.snowpack.js", "build"
+            ]
+    };
+    const snowpackProcess = Deno.run(snowpackRunOptions);
+    const snowpackStatus = await snowpackProcess.status();
+    snowpackProcess.close();
+    if (!snowpackStatus.success)
+        return snowpackStatus.code;
 
-    switch (args.server)
+    const ready = async function (): Promise<void>
     {
-        case "snowpack":
+        while (true)
+        {
+            try
             {
-                const runOptions: Deno.RunOptions =
-                {
-                    cmd:
-                        [
-                            "yarn", "run", "snowpack", "--config",
-                            "config/base.snowpack.js", "dev", "--secure"
-                        ]
-                };
-                const process = Deno.run(runOptions);
-                await process.status();
-                process.close();
+                await async.delay(750);
+                const init = { headers: { "x-http-only": "" } };
+                await fetch("http://localhost:3080/", init);
                 return;
             }
-        case "deno":
-            {
-                const snowpackRunOptions: Deno.RunOptions =
-                {
-                    cmd:
-                        [
-                            "yarn", "run", "snowpack", "--config",
-                            "config/localhost.snowpack.js", "build"
-                        ]
-                };
-                const snowpackProcess = Deno.run(snowpackRunOptions);
-                const snowpackStatus = await snowpackProcess.status();
-                snowpackProcess.close();
-                if (!snowpackStatus.success)
-                    return snowpackStatus.code;
+            catch { undefined; }
+        }
+    };
+    ready().then(async function () { await opener.open("https://localhost:3443/"); });
 
-                const ready = async function (): Promise<void>
-                {
-                    while (true)
-                    {
-                        try
-                        {
-                            await async.delay(750);
-                            const init = { headers: { "x-http-only": "" } };
-                            await fetch("http://localhost:3080/", init);
-                            return;
-                        }
-                        catch { undefined; }
-                    }
-                };
-                ready().then(async function () { await opener.open("https://localhost:3443/"); });
-
-                const serverRunOptions: Deno.RunOptions =
-                {
-                    cmd:
-                        [
-                            "deno", "run", "--unstable", "--watch", "--allow-all",
-                            "--import-map", "import-map.json", "server/daemon.tsx",
-                            "--hostname", "localhost", "--tls", "cert/localhost/"
-                        ],
-                    env: { DENO_DIR: ".cache/" }
-                };
-                const serverProcess = Deno.run(serverRunOptions);
-                const serverStatus = await serverProcess.status();
-                serverProcess.close();
-                return serverStatus.code;
-            }
-        default:
-            Console.error(`usage: ${command} localhost --server <snowpack | deno>`);
-            return;
-    }
+    const serverRunOptions: Deno.RunOptions =
+    {
+        cmd:
+            [
+                "deno", "run", "--unstable", "--watch", "--allow-all",
+                "--import-map", "import-map.json", "server/daemon.tsx",
+                "--hostname", "localhost", "--tls", "cert/localhost/"
+            ],
+        env: { DENO_DIR: ".cache/" }
+    };
+    const serverProcess = Deno.run(serverRunOptions);
+    const serverStatus = await serverProcess.status();
+    serverProcess.close();
+    return serverStatus.code;
 }
-export async function docker(args: Arguments)
+export function docker(_args: Arguments)
+{
+    Console.log(`commands:`);
+    Console.print(`  ${command} docker:bundle\t${colors.italic(colors.black("(bundles JavaScript)"))}`);
+    Console.print(`  ${command} docker:dgraph\t${colors.italic(colors.black("(runs DGraph Zero and Alpha node)"))}`);
+    Console.print(`  ${command} docker:server\t${colors.italic(colors.black("(runs webserver)"))}`);
+    return;
+}
+export async function dockerBundle(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} docker --target <localhost | dev | live> --domain <domain>`);
+        Console.log(`usage: ${command} docker:bundle --target <localhost | dev | live> --domain <domain>`);
         return;
     }
     if (!args.target || !(["localhost", "dev", "live"].includes(args.target)))
     {
-        Console.error(`usage: ${command} docker --target <localhost | dev | live> --domain <domain>`);
+        Console.error(`usage: ${command} docker:bundle --target <localhost | dev | live> --domain <domain>`);
         return;
     }
-
-    if (await cache(args))
-        throw new Error("Caching failed");
-
     const snowpackRunOptions: Deno.RunOptions =
     {
         cmd:
@@ -342,7 +312,14 @@ export async function docker(args: Arguments)
     snowpackProcess.close();
     if (!snowpackStatus.success)
         return snowpackStatus.code;
-
+}
+export async function dockerDgraph(args: Arguments)
+{
+    if (args.help)
+    {
+        Console.log(`usage: ${command} docker:dgraph`);
+        return;
+    }
     const zero = async function (): Promise<void>
     {
         const zeroRunOptions: Deno.RunOptions = { cmd: ["dgraph", "zero"] };
@@ -365,27 +342,31 @@ export async function docker(args: Arguments)
         await alphaProcess.status();
         alphaProcess.close();
     };
-    const server = async function (): Promise<void>
+
+    await Promise.race([zero(), alpha()]);
+}
+export async function dockerServer(args: Arguments)
+{
+    if (args.help)
     {
-        /** @todo Add Deno TLS. */
-        const serverRunOptions: Deno.RunOptions =
-        {
-            cmd:
-                [
-                    "deno", "run", "--unstable", "--allow-all",
-                    "--import-map", "import-map.json",
-                    "server/daemon.tsx", "--hostname", "0.0.0.0",
-                    "--domain", args.domain, "--dgraph" // "--tls", "cert/0.0.0.0"
-                ],
-            env: { DENO_DIR: ".cache/" }
-        };
-        const serverProcess = Deno.run(serverRunOptions);
-        try { await serverProcess.status(); }
-        catch { undefined; }
-        serverProcess.close();
+        Console.log(`usage: ${command} docker:server`);
+        return;
+    }
+    const serverRunOptions: Deno.RunOptions =
+    {
+        cmd:
+            [
+                "deno", "run", "--unstable", "--allow-all",
+                "--import-map", "import-map.json",
+                "server/daemon.tsx", "--hostname", "0.0.0.0",
+                "--domain", args.domain, "--dgraph"
+            ],
+        env: { DENO_DIR: ".cache/" }
     };
-    await server();
-    // await Promise.race([server(), zero(), alpha()]);
+    const serverProcess = Deno.run(serverRunOptions);
+    try { await serverProcess.status(); }
+    catch { undefined; }
+    serverProcess.close();
 }
 export async function test(args: Arguments)
 {
@@ -532,12 +513,17 @@ if (import.meta.main)
         .command("clean", "", {}, clean)
         .command("install", "", {}, install)
         .command("upgrade", "", {}, upgrade)
-        .command("pkg-update", "", {}, pkgUpdate)
+        .command("pkg:update", "", {}, pkgUpdate)
         .command("cache", "", {}, cache)
         .command("bundle", "", {}, bundle)
         .command("codegen", "", {}, codegen)
         .command("localhost", "", {}, localhost)
+        .command("localhost:snowpack", "", {}, localhostSnowpack)
+        .command("localhost:deno", "", {}, localhostDeno)
         .command("docker", "", {}, docker)
+        .command("docker:bundle", "", {}, dockerBundle)
+        .command("docker:dgraph", "", {}, dockerDgraph)
+        .command("docker:server", "", {}, dockerServer)
         .command("test", "", {}, test)
         .command("prune", "", {}, prune)
         .command("image", "", {}, image)
