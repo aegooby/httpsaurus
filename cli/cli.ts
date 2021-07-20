@@ -349,7 +349,12 @@ export async function dockerServer(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} docker:server`);
+        Console.log(`usage: ${command} docker:server --domain <domain>`);
+        return;
+    }
+    if (!args.domain)
+    {
+        Console.error(`usage: ${command} docker:server --domain <domain>`);
         return;
     }
     const serverRunOptions: Deno.RunOptions =
