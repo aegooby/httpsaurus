@@ -31,7 +31,9 @@ jobs:
                   deno-version: ${{ matrix.deno }}
             - name: Upgrade Node
               run: sudo npm install --global n && sudo n latest
+            - name: Install Turtle CLI
+              run: sudo cli/install.sh
             - name: Cache Dependencies
-              run: deno run --unstable --allow-all --import-map import-map.json cli/cli.ts cache
+              run: turtle cache
             - name: Test Server
-              run: deno run --unstable --allow-all --import-map import-map.json cli/cli.ts test
+              run: turtle test
