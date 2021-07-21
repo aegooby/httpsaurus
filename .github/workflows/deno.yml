@@ -34,6 +34,6 @@ jobs:
             - name: Install Turtle CLI
               run: sudo cli/install.sh
             - name: Cache Dependencies
-              run: turtle cache
+              run: sudo turtle cache
             - name: Test Server
-              run: turtle test
+              run: sudo turtle test
