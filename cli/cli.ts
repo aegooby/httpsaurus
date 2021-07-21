@@ -72,15 +72,72 @@ export async function upgrade(args: Arguments)
     process.close();
     return status.code;
 }
+export async function pkgAdd(args: Arguments)
+{
+    if (args.help)
+    {
+        Console.log(`usage: ${command} pkg-add --host <host> <packages>...`);
+        return;
+    }
+    if (!args.host)
+    {
+        Console.error(`usage: ${command} pkg-add --host <host> <packages>...`);
+        return;
+    }
+    const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
+    for (const arg of args._ as string[])
+    {
+        const errorStr = `Package "${arg}" not found, may need to be added manually`;
+        switch (args.host)
+        {
+            case "std":
+                {
+                    const url = `https://deno.land/std/${arg}/mod.ts`;
+                    if ((await fetch(url)).ok)
+                        importMap.imports[arg] = url;
+                    else
+                        Console.error(errorStr);
+                    break;
+                }
+            case "deno.land":
+                {
+                    const url = `https://deno.land/x/${arg}/mod.ts`;
+                    if ((await fetch(url)).ok)
+                        importMap.imports[arg] = url;
+                    else
+                        Console.error(errorStr);
+                    break;
+                }
+            case "cdn.skypack.dev":
+                {
+                    const url = `https://cdn.skypack.dev/${arg}?dts`;
+                    if ((await fetch(url)).ok)
+                        importMap.imports[arg] = url;
+                    else
+                        Console.error(errorStr);
+                    break;
+                }
+            case "esm.sh":
+                {
+                    const url = `https://esm.sh/${arg}`;
+                    if ((await fetch(url)).ok)
+                        importMap.imports[arg] = url;
+                    else
+                        Console.error(errorStr);
+                    break;
+                }
+        }
+    }
+}
 export async function pkgUpdate(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} pkg-update <packages>... [--all]`);
+        Console.log(`usage: ${command} pkg-update <packages>...`);
         return;
     }
     const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
-    const keys = (args.all ? Object.keys(importMap.imports) : args._) as string[];
+    const keys = (args._.length ? args._ : Object.keys(importMap.imports)) as string[];
     for (const key of keys)
     {
         if (!importMap.imports[key])
@@ -121,9 +178,8 @@ export async function cache(args: Arguments)
         Console.log(`usage: ${command} cache [--reload]`);
         return;
     }
-    const files: string[] = [];
-    for await (const file of fs.expandGlob("**/*.tsx"))
-        files.push(file.path);
+    const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
+    const packages: string[] = Object.values(importMap.imports);
 
     const flags = args.reload ? ["--reload"] : [];
     switch (typeof args.reload)
@@ -131,7 +187,6 @@ export async function cache(args: Arguments)
         case "string":
             {
                 const reloadNames = args.reload.split(",");
-                const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
                 const map = function (value: string) 
                 {
                     try { return (new URL(value)).href; }
@@ -151,7 +206,7 @@ export async function cache(args: Arguments)
     }
     const denoRunOptions: Deno.RunOptions =
     {
-        cmd: ["deno", "cache", "--unstable", ...flags, "--import-map", "import-map.json", ...files],
+        cmd: ["deno", "cache", "--unstable", ...flags, "--import-map", "import-map.json", ...packages],
         env: { DENO_DIR: ".cache/" }
     };
     const yarnRunOptions: Deno.RunOptions = { cmd: ["yarn", "install"] };
@@ -519,6 +574,7 @@ if (import.meta.main)
         .command("install", "", {}, install)
         .command("upgrade", "", {}, upgrade)
         .command("pkg:update", "", {}, pkgUpdate)
+        .command("pkg:add", "", {}, pkgAdd)
         .command("cache", "", {}, cache)
         .command("bundle", "", {}, bundle)
         .command("codegen", "", {}, codegen)
