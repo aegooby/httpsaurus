@@ -335,19 +335,7 @@ export async function localhostSnowpack(_args: Arguments)
 }
 export async function localhostDeno(_args: Arguments)
 {
-    const snowpackRunOptions: Deno.RunOptions =
-    {
-        cmd:
-            [
-                "yarn", "run", "snowpack", "--config",
-                "config/localhost.snowpack.js", "build"
-            ]
-    };
-    const snowpackProcess = Deno.run(snowpackRunOptions);
-    const snowpackStatus = await snowpackProcess.status();
-    snowpackProcess.close();
-    if (!snowpackStatus.success)
-        return snowpackStatus.code;
+    await bundle({ _: [], graphql: "https://localhost:3443/graphql" });
 
     const ready = async function (): Promise<void>
     {
