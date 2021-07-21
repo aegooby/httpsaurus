@@ -1,6 +1,5 @@
 
 import * as colors from "@std/colors";
-import * as fs from "@std/fs";
 import * as async from "@std/async";
 import * as yargs from "@yargs/yargs";
 import { Arguments } from "@yargs/types";
@@ -15,27 +14,21 @@ const [args, command] = [Deno.args, "turtle"];
 export function all(_: Arguments)
 {
     Console.error(`usage: ${command} <command> [options]`);
+    Console.log(`Try \`${command} <command> --help\` for more information`);
     Console.log(`commands:`);
-    Console.print(`  clean\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  install\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  upgrade\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  pkg:update\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  cache\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  bundle\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  codegen\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  localhost\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  localhost:snowpack\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  localhost:deno\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  docker\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  docker:bundle\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  docker:dgraph\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  docker:server\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  test\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  prune\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  image\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  container\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  sync\t\t${colors.italic(colors.black(""))}`);
-    Console.print(`  help\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  clean\t\t${colors.italic(colors.black("(cleans temporary directories)"))}`);
+    Console.print(`  install\t\t${colors.italic(colors.black("(installs Yarn)"))}`);
+    Console.print(`  upgrade\t\t${colors.italic(colors.black("(upgrades Deno)"))}`);
+    Console.print(`  pkg\t\t${colors.italic(colors.black("(manages packages)"))}`);
+    Console.print(`  cache\t\t${colors.italic(colors.black("(caches packages)"))}`);
+    Console.print(`  bundle\t\t${colors.italic(colors.black("(bundles JavaScript)"))}`);
+    Console.print(`  codegen\t\t${colors.italic(colors.black("(generates GraphQL types)"))}`);
+    Console.print(`  localhost\t\t${colors.italic(colors.black("(runs server on localhost)"))}`);
+    Console.print(`  deploy\t\t${colors.italic(colors.black("(runs live deployment)"))}`);
+    Console.print(`  test\t\t${colors.italic(colors.black("(runs automated tests)"))}`);
+    Console.print(`  docker\t\t${colors.italic(colors.black("(manages Docker)"))}`);
+    Console.print(`  sync\t\t${colors.italic(colors.black("(sync files to server)"))}`);
+    Console.print(`  help\t\t${colors.italic(colors.black("(prints help)"))}`);
     return;
 }
 export async function clean(args: Arguments)
@@ -94,20 +87,28 @@ export async function upgrade(args: Arguments)
     process.close();
     return status.code;
 }
+export function pkg(_args: Arguments)
+{
+    Console.log(`commands:`);
+    Console.print(`  pkg:add --host <host> <packages...>\t${colors.italic(colors.black("(adds new packages)"))}`);
+    Console.print(`  pkg:remove <packages...>\t\t\t${colors.italic(colors.black("(removes existing packages)"))}`);
+    Console.print(`  pkg:update [packages...]\t\t\t${colors.italic(colors.black("(updates pacakges)"))}`);
+    return;
+}
 export async function pkgAdd(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} pkg-add --host <host> <packages>...`);
+        Console.log(`usage: ${command} pkg-add --host <host> <packages...>`);
         return;
     }
     if (!args.host)
     {
-        Console.error(`usage: ${command} pkg-add --host <host> <packages>...`);
+        Console.error(`usage: ${command} pkg-add --host <host> <packages...>`);
         return;
     }
     const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
-    for (const arg of args._ as string[])
+    for (const arg of args._.slice(1) as string[])
     {
         const errorStr = `Package "${arg}" not found, may need to be added manually`;
         switch (args.host)
@@ -150,12 +151,28 @@ export async function pkgAdd(args: Arguments)
                 }
         }
     }
+    await Deno.writeTextFile("import-map.json", JSON.stringify(importMap, undefined, 4));
+}
+export async function pkgRemove(args: Arguments)
+{
+    if (args.help)
+    {
+        Console.log(`usage: ${command} pkg-remove <packages...>`);
+        return;
+    }
+    const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
+    for (const arg of args._ as string[])
+    {
+        if (importMap.imports[arg])
+            importMap.imports[arg] = undefined;
+    }
+    await Deno.writeTextFile("import-map.json", JSON.stringify(importMap, undefined, 4));
 }
 export async function pkgUpdate(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} pkg-update <packages>...`);
+        Console.log(`usage: ${command} pkg-update [packages...]`);
         return;
     }
     const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
@@ -250,21 +267,28 @@ export async function bundle(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} bundle`);
+        Console.log(`usage: ${command} bundle --graphql <endpoint>`);
         return;
     }
-
-    if (await cache(args))
-        throw new Error("Caching failed");
-
-    const runOptions: Deno.RunOptions =
+    if (!args.graphql)
     {
-        cmd: ["yarn", "run", "snowpack", "--config", "config/base.snowpack.js", "build"],
+        Console.error(`usage: ${command} bundle --graphql <endpoint>`);
+        return;
+    }
+    const snowpackRunOptions: Deno.RunOptions =
+    {
+        cmd:
+            [
+                "yarn", "run", "snowpack", "--config",
+                "config/snowpack.config.js", "build"
+            ],
+        env: { SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT: args.graphql }
     };
-    const process = Deno.run(runOptions);
-    const status = await process.status();
-    process.close();
-    return status.code;
+    const snowpackProcess = Deno.run(snowpackRunOptions);
+    const snowpackStatus = await snowpackProcess.status();
+    snowpackProcess.close();
+    if (!snowpackStatus.success)
+        return snowpackStatus.code;
 }
 export async function codegen(args: Arguments)
 {
@@ -356,45 +380,46 @@ export async function localhostDeno(_args: Arguments)
     serverProcess.close();
     return serverStatus.code;
 }
-export function docker(_args: Arguments)
+export function deploy(_args: Arguments)
 {
     Console.log(`commands:`);
-    Console.print(`  docker:bundle\t${colors.italic(colors.black("(bundles JavaScript)"))}`);
-    Console.print(`  docker:dgraph\t${colors.italic(colors.black("(runs DGraph Zero and Alpha node)"))}`);
-    Console.print(`  docker:server\t${colors.italic(colors.black("(runs webserver)"))}`);
+    Console.print(`  deploy:server --domain <domain>\t${colors.italic(colors.black("(runs webserver)"))}`);
+    Console.print(`  deploy:dgraph\t\t\t${colors.italic(colors.black("(runs DGraph Zero and Alpha node)"))}`);
     return;
 }
-export async function dockerBundle(args: Arguments)
+export async function deployServer(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} docker:bundle --target <target>`);
+        Console.log(`usage: ${command} deploy:server --domain <domain>`);
         return;
     }
-    if (!args.target || !(["localhost", "dev", "live"].includes(args.target)))
+    if (!args.domain)
     {
-        Console.error(`usage: ${command} docker:bundle --target <target>`);
+        Console.error(`usage: ${command} deploy:server --domain <domain>`);
         return;
     }
-    const snowpackRunOptions: Deno.RunOptions =
+    const serverRunOptions: Deno.RunOptions =
     {
         cmd:
             [
-                "yarn", "run", "snowpack", "--config",
-                `config/docker-${args.target}.snowpack.js`, "build"
+                "deno", "run", "--unstable", "--allow-all",
+                "--import-map", "import-map.json",
+                "server/daemon.tsx", "--hostname", "0.0.0.0",
+                "--domain", args.domain, "--dgraph"
             ],
+        env: { DENO_DIR: ".cache/" }
     };
-    const snowpackProcess = Deno.run(snowpackRunOptions);
-    const snowpackStatus = await snowpackProcess.status();
-    snowpackProcess.close();
-    if (!snowpackStatus.success)
-        return snowpackStatus.code;
+    const serverProcess = Deno.run(serverRunOptions);
+    try { await serverProcess.status(); }
+    catch { undefined; }
+    serverProcess.close();
 }
-export async function dockerDgraph(args: Arguments)
+export async function deployDgraph(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} docker:dgraph`);
+        Console.log(`usage: ${command} deploy:dgraph`);
         return;
     }
     const zero = async function (): Promise<void>
@@ -422,34 +447,6 @@ export async function dockerDgraph(args: Arguments)
 
     await Promise.race([zero(), alpha()]);
 }
-export async function dockerServer(args: Arguments)
-{
-    if (args.help)
-    {
-        Console.log(`usage: ${command} docker:server --domain <domain>`);
-        return;
-    }
-    if (!args.domain)
-    {
-        Console.error(`usage: ${command} docker:server --domain <domain>`);
-        return;
-    }
-    const serverRunOptions: Deno.RunOptions =
-    {
-        cmd:
-            [
-                "deno", "run", "--unstable", "--allow-all",
-                "--import-map", "import-map.json",
-                "server/daemon.tsx", "--hostname", "0.0.0.0",
-                "--domain", args.domain, "--dgraph"
-            ],
-        env: { DENO_DIR: ".cache/" }
-    };
-    const serverProcess = Deno.run(serverRunOptions);
-    try { await serverProcess.status(); }
-    catch { undefined; }
-    serverProcess.close();
-}
 export async function test(args: Arguments)
 {
     if (args.help)
@@ -471,7 +468,15 @@ export async function test(args: Arguments)
     process.close();
     return status.code;
 }
-export async function prune(args: Arguments)
+export function docker(_args: Arguments)
+{
+    Console.log(`commands:`);
+    Console.print(`  docker:prune\t\t\t\t\t${colors.italic(colors.black("(prunes unused resources)"))}`);
+    Console.print(`  docker:image --target <target> --tag <tag>\t${colors.italic(colors.black("(builds Docker image)"))}`);
+    Console.print(`  docker:container --tag <tag>\t\t\t${colors.italic(colors.black("(runs Docker container)"))}`);
+    return;
+}
+export async function dockerPrune(args: Arguments)
 {
     if (args.help)
     {
@@ -492,7 +497,7 @@ export async function prune(args: Arguments)
     if (!imageStatus.success)
         return imageStatus.code;
 }
-export async function image(args: Arguments)
+export async function dockerImage(args: Arguments)
 {
     if (args.help)
     {
@@ -506,7 +511,7 @@ export async function image(args: Arguments)
     }
 
     if (args.prune)
-        await prune(args);
+        await dockerPrune(args);
 
     const imageRunOptions: Deno.RunOptions =
         { cmd: ["docker", "build", "--target", args.target, "--tag", args.tag, "."] };
@@ -516,7 +521,7 @@ export async function image(args: Arguments)
     if (!imageStatus.success)
         return imageStatus.code;
 }
-export async function container(args: Arguments)
+export async function dockerContainer(args: Arguments)
 {
     if (args.help)
     {
@@ -530,7 +535,7 @@ export async function container(args: Arguments)
     }
 
     if (args.prune)
-        await prune(args);
+        await dockerPrune(args);
 
     const containerRunOptions: Deno.RunOptions =
     {
@@ -581,6 +586,22 @@ export async function sync(args: Arguments)
 export function help(_: Arguments)
 {
     Console.log(`usage: ${command} <command> [options]`);
+    Console.log(`Try \`${command} <command> --help\` for more information`);
+    Console.log(`commands:`);
+    Console.print(`  clean\t\t${colors.italic(colors.black("(cleans temporary directories)"))}`);
+    Console.print(`  install\t\t${colors.italic(colors.black("(installs Yarn)"))}`);
+    Console.print(`  upgrade\t\t${colors.italic(colors.black("(upgrades Deno)"))}`);
+    Console.print(`  pkg\t\t${colors.italic(colors.black("(manages packages)"))}`);
+    Console.print(`  cache\t\t${colors.italic(colors.black("(caches packages)"))}`);
+    Console.print(`  bundle\t\t${colors.italic(colors.black("(bundles JavaScript)"))}`);
+    Console.print(`  codegen\t\t${colors.italic(colors.black("(generates GraphQL types)"))}`);
+    Console.print(`  localhost\t\t${colors.italic(colors.black("(runs server on localhost)"))}`);
+    Console.print(`  deploy\t\t${colors.italic(colors.black("(runs live deployment)"))}`);
+    Console.print(`  test\t\t${colors.italic(colors.black("(runs automated tests)"))}`);
+    Console.print(`  docker\t\t${colors.italic(colors.black("(manages Docker)"))}`);
+    Console.print(`  sync\t\t${colors.italic(colors.black("(sync files to server)"))}`);
+    Console.print(`  help\t\t${colors.italic(colors.black("(prints help)"))}`);
+    return;
 }
 
 if (import.meta.main)
@@ -595,22 +616,28 @@ if (import.meta.main)
         .command("clean", "", {}, clean)
         .command("install", "", {}, install)
         .command("upgrade", "", {}, upgrade)
-        .command("pkg:update", "", {}, pkgUpdate)
+        .command("pkg", "", {}, pkg)
+        .command("pkg:help", "", {}, pkg)
         .command("pkg:add", "", {}, pkgAdd)
+        .command("pkg:remove", "", {}, pkgRemove)
+        .command("pkg:update", "", {}, pkgUpdate)
         .command("cache", "", {}, cache)
         .command("bundle", "", {}, bundle)
         .command("codegen", "", {}, codegen)
         .command("localhost", "", {}, localhost)
+        .command("localhost:help", "", {}, localhost)
         .command("localhost:snowpack", "", {}, localhostSnowpack)
         .command("localhost:deno", "", {}, localhostDeno)
-        .command("docker", "", {}, docker)
-        .command("docker:bundle", "", {}, dockerBundle)
-        .command("docker:dgraph", "", {}, dockerDgraph)
-        .command("docker:server", "", {}, dockerServer)
+        .command("deploy", "", {}, deploy)
+        .command("deploy:help", "", {}, deploy)
+        .command("deploy:server", "", {}, deployServer)
+        .command("deploy:dgraph", "", {}, deployDgraph)
         .command("test", "", {}, test)
-        .command("prune", "", {}, prune)
-        .command("image", "", {}, image)
-        .command("container", "", {}, container)
+        .command("docker", "", {}, docker)
+        .command("docker:help", "", {}, docker)
+        .command("docker:prune", "", {}, dockerPrune)
+        .command("docker:image", "", {}, dockerImage)
+        .command("docker:container", "", {}, dockerContainer)
         .command("sync", "", {}, sync)
         .command("help", "", {}, help)
         .parse();
