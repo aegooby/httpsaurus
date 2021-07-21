@@ -1,4 +1,5 @@
 
+import * as fs from "@std/fs";
 import * as colors from "@std/colors";
 import * as async from "@std/async";
 import * as yargs from "@yargs/yargs";
@@ -49,19 +50,11 @@ export async function clean(args: Arguments)
     if (args.all || args.node)
         directories.push("node_modules/");
 
-    const rmRunOptions: Deno.RunOptions = { cmd: ["rm", "-rf", ...directories] };
-    const rmProcess = Deno.run(rmRunOptions);
-    const rmStatus = await rmProcess.status();
-    rmProcess.close();
-    if (!rmStatus.success)
-        return rmStatus.code;
+    for (const directory of directories)
+        await Deno.remove(directory, { recursive: true });
 
-    const mkdirRunOptions: Deno.RunOptions =
-        { cmd: ["mkdir", "-p", ...directories] };
-    const mkdirProcess = Deno.run(mkdirRunOptions);
-    const mkdirStatus = await mkdirProcess.status();
-    mkdirProcess.close();
-    return mkdirStatus.code;
+    for (const directory of directories)
+        await fs.ensureDir(directory);
 }
 export async function install(args: Arguments)
 {
@@ -214,9 +207,37 @@ export async function cache(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} cache [--reload]`);
+        Console.log(`usage: ${command} cache [--reload] [--remote]`);
         return;
     }
+
+    if (args.remote)
+    {
+        const remoteCache = "https://dl.dropboxusercontent.com/s/g7sy2qc69xdj3db/.cache.zip";
+        const response = await fetch(remoteCache);
+        if (!response.body)
+        {
+            Console.error("Unable to fetch remote cache");
+            return;
+        }
+        const body = await response.arrayBuffer();
+        const binary = new Uint8Array(body);
+        await Deno.writeFile(".cache.zip", binary);
+
+        const runOptions: Deno.RunOptions =
+            { cmd: ["unzip", "-oq", ".cache"] };
+        const process = Deno.run(runOptions);
+        const status = await process.status();
+        process.close();
+        if (!status.success)
+        {
+            Console.error("Failed to unzip cache");
+            await Deno.remove(".cache.zip");
+            return status.code;
+        }
+        await Deno.remove(".cache.zip");
+    }
+
     const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
     const packages: string[] = Object.values(importMap.imports);
 
