@@ -63,10 +63,16 @@ export async function install(args: Arguments)
         Console.log(`usage: ${command} install`);
         return;
     }
-    const npmProcess = Deno.run({ cmd: ["npm", "install", "--global", "yarn"] });
+    const npmProcess = Deno.run({ cmd: ["npm", "install", "--global", "yarn", "n"] });
     const npmStatus = await npmProcess.status();
     npmProcess.close();
-    return npmStatus.code;
+    if (!npmStatus.success)
+        return npmStatus.code;
+
+    const nProcess = Deno.run({ cmd: ["n", "latest"] });
+    const nStatus = await nProcess.status();
+    nProcess.close();
+    return nStatus.code;
 }
 export async function upgrade(args: Arguments)
 {
