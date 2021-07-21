@@ -15,6 +15,28 @@ const [args, command] = [Deno.args, "turtle"];
 export function all(_: Arguments)
 {
     Console.error(`usage: ${command} <command> [options]`);
+    Console.log(`commands:`);
+    Console.print(`  clean\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  install\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  upgrade\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  pkg:update\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  cache\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  bundle\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  codegen\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  localhost\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  localhost:snowpack\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  localhost:deno\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  docker\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  docker:bundle\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  docker:dgraph\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  docker:server\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  test\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  prune\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  image\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  container\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  sync\t\t${colors.italic(colors.black(""))}`);
+    Console.print(`  help\t\t${colors.italic(colors.black(""))}`);
+    return;
 }
 export async function clean(args: Arguments)
 {
@@ -268,8 +290,8 @@ export async function codegen(args: Arguments)
 export function localhost(_args: Arguments)
 {
     Console.log(`commands:`);
-    Console.print(`  ${command} localhost:snowpack\t${colors.italic(colors.black("(runs Snowpack dev server)"))}`);
-    Console.print(`  ${command} localhost:deno\t${colors.italic(colors.black("(runs Deno live server)"))}`);
+    Console.print(`  localhost:snowpack\t${colors.italic(colors.black("(runs Snowpack dev server)"))}`);
+    Console.print(`  localhost:deno\t${colors.italic(colors.black("(runs Deno live server)"))}`);
     return;
 }
 export async function localhostSnowpack(_args: Arguments)
@@ -337,9 +359,9 @@ export async function localhostDeno(_args: Arguments)
 export function docker(_args: Arguments)
 {
     Console.log(`commands:`);
-    Console.print(`  ${command} docker:bundle\t${colors.italic(colors.black("(bundles JavaScript)"))}`);
-    Console.print(`  ${command} docker:dgraph\t${colors.italic(colors.black("(runs DGraph Zero and Alpha node)"))}`);
-    Console.print(`  ${command} docker:server\t${colors.italic(colors.black("(runs webserver)"))}`);
+    Console.print(`  docker:bundle\t${colors.italic(colors.black("(bundles JavaScript)"))}`);
+    Console.print(`  docker:dgraph\t${colors.italic(colors.black("(runs DGraph Zero and Alpha node)"))}`);
+    Console.print(`  docker:server\t${colors.italic(colors.black("(runs webserver)"))}`);
     return;
 }
 export async function dockerBundle(args: Arguments)
