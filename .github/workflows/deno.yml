@@ -34,6 +34,6 @@ jobs:
             - name: Download remote cache
               run: cli/remote-cache.sh
             - name: Cache dependencies
-              run: deno run --unstable --allow-all --import-map import-map.json cli/cli.ts cache
+              run: DENO_DIR=.cache deno run --unstable --allow-all --import-map import-map.json cli/cli.ts cache
             - name: Test server
-              run: deno run --unstable --allow-all --import-map import-map.json cli/cli.ts test
+              run: DENO_DIR=.cache deno run --unstable --allow-all --import-map import-map.json cli/cli.ts test
