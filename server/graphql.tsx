@@ -30,12 +30,12 @@ interface GraphQLCustomSchema
 export class GraphQL
 {
     private customSchema: GraphQLCustomSchema = { schema: undefined, path: "" };
-    private schema: string = "" as const;
-    private resolvers: Apollo.GraphQLResolverMap;
+    private schema: string = {} as string;
+    private resolvers: Apollo.GraphQLResolverMap = {};
     private customPlayground: async.Deferred<string> = async.deferred();
     private playground: async.Deferred<string> = async.deferred();
-    private secure: boolean;
-    private dgraph: boolean;
+    private secure: boolean = {} as boolean;
+    private dgraph: boolean = {} as boolean;
 
     private static dgraphEndpoint: URL = new URL("http://localhost:8080/");
     private static dgraphAdminSchema: URL;
@@ -46,15 +46,32 @@ export class GraphQL
 
     private static MAX_RETRIES: number = 25 as const;
 
-    constructor(attributes: GraphQLAttributes)
+    private constructor()
     {
-        this.customSchema.path = attributes.customSchema;
-        this.schema = attributes.schema;
-        this.resolvers = attributes.resolvers as Apollo.GraphQLResolverMap;
-        this.secure = attributes.secure;
-        this.dgraph = attributes.dgraph;
+        this.buildSchema = this.buildSchema.bind(this);
+        this.urlPlayground = this.urlPlayground.bind(this);
+        this.renderPlayground = this.renderPlayground.bind(this);
+        this.build = this.build.bind(this);
 
-        if (this.dgraph)
+        this.customPost = this.customPost.bind(this);
+        this.customGet = this.customGet.bind(this);
+        this.customHead = this.customHead.bind(this);
+
+        this.post = this.post.bind(this);
+        this.get = this.get.bind(this);
+        this.head = this.head.bind(this);
+    }
+    public static async create(attributes: GraphQLAttributes): Promise<GraphQL>
+    {
+        const instance = new GraphQL();
+
+        instance.customSchema.path = attributes.customSchema;
+        instance.schema = attributes.schema;
+        instance.resolvers = attributes.resolvers as Apollo.GraphQLResolverMap;
+        instance.secure = attributes.secure;
+        instance.dgraph = attributes.dgraph;
+
+        if (instance.dgraph)
         {
             if (!Deno.env.get("DGRAPH_URL"))
                 Console.warn(`DGRAPH_URL environment variable not found, using ${GraphQL.dgraphEndpoint.href}`);
@@ -72,18 +89,7 @@ export class GraphQL
 
         GraphQL.serverGraphQL = new URL("/graphql/custom", GraphQL.serverEndpoint);
 
-        this.buildSchema = this.buildSchema.bind(this);
-        this.urlPlayground = this.urlPlayground.bind(this);
-        this.renderPlayground = this.renderPlayground.bind(this);
-        this.build = this.build.bind(this);
-
-        this.customPost = this.customPost.bind(this);
-        this.customGet = this.customGet.bind(this);
-        this.customHead = this.customHead.bind(this);
-
-        this.post = this.post.bind(this);
-        this.get = this.get.bind(this);
-        this.head = this.head.bind(this);
+        return await Promise.resolve(instance);
     }
     private async buildSchema(): Promise<void>
     {

@@ -76,96 +76,31 @@ interface OakServer
 
 export class Server
 {
-    private secure: boolean;
-    private domain: string;
+    private secure: boolean = {} as boolean;
+    private domain: string = {} as string;
     private routes: Map<string, string> = new Map<string, string>();
 
     private public: string = "/dist" as const;
     private scriptElements: Array<React.ReactElement> = [];
 
-    private oak: OakServer;
+    private oak: OakServer = {} as OakServer;
 
-    private listener: Listener;
-    private hostname: string;
-    private port: number;
+    private listener: Listener = {} as Listener;
+    private hostname: string = {} as string;
+    private port: number = {} as number;
     private portTls: number | undefined;
 
     private closed: async.Deferred<StatusCode> = async.deferred();
 
-    private graphql: GraphQL;
+    private graphql: GraphQL = {} as GraphQL;
 
-    private App: React.ReactElement;
-    private headElements: Array<React.ReactElement>;
+    private App: React.ReactElement = {} as React.ReactElement;
+    private headElements: Array<React.ReactElement> = [];
 
-    private keypair: keypair.KeypairResults;
+    private keypair: keypair.KeypairResults = {} as keypair.KeypairResults;
 
-    constructor(attributes: ServerAttributes)
+    private constructor()
     {
-        this.secure = attributes.secure;
-
-        this.App = attributes.App;
-        this.headElements = attributes.headElements;
-
-        for (const key in attributes.routes)
-        {
-            const url = new URL(`key://${key}`);
-            switch (url.pathname)
-            {
-                case "/graphql":
-                    throw new Error("Cannot reroute /graphql URL");
-                case "/graphql/custom":
-                    throw new Error("Cannot reroute /graphql/custom URL");
-                default:
-                    this.routes.set(key, attributes.routes[key]);
-                    break;
-            }
-        }
-
-        this.hostname = attributes.hostname;
-        this.port = attributes.port;
-        this.portTls = this.secure ? attributes.portTls : undefined;
-
-        const options: Array<ListenOptions> = [];
-        const listenOptions: ListenBaseOptions =
-        {
-            hostname: attributes.hostname,
-            port: attributes.port as number,
-            secure: false
-        };
-        options.push(listenOptions);
-
-        if (this.secure)
-        {
-            const listenTlsOptions: ListenTlsOptions =
-            {
-                hostname: attributes.hostname,
-                port: attributes.portTls as number,
-                certFile: path.join(attributes.cert ?? "", "fullchain.pem"),
-                keyFile: path.join(attributes.cert ?? "", "privkey.pem"),
-                alpnProtocols: ["http/1.1", "h2"],
-                transport: "tcp",
-                secure: true,
-            };
-            options.push(listenTlsOptions);
-        }
-        this.listener = new Listener(options);
-
-        this.oak = { app: new Oak.Application(), router: new Oak.Router() };
-
-        this.graphql = new GraphQL(attributes);
-
-        if (attributes.domain)
-        {
-            if (!attributes.domain.startsWith("www."))
-                this.domain = `https://www.${attributes.domain}`;
-            else
-                this.domain = `https://${attributes.domain}`;
-        }
-        else
-            this.domain = `https://${this.hostname}:${this.port}`;
-
-        this.keypair = keypair.default();
-
         this.www = this.www.bind(this);
         this.jwt = this.jwt.bind(this);
 
@@ -183,6 +118,77 @@ export class Server
 
         this.serve = this.serve.bind(this);
         this.close = this.close.bind(this);
+    }
+    public static async create(attributes: ServerAttributes): Promise<Server>
+    {
+        const instance = new Server();
+
+        instance.secure = attributes.secure;
+
+        instance.App = attributes.App;
+        instance.headElements = attributes.headElements;
+
+        for (const key in attributes.routes)
+        {
+            const url = new URL(`key://${key}`);
+            switch (url.pathname)
+            {
+                case "/graphql":
+                    throw new Error("Cannot reroute /graphql URL");
+                case "/graphql/custom":
+                    throw new Error("Cannot reroute /graphql/custom URL");
+                default:
+                    instance.routes.set(key, attributes.routes[key]);
+                    break;
+            }
+        }
+
+        instance.hostname = attributes.hostname;
+        instance.port = attributes.port;
+        instance.portTls = instance.secure ? attributes.portTls : undefined;
+
+        const options: Array<ListenOptions> = [];
+        const listenOptions: ListenBaseOptions =
+        {
+            hostname: attributes.hostname,
+            port: attributes.port as number,
+            secure: false
+        };
+        options.push(listenOptions);
+
+        if (instance.secure)
+        {
+            const listenTlsOptions: ListenTlsOptions =
+            {
+                hostname: attributes.hostname,
+                port: attributes.portTls as number,
+                certFile: path.join(attributes.cert ?? "", "fullchain.pem"),
+                keyFile: path.join(attributes.cert ?? "", "privkey.pem"),
+                alpnProtocols: ["http/1.1", "h2"],
+                transport: "tcp",
+                secure: true,
+            };
+            options.push(listenTlsOptions);
+        }
+        instance.listener = new Listener(options);
+
+        instance.oak = { app: new Oak.Application(), router: new Oak.Router() };
+
+        instance.graphql = await GraphQL.create(attributes);
+
+        if (attributes.domain)
+        {
+            if (!attributes.domain.startsWith("www."))
+                instance.domain = `https://www.${attributes.domain}`;
+            else
+                instance.domain = `https://${attributes.domain}`;
+        }
+        else
+            instance.domain = `https://${instance.hostname}:${instance.port}`;
+
+        instance.keypair = keypair.default();
+
+        return await Promise.resolve(instance);
     }
     public get protocol(): "http" | "https"
     {

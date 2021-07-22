@@ -1,11 +1,12 @@
 
 import * as React from "react";
-import * as server from "./server.tsx";
-import App from "../components/App.tsx";
 
 import * as Oak from "oak";
 import * as yargs from "@yargs/yargs";
 
+import { Server, Console } from "./server.tsx";
+import type { ServerAttributes } from "./server.tsx";
+import App from "../components/App.tsx";
 import type { Resolvers } from "../graphql/types.d.tsx";
 
 const args = yargs.default(Deno.args)
@@ -28,7 +29,7 @@ try
             }
         }
     };
-    const serverAttributes: server.ServerAttributes =
+    const serverAttributes: ServerAttributes =
     {
         secure: !!args.tls,
         domain: args.domain,
@@ -47,7 +48,7 @@ try
         resolvers: resolvers,
         dgraph: args.dgraph
     };
-    const httpserver = new server.Server(serverAttributes);
+    const httpserver = await Server.create(serverAttributes);
     await httpserver.serve();
 }
-catch (error) { server.Console.error(error); }
+catch (error) { Console.error(error); }

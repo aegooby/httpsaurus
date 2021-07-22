@@ -21,12 +21,16 @@ export type Snowpack = ImportMeta & { hot: { accept: () => unknown; }; env: Reco
 
 export class Client
 {
-    private api: string;
-    constructor(attributes: ClientAttributes)
+    private api: string = {} as string;
+    private constructor()
     {
-        this.api = attributes.api;
-
         this.fetch = this.fetch.bind(this);
+    }
+    public static create(attributes: ClientAttributes): Client
+    {
+        const instance = new Client();
+        instance.api = attributes.api;
+        return instance;
     }
     public async fetch(data: string | GraphQL.Query): Promise<Record<string, unknown>>
     {

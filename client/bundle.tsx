@@ -1,27 +1,30 @@
 
 import * as React from "react";
 import * as ReactRouter from "react-router-dom";
-import * as client from "./client.tsx";
+
+import { Client, Console } from "./client.tsx";
+import type { Snowpack } from "./client.tsx";
 
 import App from "../components/App.tsx";
 
-try
+
+try 
 {
     const clientAttributes =
     {
-        api: (import.meta as client.Snowpack).env.SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT,
+        api: (import.meta as Snowpack).env.SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT,
     };
-    const httpclient = new client.Client(clientAttributes);
+    const httpclient = Client.create(clientAttributes);
     const element: React.ReactElement =
         <ReactRouter.BrowserRouter>
             <App client={httpclient} />
         </ReactRouter.BrowserRouter>;
-    switch ((import.meta as client.Snowpack).env.MODE)
+    switch ((import.meta as Snowpack).env.MODE)
     {
         case "development":
             httpclient.render(element);
-            if ((import.meta as client.Snowpack).hot)
-                (import.meta as client.Snowpack).hot.accept();
+            if ((import.meta as Snowpack).hot)
+                (import.meta as Snowpack).hot.accept();
             break;
         case "production":
             httpclient.hydrate(element);
@@ -30,4 +33,4 @@ try
             throw new Error("Unknown Snowpack mode");
     }
 }
-catch (error) { client.Console.error(error); }
+catch (error) { Console.error(error); }
