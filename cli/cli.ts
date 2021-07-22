@@ -51,7 +51,8 @@ export async function clean(args: Arguments)
         directories.push("node_modules/");
 
     for (const directory of directories)
-        await Deno.remove(directory, { recursive: true });
+        if (await fs.exists(directory))
+            await Deno.remove(directory, { recursive: true });
 
     for (const directory of directories)
         await fs.ensureDir(directory);
@@ -238,10 +239,12 @@ export async function cache(args: Arguments)
         if (!status.success)
         {
             Console.error("Failed to unzip cache");
-            await Deno.remove(".cache.zip");
+            if (await fs.exists(".cache.zip"))
+                await Deno.remove(".cache.zip");
             return status.code;
         }
-        await Deno.remove(".cache.zip");
+        if (await fs.exists(".cache.zip"))
+            await Deno.remove(".cache.zip");
     }
 
     const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
