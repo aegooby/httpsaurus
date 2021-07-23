@@ -1,9 +1,9 @@
 
 import * as redis from "redis";
 
-export interface RedisAttributes extends redis.RedisConnectOptions
+export interface RedisAttributes
 {
-
+    url?: string;
 }
 
 interface RedisModuleAttributes
@@ -194,7 +194,10 @@ export class Redis extends redis.RedisImpl
     }
     public static async create(attributes: RedisAttributes): Promise<Redis>
     {
-        const { hostname, port = 6379, ...opts } = attributes;
+        if (!attributes.url && !Deno.env.get("REDIS_URL"))
+            throw new Error("Unable to find Redis URL");
+        const url = attributes.url ?? Deno.env.get("REDIS_URL") as string;
+        const { hostname, port = 6379, ...opts } = redis.parseURL(url);
         const connection = new redis.RedisConnection(hostname, port, opts);
         await connection.connect();
         const executor = new redis.MuxExecutor(connection);

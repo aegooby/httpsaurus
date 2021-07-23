@@ -17,6 +17,7 @@ import { Listener } from "./listener.tsx";
 import type { ListenOptions, ListenBaseOptions, ListenTlsOptions } from "./listener.tsx";
 import { Console } from "./console.tsx";
 export { Console } from "./console.tsx";
+export { Redis } from "./redis.tsx";
 
 class Version
 {
@@ -57,10 +58,8 @@ export interface ServerAttributes
     App: React.ReactElement;
     headElements: Array<React.ReactElement>;
 
-    customSchema: string;
     schema: string;
     resolvers: unknown;
-    dgraph: boolean;
 }
 
 interface State 
@@ -135,8 +134,6 @@ export class Server
             {
                 case "/graphql":
                     throw new Error("Cannot reroute /graphql URL");
-                case "/graphql/custom":
-                    throw new Error("Cannot reroute /graphql/custom URL");
                 default:
                     instance.routes.set(key, attributes.routes[key]);
                     break;
@@ -409,11 +406,6 @@ export class Server
         Console.log(`Collecting scripts...`, { clear: true });
         await this.scripts();
         Console.success(`Scripts collected`, { clear: true });
-
-
-        this.oak.router.head("/graphql/custom", this.graphql.customHead);
-        this.oak.router.get("/graphql/custom", this.graphql.customGet);
-        this.oak.router.post("/graphql/custom", this.graphql.customPost);
 
         this.oak.router.head("/graphql", this.graphql.head);
         this.oak.router.get("/graphql", this.graphql.get);
