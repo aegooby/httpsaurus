@@ -24,6 +24,7 @@
         "@yargs/types": "https://deno.land/x/yargs@v17.0.1-deno/deno-types.ts",
         "@yargs/yargs": "https://deno.land/x/yargs@v17.0.1-deno/deno.ts",
         "opener": "https://deno.land/x/opener@v1.0.1/mod.ts",
-        "dotenv": "https://deno.land/x/dotenv@v2.0.0/mod.ts"
+        "dotenv": "https://deno.land/x/dotenv@v2.0.0/mod.ts",
+        "redis": "https://raw.githubusercontent.com/aegooby/redis/master/mod.ts"
     }
 }
