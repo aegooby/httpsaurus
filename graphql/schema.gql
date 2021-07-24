@@ -1,31 +1,10 @@
 
-type User @secret(field: "password") @auth
-(
-    add:
-    {
-        or:
-        [
-            { rule: "query { queryUser(filter: { admin: false }) { __typename } }" }
-            { rule: "query { queryUser(filter: { email: { eq: \"root@ghostwritten.io\" } }) { __typename } }" }
-            { rule: "{ $ADMIN: { eq: true } }" }
-        ]
-    }
-)
-{
-    id: ID!
-    email: String! @id
-    admin: Boolean @search
+type Query 
+{ 
+    get(key: String!): String
 }
 
-type Query
+type Mutation
 {
-    request: String! @custom
-    (
-        http: 
-        {
-            url: "${SERVER_GRAPHQL}"
-            method: "POST"
-            graphql: "query { request }"
-        }
-    )
+    set(key: String!, value: String!): String!
 }

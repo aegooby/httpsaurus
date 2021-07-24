@@ -1,5 +1,5 @@
 {
-    "schema": "graphql/custom.gql",
+    "schema": "graphql/schema.gql",
     "generates": {
         "graphql/types.d.tsx": {
             "plugins": {
