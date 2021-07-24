@@ -54,13 +54,6 @@ try
         schema: "graphql/schema.gql",
         resolvers: resolvers,
     };
-    (self as unknown as MessagePort).onmessage = function (event: MessageEvent<Record<string, unknown>>)
-    {
-        serverAttributes.secure = !!event.data.tls as boolean;
-        serverAttributes.domain = event.data.domain as string;
-        serverAttributes.hostname = event.data.hostname as string;
-        serverAttributes.cert = event.data.tls as string;
-    };
     const httpserver = await Server.create(serverAttributes);
     await httpserver.serve();
 }
