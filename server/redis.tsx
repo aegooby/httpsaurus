@@ -188,6 +188,8 @@ export class Redis extends redis.RedisImpl
 {
     public json: RedisJSON = {} as RedisJSON;
     public search: RedisSearch = {} as RedisSearch;
+
+    private static default: string = "redis://localhost:6379/" as const;
     private constructor(executor: redis.CommandExecutor)
     {
         super(executor);
@@ -196,7 +198,7 @@ export class Redis extends redis.RedisImpl
     {
         if (!attributes.url && !Deno.env.get("REDIS_URL"))
             throw new Error("Unable to find Redis URL");
-        const url = attributes.url ?? Deno.env.get("REDIS_URL") as string;
+        const url = attributes.url ?? Deno.env.get("REDIS_URL") ?? Redis.default;
         const { hostname, port = 6379, ...opts } = redis.parseURL(url);
         const connection = new redis.RedisConnection(hostname, port, opts);
         await connection.connect();

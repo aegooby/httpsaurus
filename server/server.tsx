@@ -62,7 +62,7 @@ export interface ServerAttributes
     resolvers: unknown;
 }
 
-interface State 
+export interface State 
 {
     data: jwt.Jwt | string | undefined;
     keypair: keypair.KeypairResults;
@@ -199,36 +199,42 @@ export class Server
     {
         return `${this.protocol}://${this.hostname}`;
     }
-    private async www(context: Oak.Context, next: () => Promise<unknown>): Promise<void>
+    private www(): Oak.Middleware<State>
     {
-        const host = context.request.headers.get("host") as string;
-        if (!host.startsWith("www.") && !host.startsWith("localhost"))
+        return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
-            const wwwhost = `www.${host}`;
-            const protocol = context.request.secure ? "https" : "http";
-            const redirect = `${protocol}://${wwwhost}${context.request.url.pathname}`;
-            context.response.redirect(redirect);
-        }
-        await next();
-    }
-    private async jwt(context: Oak.Context<State>, next: () => Promise<unknown>): Promise<void>
-    {
-        context.state.keypair = this.keypair;
-        try
-        {
-            const accessToken = context.cookies.get("access-token");
-            if (!accessToken)
-                throw new Error();
-            const verifyOptions: jwt.VerifyOptions & { complete: true; } =
+            const host = context.request.headers.get("host") as string;
+            if (!host.startsWith("www.") && !host.startsWith("localhost"))
             {
-                algorithms: ["RS256"],
-                complete: true
-            };
-            const data = jwt.verify(accessToken, this.keypair.public, verifyOptions);
-            context.state.data = data;
-        }
-        catch { undefined; }
-        await next();
+                const wwwhost = `www.${host}`;
+                const protocol = context.request.secure ? "https" : "http";
+                const redirect = `${protocol}://${wwwhost}${context.request.url.pathname}`;
+                context.response.redirect(redirect);
+            }
+            await next();
+        };
+    }
+    private jwt(): Oak.Middleware<State>
+    {
+        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
+        {
+            context.state.keypair = this.keypair;
+            try
+            {
+                const accessToken = context.cookies.get("access-token");
+                if (!accessToken)
+                    throw new Error();
+                const verifyOptions: jwt.VerifyOptions & { complete: true; } =
+                {
+                    algorithms: ["RS256"],
+                    complete: true
+                };
+                const data = jwt.verify(accessToken, this.keypair.public, verifyOptions);
+                context.state.data = data;
+            }
+            catch { undefined; }
+            await next();
+        };
     }
     private async static(context: Oak.Context): Promise<void>
     {
@@ -294,46 +300,54 @@ export class Server
         context.response.status = staticContext.statusCode as Oak.Status ?? Oak.Status.OK;
         context.response.body = body;
     }
-    private async get(context: Oak.Context): Promise<void>
+    private get(): Oak.Middleware<State>
     {
-        /* Redirect HTTP to HTTPS if it's available. */
-        if (!context.request.secure && this.secure)
+        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
         {
-            if (context.request.headers.has("x-http-only"))
+            /* Redirect HTTP to HTTPS if it's available. */
+            if (!context.request.secure && this.secure)
             {
-                context.response.status = Oak.Status.OK;
-                context.response.body = "";
-                return;
+                if (context.request.headers.has("x-http-only"))
+                {
+                    context.response.status = Oak.Status.OK;
+                    context.response.body = "";
+                    return;
+                }
+                const urlRequest = context.request.url;
+                const host = context.request.headers.get("host");
+                return context.response.redirect(`https://${host}${urlRequest.pathname}`);
             }
-            const urlRequest = context.request.url;
-            const host = context.request.headers.get("host");
-            return context.response.redirect(`https://${host}${urlRequest.pathname}`);
-        }
 
-        /* Check reroutes */
-        if (this.routes.has(context.request.url.pathname))
-        {
-            const from = context.request.url.pathname;
-            const to = this.routes.get(from) as string;
-            return context.response.redirect(to);
-        }
+            /* Check reroutes */
+            if (this.routes.has(context.request.url.pathname))
+            {
+                const from = context.request.url.pathname;
+                const to = this.routes.get(from) as string;
+                return context.response.redirect(to);
+            }
 
-        /* Convert URL to filepath. */
-        const filepath = path.join(".", this.public, context.request.url.pathname);
+            /* Convert URL to filepath. */
+            const filepath = path.join(".", this.public, context.request.url.pathname);
 
-        /* File path not found or is not a file -> not static. */
-        if (!await fs.exists(filepath) || !(await Deno.stat(filepath)).isFile)
-            return await this.react(context);
+            /* File path not found or is not a file -> not static. */
+            if (!await fs.exists(filepath) || !(await Deno.stat(filepath)).isFile)
+                return await this.react(context);
 
-        return await this.static(context);
+            await this.static(context);
+            await next();
+        };
     }
-    private async head(context: Oak.Context): Promise<void>
+    private head(): Oak.Middleware<State>
     {
-        await this.get(context);
-        const response = await context.response.toDomResponse();
-        const length = response.headers.get("content-length");
-        context.response.headers.set("content-length", length ?? "0");
-        context.response.body = undefined;
+        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
+        {
+            await this.get()(context, async () => { });
+            const response = await context.response.toDomResponse();
+            const length = response.headers.get("content-length");
+            context.response.headers.set("content-length", length ?? "0");
+            context.response.body = undefined;
+            await next();
+        };
     }
     private async handle(connection: Deno.Conn, secure: boolean): Promise<void>
     {
@@ -407,16 +421,16 @@ export class Server
         await this.scripts();
         Console.success(`Scripts collected`, { clear: true });
 
-        this.oak.router.head("/graphql", this.graphql.head);
-        this.oak.router.get("/graphql", this.graphql.get);
-        this.oak.router.post("/graphql", this.graphql.post);
+        this.oak.router.head("/graphql", this.graphql.head());
+        this.oak.router.get("/graphql", this.graphql.get());
+        this.oak.router.post("/graphql", this.graphql.post());
 
-        this.oak.router.head("/(.*)", this.head);
-        this.oak.router.get("/(.*)", this.get);
+        this.oak.router.head("/((?!graphql).*)", this.head());
+        this.oak.router.get("/((?!graphql).*)", this.get());
 
         this.oak.app.proxy = true;
-        this.oak.app.use(this.www);
-        this.oak.app.use(this.jwt);
+        this.oak.app.use(this.www());
+        this.oak.app.use(this.jwt());
         this.oak.app.use(this.oak.router.routes());
         this.oak.app.use(this.oak.router.allowedMethods());
         this.oak.app.use(Oak.etag.factory());

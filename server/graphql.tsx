@@ -7,6 +7,7 @@ import * as graphql from "graphql";
 import * as playground from "graphql-playground";
 
 import { Console } from "./console.tsx";
+import type { State } from "./server.tsx";
 import type { Query } from "../components/Core/GraphQL/GraphQL.tsx";
 
 interface GraphQLAttributes
@@ -61,7 +62,7 @@ export class GraphQL
         switch (urlParsed.hostname)
         {
             case "localhost":
-                return this.secure ? "https://localhost" : "http://localhost";
+                return this.secure ? "https://localhost:3443" : "http://localhost:3080";
             default:
                 return url;
         }
@@ -97,65 +98,77 @@ export class GraphQL
         await this.buildSchema();
         this.renderPlayground(attributes.url);
     }
-    public async post(context: Oak.Context): Promise<void>
+    public post(): Oak.Middleware<State>
     {
-        try
+        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
         {
-            const query: Query = { query: "" };
-            switch (context.request.headers.get("content-type"))
+            try
             {
-                case "application/json":
-                    {
-                        const jsonRequest = await context.request.body({ type: "json" }).value;
-                        query.query = jsonRequest.query;
-                        query.operationName = jsonRequest.operationName;
-                        query.variables = jsonRequest.variables;
-                        break;
-                    }
-                case "application/graphql":
-                    {
-                        const textRequest = await context.request.body({ type: "text" }).value;
-                        query.query = textRequest;
-                        break;
-                    }
-                default:
-                    throw new Error("Invalid GraphQL MIME type");
+                const query: Query = { query: "" };
+                switch (context.request.headers.get("content-type"))
+                {
+                    case "application/json":
+                        {
+                            const jsonRequest = await context.request.body({ type: "json" }).value;
+                            query.query = jsonRequest.query;
+                            query.operationName = jsonRequest.operationName;
+                            query.variables = jsonRequest.variables;
+                            break;
+                        }
+                    case "application/graphql":
+                        {
+                            const textRequest = await context.request.body({ type: "text" }).value;
+                            query.query = textRequest;
+                            break;
+                        }
+                    default:
+                        throw new Error("Invalid GraphQL MIME type");
+                }
+                const graphQLArgs: graphql.GraphQLArgs =
+                {
+                    schema: this.resolverSchema,
+                    source: query.query,
+                    rootValue: this.resolvers,
+                    contextValue: context,
+                    variableValues: query.variables,
+                    operationName: query.operationName,
+                };
+                const result = await graphql.graphql(graphQLArgs);
+                context.response.status = Oak.Status.OK;
+                context.response.body = JSON.stringify(result);
             }
-            const graphQLArgs: graphql.GraphQLArgs =
+            catch (error)
             {
-                schema: this.resolverSchema,
-                source: query.query,
-                rootValue: this.resolvers,
-                contextValue: context,
-                variableValues: query.variables,
-                operationName: query.operationName,
-            };
-            const result = await graphql.graphql(graphQLArgs);
-            context.response.status = Oak.Status.OK;
-            context.response.body = JSON.stringify(result);
-        }
-        catch (error)
+                if (!(error instanceof Deno.errors.Http))
+                    Console.warn(error);
+                const jsonError =
+                {
+                    data: null,
+                    errors: [{ message: error.message ?? error }],
+                };
+                context.response.status = Oak.Status.OK;
+                context.response.body = JSON.stringify(jsonError);
+            }
+            await next();
+        };
+    }
+    public get(): Oak.Middleware<State>
+    {
+        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
         {
-            if (!(error instanceof Deno.errors.Http))
-                Console.warn(error);
-            const jsonError =
-            {
-                data: null,
-                errors: [{ message: error.message ?? error }],
-            };
             context.response.status = Oak.Status.OK;
-            context.response.body = JSON.stringify(jsonError);
-        }
+            context.response.body = await this.playground;
+            await next();
+        };
     }
-    public async get(context: Oak.Context): Promise<void>
+    public head(): Oak.Middleware<State>
     {
-        context.response.status = Oak.Status.OK;
-        context.response.body = await this.playground;
-    }
-    public async head(context: Oak.Context): Promise<void>
-    {
-        await this.get(context);
-        context.response.status = Oak.Status.MethodNotAllowed;
-        context.response.body = undefined;
+        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
+        {
+            await this.get()(context, async () => { });
+            context.response.status = Oak.Status.MethodNotAllowed;
+            context.response.body = undefined;
+            await next();
+        };
     }
 }
