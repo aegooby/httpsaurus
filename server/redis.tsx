@@ -1,6 +1,8 @@
 
 import * as redis from "redis";
 
+import { Console } from "./console.tsx";
+
 export interface RedisAttributes
 {
     url?: string;
@@ -195,7 +197,7 @@ export class Redis
     public static async create(attributes: RedisAttributes): Promise<Redis>
     {
         if (!attributes.url && !Deno.env.get("REDIS_URL"))
-            throw new Error("Unable to find Redis URL");
+            Console.warn("No URL provided, and REDIS_URL is not set, using default");
         const url = attributes.url ?? Deno.env.get("REDIS_URL") ?? Redis.default;
         const { hostname, port = 6379, ...opts } = redis.parseURL(url);
         const connection = new redis.RedisConnection(hostname, port, opts);
