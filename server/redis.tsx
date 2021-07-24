@@ -8,12 +8,12 @@ export interface RedisAttributes
 
 interface RedisModuleAttributes
 {
-    redisMain: Redis;
+    redisMain: redis.Redis;
 }
 
 abstract class RedisModule
 {
-    protected redisMain: Redis = {} as Redis;
+    protected redisMain: redis.Redis = {} as redis.Redis;
     constructor(attributes: RedisModuleAttributes)
     {
         this.redisMain = attributes.redisMain;
@@ -184,17 +184,14 @@ class RedisSearch extends RedisModule
     }
 }
 
-export class Redis extends redis.RedisImpl
+export class Redis
 {
-    [index: string]: unknown;
     public json: RedisJSON = {} as RedisJSON;
     public search: RedisSearch = {} as RedisSearch;
+    public main: redis.Redis = {} as redis.Redis;
 
     private static default: string = "redis://localhost:6379/" as const;
-    private constructor(executor: redis.CommandExecutor)
-    {
-        super(executor);
-    }
+    private constructor() { }
     public static async create(attributes: RedisAttributes): Promise<Redis>
     {
         if (!attributes.url && !Deno.env.get("REDIS_URL"))
@@ -204,9 +201,10 @@ export class Redis extends redis.RedisImpl
         const connection = new redis.RedisConnection(hostname, port, opts);
         await connection.connect();
         const executor = new redis.MuxExecutor(connection);
-        const instance = new Redis(executor);
-        instance.json = await RedisJSON.create({ redisMain: instance });
-        instance.search = await RedisSearch.create({ redisMain: instance });
+        const instance = new Redis();
+        instance.json = await RedisJSON.create({ redisMain: instance.main });
+        instance.search = await RedisSearch.create({ redisMain: instance.main });
+        instance.main = redis.create(executor);
         return instance;
     }
 }

@@ -26,14 +26,14 @@ try
         {
             async get(_parent: unknown, args: { key: string; }, _context: Oak.Context)
             {
-                return (await redis.get(args.key)) ?? null;
+                return (await redis.main.get(args.key)) ?? null;
             }
         },
         Mutation:
         {
             async set(_parent: unknown, args: { key: string; value: string; }, _context: Oak.Context)
             {
-                return await redis.set(args.key, args.value);
+                return await redis.main.set(args.key, args.value);
             }
         }
     };
