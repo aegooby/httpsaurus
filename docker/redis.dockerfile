@@ -1,5 +1,7 @@
 FROM redis:latest
 
+EXPOSE 6379
+
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get update
 RUN apt-get install -y curl unzip git build-essential ca-certificates python2 clang --no-install-recommends
@@ -21,5 +23,6 @@ RUN cargo build --release
 ENV REDIS_JSON="/root/RedisJSON/target/release/librejson.so"
 
 WORKDIR /root
-
-CMD [ "redis-server", "/usr/local/etc/redis/redis.conf", "--loadmodule", "/root/RediSearch/build/redisearch.so", "--loadmodule", "/root/RedisJSON/target/release/librejson.so", "--bind", "0.0.0.0" ]
+RUN mkdir -p /usr/local/lib/redis
+RUN cp -r ${REDIS_SEARCH} /usr/local/lib/redis/libsearch.so
+RUN cp -r ${REDIS_JSON} /usr/local/lib/redis/libjson.so
