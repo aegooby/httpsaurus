@@ -22,4 +22,4 @@ ENV REDIS_JSON="/root/RedisJSON/target/release/librejson.so"
 
 WORKDIR /root
 
-CMD [ "redis-server", "--loadmodule", "/root/RediSearch/build/redisearch.so", "/usr/local/etc/redis/redis.conf", "--bind", "0.0.0.0" ]
+CMD [ "redis-server", "/usr/local/etc/redis/redis.conf", "--loadmodule", "/root/RediSearch/build/redisearch.so", "--loadmodule", "/root/RedisJSON/target/release/librejson.so", "--bind", "0.0.0.0" ]
