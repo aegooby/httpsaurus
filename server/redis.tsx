@@ -186,6 +186,7 @@ class RedisSearch extends RedisModule
 
 export class Redis extends redis.RedisImpl
 {
+    [index: string]: unknown;
     public json: RedisJSON = {} as RedisJSON;
     public search: RedisSearch = {} as RedisSearch;
 
