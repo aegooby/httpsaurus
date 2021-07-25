@@ -199,14 +199,11 @@ export class Redis
         if (!attributes.url && !Deno.env.get("REDIS_URL"))
             Console.warn("No URL provided, and REDIS_URL is not set, using default");
         const url = attributes.url ?? Deno.env.get("REDIS_URL") ?? Redis.default;
-        const { hostname, port = 6379, ...opts } = redis.parseURL(url);
-        const connection = new redis.RedisConnection(hostname, port, opts);
-        await connection.connect();
-        const executor = new redis.MuxExecutor(connection);
+        const options: redis.RedisConnectOptions = redis.parseURL(url);
         const instance = new Redis();
         instance.json = await RedisJSON.create({ redisMain: instance.main });
         instance.search = await RedisSearch.create({ redisMain: instance.main });
-        instance.main = redis.create(executor);
+        instance.main = await redis.connect(options);
         return instance;
     }
 }
