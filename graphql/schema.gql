@@ -1,4 +1,10 @@
 
+type User
+{
+    id: ID!
+    email: String!
+}
+
 type Query 
 { 
     get(key: String!): String
@@ -7,4 +13,5 @@ type Query
 type Mutation
 {
     set(key: String!, value: String!): String!
+    createUser(email: String!, password: String!): User
 }
