@@ -201,9 +201,13 @@ export class Redis
         const url = attributes.url ?? Deno.env.get("REDIS_URL") ?? Redis.default;
         const options: redis.RedisConnectOptions = redis.parseURL(url);
         const instance = new Redis();
+        instance.main = await redis.connect(options);
+        if (!instance.main.isConnected)
+            throw new Error("Failed to connect to Redis");
+
         instance.json = await RedisJSON.create({ redisMain: instance.main });
         instance.search = await RedisSearch.create({ redisMain: instance.main });
-        instance.main = await redis.connect(options);
+
         return instance;
     }
 }
