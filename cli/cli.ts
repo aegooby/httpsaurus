@@ -355,7 +355,7 @@ export async function localhostSnowpack(_args: Arguments)
         cmd:
             [
                 "yarn", "run", "snowpack", "--config",
-                "config/base.snowpack.js", "dev", "--secure"
+                "config/snowpack.config.js", "dev", "--secure"
             ]
     };
     const process = Deno.run(runOptions);
