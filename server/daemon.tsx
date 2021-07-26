@@ -22,8 +22,8 @@ const args = yargs.default(Deno.args)
 try
 {
     const redis = await Redis.create({ hashRounds: 10 });
-    try { await redis.search.create("users", "JSON", [{ name: "$.email", type: "TEXT", as: "email", nostem: true, sortable: true }]); }
-    catch { Console.warn("Users index already present, skipping creation"); }
+    try { await redis.search.create("users", "JSON", [{ name: "$.email", type: "TAG", as: "email", sortable: true }]); }
+    catch (error) { Console.error(error); }
     const resolvers: Resolvers<Oak.Context> =
     {
         Query:
@@ -39,6 +39,25 @@ try
             {
                 return await redis.main.set(args.key, args.value);
             },
+            async createUser(_parent: unknown, args: { email: string; password: string; }, _context: Oak.Context)
+            {
+                const id = crypto.randomUUID();
+
+                const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
+                const search = await redis.search.search("users", `@email:{${escapedEmail}}`);
+
+                switch (typeof search)
+                {
+                    case "number":
+                        break;
+                    default:
+                        throw new Error("Email already in use");
+                }
+                const password = scrypt.hash(args.password);
+                const payload = { email: args.email, password: password };
+                await redis.json.set(`users:${id}`, "$", JSON.stringify(payload));
+                return { id: id, email: args.email };
+            }
         }
     };
     const serverAttributes: ServerAttributes =
