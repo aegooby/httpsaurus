@@ -26,6 +26,7 @@
         "@yargs/yargs": "https://deno.land/x/yargs@v17.0.1-deno/deno.ts",
         "opener": "https://deno.land/x/opener@v1.0.1/mod.ts",
         "dotenv": "https://deno.land/x/dotenv@v2.0.0/mod.ts",
-        "redis": "https://deno.land/x/redis@v0.23.1/mod.ts"
+        "redis": "https://deno.land/x/redis@v0.23.1/mod.ts",
+        "scrypt": "https://raw.githubusercontent.com/aegooby/scrypt/master/mod.ts"
     }
 }

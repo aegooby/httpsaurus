@@ -176,7 +176,7 @@ export async function pkgUpdate(args: Arguments)
         return;
     }
     const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
-    const keys = (args._.length ? args._ : Object.keys(importMap.imports)) as string[];
+    const keys = (args._.length > 1 ? args._ : Object.keys(importMap.imports)) as string[];
     for (const key of keys)
     {
         if (!importMap.imports[key])

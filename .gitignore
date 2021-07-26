@@ -9,6 +9,9 @@ _snowpack/
 public/**/*.gz
 remote.pem
 
+# Redis
+*.rdb
+
 # Build
 build/
 

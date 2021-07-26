@@ -4,7 +4,7 @@ import * as uuid from "@std/uuid";
 import * as React from "react";
 import * as Oak from "oak";
 import * as yargs from "@yargs/yargs";
-import * as redis from "redis";
+import * as scrypt from "scrypt";
 
 import { Server, Redis, Console } from "./server.tsx";
 import type { ServerAttributes } from "./server.tsx";
@@ -19,19 +19,10 @@ const args = yargs.default(Deno.args)
     .demandOption(["hostname"])
     .parse();
 
-
-class EmailExistsError extends Error
-{
-    constructor(message: string)
-    {
-        super(message);
-        Object.setPrototypeOf(this, EmailExistsError.prototype);
-    }
-}
 try
 {
-    const redis = await Redis.create({});
-    try { await redis.search.create("users", "ON", "JSON", "SCHEMA", "$.email", "AS", "email", "TEXT", "NOSTEM", "SORTABLE"); }
+    const redis = await Redis.create({ hashRounds: 10 });
+    try { await redis.search.create("users", "JSON", [{ name: "$.email", type: "TEXT", as: "email", nostem: true, sortable: true }]); }
     catch { Console.warn("Users index already present, skipping creation"); }
     const resolvers: Resolvers<Oak.Context> =
     {
@@ -53,24 +44,18 @@ try
                 const namespace = uuid.v1.generate() as string;
                 const name = (new TextEncoder()).encode(crypto.randomUUID());
                 const id = await uuid.v5.generate(namespace, name);
-                // const password = scrypt.hash(args.password);
-                const address = args.email.split("@")[0];
-                const search = (await redis.search.search("users", `@email:(${address})`)).value() as redis.ConditionalArray;
-                for (const result of search)
+                const passwordHashed = scrypt.hash(args.password);
+                const emailEscaped = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
+                const search = await redis.search.search("users", `@email:(${emailEscaped})`);
+                switch (typeof search)
                 {
-                    try 
-                    {
-                        const json = JSON.parse((result as string[])[1]);
-                        if (json.email === args.email)
-                            throw new EmailExistsError("A user with this email already exists");
-                    }
-                    catch (error: unknown) 
-                    {
-                        if (error instanceof EmailExistsError)
-                            throw error;
-                    }
+                    case "number":
+                        break;
+                    default:
+                        throw new Error("An account with this email address already exists");
                 }
-                await redis.json.set(`users:${id}`, "$", JSON.stringify({ email: args.email, password: args.password }));
+                const payload = { email: emailEscaped, password: passwordHashed };
+                await redis.json.set(`users:${id}`, "$", JSON.stringify(payload));
                 return { id: id, email: args.email };
             }
         }
