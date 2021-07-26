@@ -39,25 +39,6 @@ try
             {
                 return await redis.main.set(args.key, args.value);
             },
-            async createUser(_parent: unknown, args: { email: string; password: string; }, _context: Oak.Context)
-            {
-                const namespace = uuid.v1.generate() as string;
-                const name = (new TextEncoder()).encode(crypto.randomUUID());
-                const id = await uuid.v5.generate(namespace, name);
-                const passwordHashed = scrypt.hash(args.password);
-                const emailEscaped = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
-                const search = await redis.search.search("users", `@email:(${emailEscaped})`);
-                switch (typeof search)
-                {
-                    case "number":
-                        break;
-                    default:
-                        throw new Error("An account with this email address already exists");
-                }
-                const payload = { email: emailEscaped, password: passwordHashed };
-                await redis.json.set(`users:${id}`, "$", JSON.stringify(payload));
-                return { id: id, email: args.email };
-            }
         }
     };
     const serverAttributes: ServerAttributes =
