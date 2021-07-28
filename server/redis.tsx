@@ -1,4 +1,6 @@
 
+import * as async from "@std/async";
+
 import * as redis from "redis";
 
 import { Console } from "./console.tsx";
@@ -607,7 +609,7 @@ class RedisSearch extends RedisModule
         return this.handleResponse(response) as string;
     }
 
-    async search(index: string, query: string, parameters?: FTSearchParameters): Promise<[number, ...Array<string | string[]>]>
+    async search(index: string, query: string, parameters?: FTSearchParameters): Promise<[number, ...Array<string | string[]>] | number>
     {
         let args: string[] = [index, query];
         if (parameters)
@@ -710,7 +712,7 @@ class RedisSearch extends RedisModule
                 args = args.concat(["LIMIT", parameters.limit.first.toString(), parameters.limit.num.toString()]);
         }
         const response = await this.sendCommand("FT.SEARCH", args);
-        return this.handleResponse(response) as [number, ...Array<string | string[]>];
+        return this.handleResponse(response) as [number, ...Array<string | string[]>] | number;
     }
 
     async aggregate(index: string, query: string, parameters?: FTAggregateParameters): Promise<[number, ...Array<string[]>]>
@@ -971,7 +973,7 @@ class RedisSearch extends RedisModule
 export interface RedisAttributes
 {
     url?: string;
-    hashRounds: number;
+    retries: number;
 }
 
 export class Redis
@@ -979,8 +981,6 @@ export class Redis
     public json: RedisJSON = {} as RedisJSON;
     public search: RedisSearch = {} as RedisSearch;
     public main: redis.Redis = {} as redis.Redis;
-
-    public hashRounds: number = {} as number;
 
     private static default: string = "redis://localhost:6379/" as const;
 
@@ -992,13 +992,28 @@ export class Redis
         const url = attributes.url ?? Deno.env.get("REDIS_URL") ?? Redis.default;
         const options: redis.RedisConnectOptions = redis.parseURL(url);
         const instance = new Redis();
-        instance.main = await redis.connect(options);
+
+        for (let i = 0; i < attributes.retries; ++i)
+        {
+            try 
+            {
+                instance.main = await redis.connect(options);
+                if (instance.main.isConnected)
+                    break;
+            }
+            catch (error: unknown)
+            {
+                if (!(error instanceof Deno.errors.ConnectionRefused))
+                    throw new Error("Failed to connect to Redis");
+            }
+            await async.delay(500);
+        }
+
         if (!instance.main.isConnected)
             throw new Error("Failed to connect to Redis");
 
         instance.json = await RedisJSON.create({ redisMain: instance.main });
         instance.search = await RedisSearch.create({ redisMain: instance.main });
-        instance.hashRounds = attributes.hashRounds;
 
         return instance;
     }

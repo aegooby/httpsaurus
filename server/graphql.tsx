@@ -7,7 +7,6 @@ import * as graphql from "graphql";
 import * as playground from "graphql-playground";
 
 import { Console } from "./console.tsx";
-import type { State } from "./server.tsx";
 import type { Query } from "../components/Core/GraphQL/GraphQL.tsx";
 
 interface GraphQLAttributes
@@ -98,9 +97,9 @@ export class GraphQL
         await this.buildSchema();
         this.renderPlayground(attributes.url);
     }
-    public post(): Oak.Middleware<State>
+    public post(): Oak.Middleware
     {
-        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
+        return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
             try
             {
@@ -152,18 +151,18 @@ export class GraphQL
             await next();
         };
     }
-    public get(): Oak.Middleware<State>
+    public get(): Oak.Middleware
     {
-        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
+        return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
             context.response.status = Oak.Status.OK;
             context.response.body = await this.playground;
             await next();
         };
     }
-    public head(): Oak.Middleware<State>
+    public head(): Oak.Middleware
     {
-        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
+        return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
             await this.get()(context, async () => { });
             context.response.status = Oak.Status.MethodNotAllowed;

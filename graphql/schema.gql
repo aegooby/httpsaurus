@@ -3,15 +3,42 @@ type User
 {
     id: ID!
     email: String!
+    receipt: String
+}
+
+type QueryUserResponse
+{
+    user: User!
+}
+type CreateUserResponse
+{
+    user: User!
+}
+type LoginUserResponse
+{
+    accessToken: String!
+    user: User!
+}
+type LogoutUserResponse
+{
+    success: Boolean!
+}
+type RevokeUserResponse
+{
+    success: Boolean!
 }
 
 type Query 
 { 
     get(key: String!): String
+    queryUser(id: ID!): QueryUserResponse!
 }
 
 type Mutation
 {
     set(key: String!, value: String!): String!
-    createUser(email: String!, password: String!): User
+    createUser(email: String!, password: String!): CreateUserResponse!
+    loginUser(email: String!, password: String!): LoginUserResponse!
+    logoutUser: LogoutUserResponse!
+    revokeUser(id: ID!): RevokeUserResponse!
 }

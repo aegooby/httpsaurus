@@ -33,7 +33,6 @@ export default function Login()
             "user":
             {
                 "email": email,
-                "admin": false,
                 "password": password
             }
         };
@@ -41,25 +40,27 @@ export default function Login()
     }
     const element =
         <div className="page">
-            <form onSubmit={onSubmit}>
-                <div>
-                    <input
-                        type="text" id="email" name="email" required
-                        placeholder="email@example.com"
-                        onChange={function (event) { setEmail((event.target as (typeof event.target & Value)).value.trim()); }}
-                    />
-                </div>
-                <div>
-                    <input
-                        type="text" id="password" name="password" required
-                        placeholder="password"
-                        onChange={function (event) { setPassword((event.target as (typeof event.target & Value)).value.trim()); }}
-                    />
-                </div>
-                <div className="form-item-wrapper">
-                    <input type="submit" value="Confirm" />
-                </div>
-            </form>
+            <div className="form-wrapper">
+                <form onSubmit={onSubmit}>
+                    <div className="form-item-wrapper">
+                        <input
+                            type="text" id="email" name="email" required
+                            placeholder="email@example.com"
+                            onChange={function (event) { setEmail((event.target as (typeof event.target & Value)).value.trim()); }}
+                        />
+                    </div>
+                    <div className="form-item-wrapper">
+                        <input
+                            type="text" id="password" name="password" required
+                            placeholder="password"
+                            onChange={function (event) { setPassword((event.target as (typeof event.target & Value)).value.trim()); }}
+                        />
+                    </div>
+                    <div className="form-item-wrapper">
+                        <input type="submit" className="button shadow" value="Confirm" />
+                    </div>
+                </form>
+            </div>
             <p className="copyinfo">© 0000 Company, Inc.</p>
         </div>;
     return element;

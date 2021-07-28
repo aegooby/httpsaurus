@@ -15,9 +15,14 @@ import * as keypair from "keypair";
 import { GraphQL } from "./graphql.tsx";
 import { Listener } from "./listener.tsx";
 import type { ListenOptions, ListenBaseOptions, ListenTlsOptions } from "./listener.tsx";
+import { Auth } from "./auth.tsx";
+import { Redis } from "./redis.tsx";
+import type { UserJWTBase } from "./auth.tsx";
 import { Console } from "./console.tsx";
+
 export { Console } from "./console.tsx";
 export { Redis } from "./redis.tsx";
+export { Auth } from "./auth.tsx";
 
 class Version
 {
@@ -58,22 +63,19 @@ export interface ServerAttributes
     App: React.ReactElement;
     headElements: Array<React.ReactElement>;
 
+    redis: Redis;
+
     schema: string;
     resolvers: unknown;
 }
 
-export interface State 
-{
-    data: jwt.Jwt | string | undefined;
-    keypair: keypair.KeypairResults;
-}
 interface OakServer
 {
-    app: Oak.Application<State>;
+    app: Oak.Application;
     router: Oak.Router;
 }
 
-export class Server
+export class Server<UserJWT extends UserJWTBase>
 {
     private secure: boolean = {} as boolean;
     private domain: string = {} as string;
@@ -92,16 +94,14 @@ export class Server
     private closed: async.Deferred<StatusCode> = async.deferred();
 
     private graphql: GraphQL = {} as GraphQL;
+    private auth: Auth<UserJWT> = {} as Auth<UserJWT>;
 
     private App: React.ReactElement = {} as React.ReactElement;
     private headElements: Array<React.ReactElement> = [];
 
-    private keypair: keypair.KeypairResults = {} as keypair.KeypairResults;
-
     private constructor()
     {
         this.www = this.www.bind(this);
-        this.jwt = this.jwt.bind(this);
 
         this.static = this.static.bind(this);
         this.react = this.react.bind(this);
@@ -118,9 +118,9 @@ export class Server
         this.serve = this.serve.bind(this);
         this.close = this.close.bind(this);
     }
-    public static async create(attributes: ServerAttributes): Promise<Server>
+    public static async create<UserJWT extends UserJWTBase>(attributes: ServerAttributes): Promise<Server<UserJWT>>
     {
-        const instance = new Server();
+        const instance = new Server<UserJWT>();
 
         instance.secure = attributes.secure;
 
@@ -172,6 +172,7 @@ export class Server
         instance.oak = { app: new Oak.Application(), router: new Oak.Router() };
 
         instance.graphql = await GraphQL.create(attributes);
+        instance.auth = await Auth.create<UserJWT>(attributes);
 
         if (attributes.domain)
         {
@@ -182,8 +183,6 @@ export class Server
         }
         else
             instance.domain = `https://${instance.hostname}:${instance.port}`;
-
-        instance.keypair = keypair.default();
 
         return await Promise.resolve(instance);
     }
@@ -199,7 +198,7 @@ export class Server
     {
         return `${this.protocol}://${this.hostname}`;
     }
-    private www(): Oak.Middleware<State>
+    private www(): Oak.Middleware
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
@@ -211,28 +210,6 @@ export class Server
                 const redirect = `${protocol}://${wwwhost}${context.request.url.pathname}`;
                 context.response.redirect(redirect);
             }
-            await next();
-        };
-    }
-    private jwt(): Oak.Middleware<State>
-    {
-        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
-        {
-            context.state.keypair = this.keypair;
-            try
-            {
-                const accessToken = context.cookies.get("access-token");
-                if (!accessToken)
-                    throw new Error();
-                const verifyOptions: jwt.VerifyOptions & { complete: true; } =
-                {
-                    algorithms: ["RS256"],
-                    complete: true
-                };
-                const data = jwt.verify(accessToken, this.keypair.public, verifyOptions);
-                context.state.data = data;
-            }
-            catch { undefined; }
             await next();
         };
     }
@@ -300,9 +277,9 @@ export class Server
         context.response.status = staticContext.statusCode as Oak.Status ?? Oak.Status.OK;
         context.response.body = body;
     }
-    private get(): Oak.Middleware<State>
+    private get(): Oak.Middleware
     {
-        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
+        return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
             /* Redirect HTTP to HTTPS if it's available. */
             if (!context.request.secure && this.secure)
@@ -337,9 +314,9 @@ export class Server
             await next();
         };
     }
-    private head(): Oak.Middleware<State>
+    private head(): Oak.Middleware
     {
-        return async (context: Oak.Context<State>, next: () => Promise<unknown>) =>
+        return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
             await this.get()(context, async () => { });
             const response = await context.response.toDomResponse();
@@ -425,12 +402,13 @@ export class Server
         this.oak.router.get("/graphql", this.graphql.get());
         this.oak.router.post("/graphql", this.graphql.post());
 
-        this.oak.router.head("/((?!graphql).*)", this.head());
-        this.oak.router.get("/((?!graphql).*)", this.get());
+        this.oak.router.post("/jwt/refresh", this.auth.post());
+
+        this.oak.router.head("/((?!graphql|jwt).*)", this.head());
+        this.oak.router.get("/((?!graphql|jwt).*)", this.get());
 
         this.oak.app.proxy = true;
         this.oak.app.use(this.www());
-        this.oak.app.use(this.jwt());
         this.oak.app.use(this.oak.router.routes());
         this.oak.app.use(this.oak.router.allowedMethods());
         this.oak.app.use(Oak.etag.factory());
