@@ -33,7 +33,6 @@ type Query
     get(key: String!): String
     queryUser(id: ID!): QueryUserResponse!
 }
-
 type Mutation
 {
     set(key: String!, value: String!): String!
