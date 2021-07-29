@@ -9,8 +9,6 @@ import * as ReactDOMServer from "react-dom/server";
 import * as ReactRouterServer from "react-router-dom/server";
 import * as Oak from "oak";
 import * as denoflate from "denoflate";
-import * as jwt from "jsonwebtoken";
-import * as keypair from "keypair";
 
 import { GraphQL } from "./graphql.tsx";
 import { Listener } from "./listener.tsx";
