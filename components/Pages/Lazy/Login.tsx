@@ -21,7 +21,7 @@ export default function Login()
             mutation LoginMutation($email: String!, $password: String!) 
             {
                 loginUser(email: $email, password: $password) {
-                    accessToken
+                    token
                     user {
                         id
                     }

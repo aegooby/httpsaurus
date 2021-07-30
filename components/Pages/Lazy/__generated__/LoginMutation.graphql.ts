@@ -9,7 +9,7 @@ export type LoginMutationVariables = {
 };
 export type LoginMutationResponse = {
     readonly loginUser: {
-        readonly accessToken: string;
+        readonly token: string;
         readonly user: {
             readonly id: string;
         };
@@ -28,7 +28,7 @@ mutation LoginMutation(
   $password: String!
 ) {
   loginUser(email: $email, password: $password) {
-    accessToken
+    token
     user {
       id
     }
@@ -73,7 +73,7 @@ v1 = [
         "alias": null,
         "args": null,
         "kind": "ScalarField",
-        "name": "accessToken",
+        "name": "token",
         "storageKey": null
       },
       {
@@ -116,14 +116,14 @@ return {
     "selections": (v1/*: any*/)
   },
   "params": {
-    "cacheID": "50ea909c142d09c654ad8bf0629c1d6e",
+    "cacheID": "f5eea316dfc40052075341674576362f",
     "id": null,
     "metadata": {},
     "name": "LoginMutation",
     "operationKind": "mutation",
-    "text": "mutation LoginMutation(\n  $email: String!\n  $password: String!\n) {\n  loginUser(email: $email, password: $password) {\n    accessToken\n    user {\n      id\n    }\n  }\n}\n"
+    "text": "mutation LoginMutation(\n  $email: String!\n  $password: String!\n) {\n  loginUser(email: $email, password: $password) {\n    token\n    user {\n      id\n    }\n  }\n}\n"
   }
 };
 })();
-(node as any).hash = '100b35b8d05da965c39f467c0cb4029e';
+(node as any).hash = 'eb80f02cd70f198b41b4b429cc1bbed6';
 export default node;

@@ -21,7 +21,7 @@ export type CreateUserResponse = {
 
 export type LoginUserResponse = {
   __typename?: 'LoginUserResponse';
-  accessToken: Scalars['String'];
+  token: Scalars['String'];
   user: User;
 };
 
@@ -212,7 +212,7 @@ export type CreateUserResponseResolvers<ContextType = any, ParentType extends Re
 };
 
 export type LoginUserResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['LoginUserResponse'] = ResolversParentTypes['LoginUserResponse']> = {
-  accessToken?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };

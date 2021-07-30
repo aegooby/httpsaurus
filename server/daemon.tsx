@@ -116,7 +116,7 @@ try
 
             const result =
             {
-                accessToken: Auth.access.create(user as User),
+                token: Auth.access.create(user as User),
                 user: user,
             };
             return result;

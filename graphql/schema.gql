@@ -16,7 +16,7 @@ type CreateUserResponse
 }
 type LoginUserResponse
 {
-    accessToken: String!
+    token: String!
     user: User!
 }
 type LogoutUserResponse
