@@ -1,8 +1,9 @@
 
 import * as React from "react";
+import Relay from "react-relay/hooks";
 
-import graphql from "../../../graphql/graphql.tsx";
-import { GraphQL } from "../../Core/Core.tsx";
+import { graphql } from "relay-runtime";
+import { environment, Environment, Console } from "../../Core/Core.tsx";
 import * as Loading from "../../Loading.tsx";
 
 interface Value
@@ -15,28 +16,41 @@ export default function Login()
     Loading.useFinishLoading();
     const [email, setEmail] = React.useState("");
     const [password, setPassword] = React.useState("");
-    const client = GraphQL.useClient();
 
-    async function onSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void>
-    {
-        event.preventDefault();
-        if (!client) return;
-
-        const query = graphql`
-            mutation($user: AddUserInput!) 
+    const mutation = graphql`
+            mutation LoginMutation($email: String!, $password: String!) 
             {
-                addUser(input: [$user]) { __typename }
+                loginUser(email: $email, password: $password) {
+                    accessToken
+                    user {
+                        id
+                    }
+                }
             }
         `;
+
+    const [commit, isInFlight] = Relay.useMutation(mutation);
+
+    function onSubmit(event: React.FormEvent<HTMLFormElement>): void
+    {
+        event.preventDefault();
+        Console.log(environment());
+        switch (environment())
+        {
+            case Environment.SERVER:
+                return;
+            case Environment.CLIENT:
+                break;
+        }
+
+
         const variables =
         {
-            "user":
-            {
-                "email": email,
-                "password": password
-            }
+            "email": email,
+            "password": password
         };
-        await client.fetch({ query: query });
+
+        commit({ variables: variables, onCompleted(data) { Console.log(data); }, onError(error) { Console.error(error); } });
     }
     const element =
         <div className="page">

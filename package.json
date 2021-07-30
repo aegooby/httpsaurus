@@ -14,9 +14,13 @@
         "@types/react-dom": "^17.0.3",
         "@types/snowpack-env": "^2.3.3",
         "babel-loader": "^8.2.2",
+        "babel-plugin-relay": "^11.0.2",
         "devcert-cli": "^1.0.0",
         "graphql": "^15.5.1",
         "history": "^5.0.0",
+        "relay-compiler": "^11.0.2",
+        "relay-compiler-language-typescript": "^14.0.0",
+        "relay-config": "^11.0.2",
         "snowpack": "^3.3.6-pre.0",
         "typescript": "^4.2.3"
     },
@@ -25,8 +29,10 @@
         "react": "^17.0.2",
         "react-dom": "^17.0.2",
         "react-helmet": "^6.1.0",
+        "react-relay": "^11.0.2",
         "react-responsive": "^8.2.0",
-        "react-router-dom": "^6.0.0-beta.0"
+        "react-router-dom": "^6.0.0-beta.0",
+        "relay-runtime": "^11.0.2"
     },
     "peerDependencies": {
         "@babel/core": "^7.14.0",

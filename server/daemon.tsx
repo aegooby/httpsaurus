@@ -8,7 +8,6 @@ import * as scrypt from "scrypt";
 
 import { Server, Redis, Console, Auth } from "./server.tsx";
 import type { ServerAttributes } from "./server.tsx";
-import App from "../components/App.tsx";
 import type { Resolvers, QueryResolvers, MutationResolvers, User } from "../graphql/types.d.tsx";
 
 const args = yargs.default(Deno.args)
@@ -151,7 +150,6 @@ try
         portTls: 3443,
         cert: args.tls,
 
-        App: <App client={undefined} />,
         headElements: [],
 
         redis: redis,

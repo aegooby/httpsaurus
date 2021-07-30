@@ -15,7 +15,7 @@ const config =
             "@snowpack/plugin-webpack",
             {
                 sourceMap: true,
-                failOnWarnings: true,
+                failOnWarnings: false,
                 outputPattern: { js: "scripts/webpack/[name].[id].js" },
                 extendConfig: function (config)
                 {
@@ -31,6 +31,7 @@ const config =
                                 presets: ["@babel/preset-env"],
                                 plugins:
                                 [
+                                    "babel-plugin-relay",
                                     "@babel/plugin-proposal-class-properties",
                                     "@babel/plugin-transform-runtime"
                                 ]

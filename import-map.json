@@ -1,18 +1,6 @@
 {
     "imports": {
-        "react": "https://esm.sh/react",
-        "react-dom": "https://esm.sh/react-dom",
-        "react-dom/server": "https://esm.sh/react-dom/server",
-        "react-router-dom": "https://esm.sh/react-router-dom@next?no-check",
-        "react-router-dom/server": "https://esm.sh/react-router-dom@next/server?no-check",
-        "react-helmet": "https://esm.sh/react-helmet",
-        "react-responsive": "https://esm.sh/react-responsive",
-        "nprogress": "https://esm.sh/nprogress",
-        "apollo-graphql": "https://esm.sh/apollo-graphql",
-        "graphql": "https://esm.sh/graphql",
-        "graphql-playground": "https://esm.sh/graphql-playground-html",
-        "jsonwebtoken": "https://esm.sh/jsonwebtoken",
-        "keypair": "https://esm.sh/keypair",
+        "scrypt": "https://raw.githubusercontent.com/aegooby/scrypt/master/mod.ts",
         "@std/path": "https://deno.land/std@0.102.0/path/mod.ts",
         "@std/fs": "https://deno.land/std@0.102.0/fs/mod.ts",
         "@std/colors": "https://deno.land/std@0.102.0/fmt/colors.ts",
@@ -27,6 +15,21 @@
         "opener": "https://deno.land/x/opener@v1.0.1/mod.ts",
         "dotenv": "https://deno.land/x/dotenv@v2.0.0/mod.ts",
         "redis": "https://deno.land/x/redis@v0.23.1/mod.ts",
-        "scrypt": "https://raw.githubusercontent.com/aegooby/scrypt/master/mod.ts"
+        "react": "https://esm.sh/react",
+        "react-dom": "https://esm.sh/react-dom",
+        "react-dom/server": "https://esm.sh/react-dom/server",
+        "react-router-dom": "https://esm.sh/react-router-dom@next",
+        "react-router-dom/server": "https://esm.sh/react-router-dom@next/server",
+        "react-helmet": "https://esm.sh/react-helmet",
+        "react-responsive": "https://esm.sh/react-responsive",
+        "react-relay": "https://esm.sh/react-relay",
+        "react-relay/hooks": "https://esm.sh/react-relay/hooks",
+        "relay-runtime": "https://esm.sh/relay-runtime",
+        "nprogress": "https://esm.sh/nprogress",
+        "apollo-graphql": "https://esm.sh/apollo-graphql",
+        "graphql": "https://esm.sh/graphql",
+        "graphql-playground": "https://esm.sh/graphql-playground-html",
+        "jsonwebtoken": "https://esm.sh/jsonwebtoken",
+        "keypair": "https://esm.sh/keypair"
     }
 }

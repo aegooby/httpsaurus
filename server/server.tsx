@@ -6,7 +6,6 @@ import * as async from "@std/async";
 
 import * as React from "react";
 import * as ReactDOMServer from "react-dom/server";
-import * as ReactRouterServer from "react-router-dom/server";
 import * as Oak from "oak";
 import * as denoflate from "denoflate";
 
@@ -58,7 +57,6 @@ export interface ServerAttributes
     portTls: number | undefined;
     cert: string | undefined;
 
-    App: React.ReactElement;
     headElements: Array<React.ReactElement>;
 
     redis: Redis;
@@ -94,7 +92,6 @@ export class Server<UserJWT extends UserJWTBase>
     private graphql: GraphQL = {} as GraphQL;
     private auth: Auth<UserJWT> = {} as Auth<UserJWT>;
 
-    private App: React.ReactElement = {} as React.ReactElement;
     private headElements: Array<React.ReactElement> = [];
 
     private constructor()
@@ -122,7 +119,6 @@ export class Server<UserJWT extends UserJWTBase>
 
         instance.secure = attributes.secure;
 
-        instance.App = attributes.App;
         instance.headElements = attributes.headElements;
 
         for (const key in attributes.routes)
@@ -252,19 +248,12 @@ export class Server<UserJWT extends UserJWTBase>
                     {this.headElements}
                 </head>
                 <body>
-                    <div id="root">
-                        <ReactRouterServer.StaticRouter
-                            location={context.request.url.pathname}
-                            context={staticContext}
-                        >
-                            {this.App}
-                        </ReactRouterServer.StaticRouter>
-                    </div>
+                    <div id="root"></div>
                 </body>
             </html>;
 
-        const render = Promise.resolve(ReactDOMServer.renderToString(element));
-        const body = `<!DOCTYPE html> ${await render}`;
+        const render = await Promise.resolve(ReactDOMServer.renderToString(element));
+        const body = `<!DOCTYPE html> ${render}`;
 
         if (staticContext.url)
         {

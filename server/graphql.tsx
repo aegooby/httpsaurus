@@ -7,7 +7,14 @@ import * as graphql from "graphql";
 import * as playground from "graphql-playground";
 
 import { Console } from "./console.tsx";
-import type { Query } from "../components/Core/GraphQL/GraphQL.tsx";
+
+
+interface GraphQLQuery
+{
+    query: string;
+    operationName?: string | undefined;
+    variables?: Record<string, unknown> | undefined;
+}
 
 interface GraphQLAttributes
 {
@@ -103,7 +110,7 @@ export class GraphQL
         {
             try
             {
-                const query: Query = { query: "" };
+                const query: GraphQLQuery = { query: "" };
                 switch (context.request.headers.get("content-type"))
                 {
                     case "application/json":

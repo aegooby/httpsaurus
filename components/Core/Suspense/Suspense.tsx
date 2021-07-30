@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { throwOnClient } from "../Core.tsx";
+import { environment, Environment } from "../Core.tsx";
 
 import nprogress from "nprogress";
 
@@ -13,19 +13,19 @@ interface SuspenseProps
 
 export function Suspense(props: SuspenseProps)
 {
-    try
+    switch (environment())
     {
-        throwOnClient();
-        return <>{props.fallback}</>;
-    }
-    catch
-    {
-        if (props.loading && !nprogress.isStarted())
-            React.useState(nprogress.start());
-        const element: React.ReactElement =
-            <React.Suspense fallback={props.fallback}>
-                {props.children}
-            </React.Suspense>;
-        return element;
+        case Environment.SERVER:
+            { return <>{props.fallback}</>; }
+        case Environment.CLIENT:
+            {
+                if (props.loading && !nprogress.isStarted())
+                    React.useState(nprogress.start());
+                const element: React.ReactElement =
+                    <React.Suspense fallback={props.fallback}>
+                        {props.children}
+                    </React.Suspense>;
+                return element;
+            }
     }
 }

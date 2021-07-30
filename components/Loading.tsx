@@ -1,24 +1,29 @@
 
-import * as React from "react";
 import nprogress from "nprogress";
 
-import { throwOnClient } from "./Core/Core.tsx";
+import { environment, Environment } from "./Core/Core.tsx";
 
 export function useStartLoading()
 {
-    try { throwOnClient(); }
-    catch
+    switch (environment())
     {
-        if (!nprogress.isStarted())
-            nprogress.start();
+        case Environment.SERVER:
+            break;
+        case Environment.CLIENT:
+            if (!nprogress.isStarted())
+                nprogress.start();
+            break;
     }
 }
 export function useFinishLoading()
 {
-    try { throwOnClient(); }
-    catch
+    switch (environment())
     {
-        if (nprogress.isStarted())
-            nprogress.done();
+        case Environment.SERVER:
+            break;
+        case Environment.CLIENT:
+            if (nprogress.isStarted())
+                nprogress.done();
+            break;
     }
 }
