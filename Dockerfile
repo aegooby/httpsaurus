@@ -13,17 +13,17 @@ RUN turtle cache
 FROM httpsaurus AS localhost
 
 RUN turtle clean --dist
-RUN turtle bundle --graphql http://localhost/graphql
+RUN turtle bundle:snowpack --graphql http://localhost/graphql
 CMD [ "turtle", "deploy:server", "--domain", "localhost" ]
 
 FROM httpsaurus AS dev
 
 RUN turtle clean --dist
-RUN turtle bundle --graphql https://www.dev.example.com/graphql
+RUN turtle bundle:snowpack --graphql https://www.dev.example.com/graphql
 CMD [ "turtle", "deploy:server", "--domain", "www.dev.example.com" ]
 
 FROM httpsaurus AS live
 
 RUN turtle clean --dist
-RUN turtle bundle --graphql https://www.example.com/graphql
+RUN turtle bundle:snowpack --graphql https://www.example.com/graphql
 CMD [ "turtle", "deploy:server", "--domain", "www.example.com" ]

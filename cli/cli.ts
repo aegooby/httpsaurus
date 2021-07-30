@@ -293,16 +293,58 @@ export async function cache(args: Arguments)
     if (!yarnStatus.success)
         return yarnStatus.code;
 }
-export async function bundle(args: Arguments)
+export function bundle(_args: Arguments)
+{
+    Console.log(`commands:`);
+    Console.print(`  bundle:relay\t${colors.italic(colors.black("(runs Relay compiler)"))}`);
+    Console.print(`  bundle:snowpack\t${colors.italic(colors.black("(runs Snowpack build)"))}`);
+}
+export async function bundleRelay(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} bundle --graphql <endpoint>`);
+        Console.log(`usage: ${command} bundle:relay`);
+        return;
+    }
+
+    const options: string[] = [];
+    const config = JSON.parse(await Deno.readTextFile("config/relay.config.json"));
+    for (const [key, value] of Object.entries(config))
+    {
+        options.push(`--${key}`);
+        switch (typeof value)
+        {
+            case "boolean":
+                break;
+            case "string":
+                options.push(value);
+                break;
+            default:
+                options.push(JSON.stringify(value));
+                break;
+        }
+    }
+
+    const relayRunOptions: Deno.RunOptions =
+    {
+        cmd: ["yarn", "run", "relay-compiler", ...options],
+    };
+    const relayProcess = Deno.run(relayRunOptions);
+    const relayStatus = await relayProcess.status();
+    relayProcess.close();
+    if (!relayStatus.success)
+        return relayStatus.code;
+}
+export async function bundleSnowpack(args: Arguments)
+{
+    if (args.help)
+    {
+        Console.log(`usage: ${command} bundle:snowpack --graphql <endpoint>`);
         return;
     }
     if (!args.graphql)
     {
-        Console.error(`usage: ${command} bundle --graphql <endpoint>`);
+        Console.error(`usage: ${command} bundle:snowpack --graphql <endpoint>`);
         return;
     }
     const snowpackRunOptions: Deno.RunOptions =
@@ -365,7 +407,7 @@ export async function localhostSnowpack(_args: Arguments)
 }
 export async function localhostDeno(_args: Arguments)
 {
-    await bundle({ _: [], graphql: "https://localhost:3443/graphql" });
+    await bundleSnowpack({ _: [], graphql: "https://localhost:3443/graphql" });
 
     const ready = async function (): Promise<void>
     {
@@ -641,6 +683,8 @@ if (import.meta.main)
         .command("pkg:update", "", {}, pkgUpdate)
         .command("cache", "", {}, cache)
         .command("bundle", "", {}, bundle)
+        .command("bundle:relay", "", {}, bundleRelay)
+        .command("bundle:snowpack", "", {}, bundleSnowpack)
         .command("codegen", "", {}, codegen)
         .command("localhost", "", {}, localhost)
         .command("localhost:help", "", {}, localhost)
