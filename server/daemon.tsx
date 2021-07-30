@@ -1,7 +1,6 @@
 
 import * as uuid from "@std/uuid";
 
-import * as React from "react";
 import * as Oak from "oak";
 import * as yargs from "@yargs/yargs";
 import * as scrypt from "scrypt";
