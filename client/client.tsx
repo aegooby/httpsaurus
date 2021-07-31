@@ -23,7 +23,7 @@ export class Client
 {
     private api: string = {} as string;
     public relayEnvironment: Relay.Environment = {} as Relay.Environment;
-    public static token: string = "" as const;
+    public static token: string | undefined = undefined;
     private constructor()
     {
         this.fetchRelay = this.fetchRelay.bind(this);
@@ -49,9 +49,9 @@ export class Client
     {
         const headers: Headers = new Headers();
         headers.set("Content-Type", "application/json");
-        switch (Client.token)
+        switch (typeof Client.token)
         {
-            case "":
+            case "undefined":
                 break;
             default:
                 headers.set("Authorization", "Bearer " + Client.token);

@@ -134,8 +134,8 @@ export class Auth<UserJWT extends UserJWTBase>
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
-            const token = context.cookies.get("refresh");
-            if (!token)
+            const refresh = context.cookies.get("refresh");
+            if (!refresh)
             {
                 context.response.status = Oak.Status.Forbidden;
                 await next();
@@ -143,8 +143,12 @@ export class Auth<UserJWT extends UserJWTBase>
             }
             try 
             {
-                const payload = Auth.refresh.verify<UserJWT>(token);
-                const user = JSON.parse(await this.redis.json.get(`users:${payload.id}`, "$")) as UserJWT;
+                const payload = Auth.refresh.verify<UserJWT>(refresh);
+                const result = JSON.parse(await this.redis.json.get(`users:${payload.id}`, "$")).pop();
+                if (!result)
+                    throw new Error("User not found");
+                result.id = payload.id;
+                const user = result as UserJWT;
                 if (user.receipt !== payload.receipt)
                 {
                     context.response.status = Oak.Status.Forbidden;
@@ -152,10 +156,10 @@ export class Auth<UserJWT extends UserJWTBase>
                     return;
                 }
 
-                Auth.refresh.create(user as UserJWT, context);
+                Auth.refresh.create(user, context);
 
                 context.response.status = Oak.Status.OK;
-                context.response.body = { access: Auth.access.create(user as UserJWT) };
+                context.response.body = { token: Auth.access.create(user) };
             }
             catch { context.response.status = Oak.Status.Forbidden; }
             await next();

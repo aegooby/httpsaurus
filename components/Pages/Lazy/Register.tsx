@@ -1,6 +1,7 @@
 
 import * as React from "react";
 import Relay from "react-relay/hooks";
+import * as ReactRouter from "react-router-dom";
 
 import { graphql } from "relay-runtime";
 import { environment, Environment, Console } from "../../Core/Core.tsx";
@@ -29,10 +30,12 @@ export default function Register()
         `;
 
     const [commit, isInFlight] = Relay.useMutation(mutation);
+    const navigate = ReactRouter.useNavigate();
 
     function onSubmit(event: React.FormEvent<HTMLFormElement>): void
     {
         event.preventDefault();
+
         Console.log(environment());
         switch (environment())
         {
@@ -49,7 +52,20 @@ export default function Register()
             "password": password
         };
 
-        commit({ variables: variables, onCompleted(data) { Console.log(data); }, onError(error) { Console.error(error); } });
+        const onCompleted = function (data: unknown)
+        {
+            Console.log(data);
+            navigate("/login");
+        };
+
+        const onError = function (error: unknown) 
+        {
+            Console.error(error);
+            setEmail("");
+            setPassword("");
+        };
+
+        commit({ variables: variables, onCompleted: onCompleted, onError: onError });
     }
     const element =
         <div className="page">
@@ -60,6 +76,7 @@ export default function Register()
                             type="text" id="email" name="email" required
                             placeholder="email@example.com"
                             onChange={function (event) { setEmail((event.target as (typeof event.target & Value)).value.trim()); }}
+                            value={email}
                         />
                     </div>
                     <div className="form-item-wrapper">
@@ -67,6 +84,7 @@ export default function Register()
                             type="text" id="password" name="password" required
                             placeholder="password"
                             onChange={function (event) { setPassword((event.target as (typeof event.target & Value)).value.trim()); }}
+                            value={password}
                         />
                     </div>
                     <div className="form-item-wrapper">

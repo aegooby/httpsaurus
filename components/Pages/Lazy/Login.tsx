@@ -2,10 +2,11 @@
 import * as React from "react";
 import Relay from "react-relay/hooks";
 import { graphql } from "relay-runtime";
+import * as ReactRouter from "react-router-dom";
 
 import { environment, Environment, Console, useToken } from "../../Core/Core.tsx";
 import * as Loading from "../../Loading.tsx";
-import type { LoginUserResponse } from "../../../graphql/types.d.tsx";
+import type { LoginMutationResponse } from "./__generated__/LoginMutation.graphql.ts";
 
 interface Value
 {
@@ -31,6 +32,7 @@ export default function Login()
         `;
 
     const [commit, isInFlight] = Relay.useMutation(mutation);
+    const navigate = ReactRouter.useNavigate();
 
     function onSubmit(event: React.FormEvent<HTMLFormElement>): void
     {
@@ -53,13 +55,16 @@ export default function Login()
 
         const onCompleted = function (data: unknown)
         {
-            const token = useToken((data as { loginUser: LoginUserResponse; }).loginUser.token);
-            Console.log(token);
+            useToken((data as LoginMutationResponse).loginUser.token);
+            const id = (data as LoginMutationResponse).loginUser.user.id;
+            navigate("/", { state: { id: id } });
         };
 
         const onError = function (error: Error)
         {
             Console.error(error);
+            setEmail("");
+            setPassword("");
         };
 
         commit({ variables: variables, onCompleted: onCompleted, onError: onError });
@@ -73,6 +78,7 @@ export default function Login()
                             type="text" id="email" name="email" required
                             placeholder="email@example.com"
                             onChange={function (event) { setEmail((event.target as (typeof event.target & Value)).value.trim()); }}
+                            value={email}
                         />
                     </div>
                     <div className="form-item-wrapper">
@@ -80,6 +86,7 @@ export default function Login()
                             type="text" id="password" name="password" required
                             placeholder="password"
                             onChange={function (event) { setPassword((event.target as (typeof event.target & Value)).value.trim()); }}
+                            value={password}
                         />
                     </div>
                     <div className="form-item-wrapper">

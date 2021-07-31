@@ -1,9 +1,8 @@
 
 import { Client } from "../../client/client.tsx";
 
-export function useToken(value?: string): string
+export function useToken(value?: string): string | undefined
 {
-    if (value)
-        Client.token = value;
+    if (value) Client.token = value;
     return Client.token;
 }

@@ -1,4 +1,5 @@
 
+import * as React from "react";
 import nprogress from "nprogress";
 
 import { environment, Environment } from "./Core/Core.tsx";
@@ -26,4 +27,17 @@ export function useFinishLoading()
                 nprogress.done();
             break;
     }
+}
+
+export function Spinner()
+{
+    const element =
+        <div className="load-spinner-wrapper">
+            <div className="load-spinner">
+                <div className="inner one"></div>
+                <div className="inner two"></div>
+                <div className="inner three"></div>
+            </div>
+        </div>;
+    return element;
 }
