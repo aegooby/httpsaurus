@@ -13,26 +13,31 @@ interface Document
 
 interface ClientAttributes
 {
-    api: string;
+    graphql: string;
+    refresh: string;
 }
 
 export declare const document: Document;
-export type Snowpack = ImportMeta & { hot: { accept: () => unknown; }; env: Record<string, string>; };
+export type Snowpack = ImportMeta &
+{ hot: { accept: () => unknown; }; env: Record<string, string>; };
 
 export class Client
 {
-    private api: string = {} as string;
+    private graphql: string = {} as string;
+    private refresh: string = {} as string;
     public relayEnvironment: Relay.Environment = {} as Relay.Environment;
     public static token: string | undefined = undefined;
     private constructor()
     {
+        this.fetchRefresh = this.fetchRefresh.bind(this);
         this.fetchRelay = this.fetchRelay.bind(this);
-        this.fetch = this.fetch.bind(this);
+        this.fetchGraphQL = this.fetchGraphQL.bind(this);
     }
     public static create(attributes: ClientAttributes): Client
     {
         const instance = new Client();
-        instance.api = attributes.api;
+        instance.graphql = attributes.graphql;
+        instance.refresh = attributes.refresh;
         const relayEnvironmentConfig =
         {
             network: Relay.Network.create(instance.fetchRelay),
@@ -41,38 +46,44 @@ export class Client
         instance.relayEnvironment = new Relay.Environment(relayEnvironmentConfig);
         return instance;
     }
-    public async fetchRelay(params: Relay.RequestParameters, variables: Relay.Variables): Promise<Relay.GraphQLResponse>
+    public async fetchRefresh(): Promise<void>
     {
-        return await this.fetch({ query: params.text, variables: variables }) as Relay.GraphQLResponse;
+        const options: RequestInit =
+        {
+            method: "POST",
+            credentials: "include"
+        };
+        const response = await fetch(this.refresh, options);
+
+        if (response.ok)
+            Client.token = (await response.json()).token;
     }
-    public async fetch(data: unknown): Promise<unknown>
+    private async fetchRelay(params: Relay.RequestParameters, variables: Relay.Variables): Promise<Relay.GraphQLResponse>
+    {
+        return await this.fetchGraphQL({ query: params.text, variables: variables }) as Relay.GraphQLResponse;
+    }
+    private async fetchGraphQL(data: unknown): Promise<unknown>
     {
         const headers: Headers = new Headers();
         headers.set("Content-Type", "application/json");
-        switch (typeof Client.token)
-        {
-            case "undefined":
-                break;
-            default:
-                headers.set("Authorization", "Bearer " + Client.token);
-                break;
-        }
+        if (Client.token)
+            headers.set("Authorization", "Bearer " + Client.token);
         const fetchOptions =
         {
             method: "POST",
             headers: headers,
             body: JSON.stringify(data)
         };
-        return await (await fetch(this.api, fetchOptions)).json();
+        return await (await fetch(this.graphql, fetchOptions)).json();
     }
     public hydrate(element: React.ReactElement): void
     {
-        Console.log("Hydrating bundle");
+        Console.log("Hydrating React");
         ReactDOM.hydrate(element, document.querySelector("#root"));
     }
     public render(element: React.ReactElement): void
     {
-        Console.log("Hydrating bundle");
+        Console.log("Rendering React");
         ReactDOM.render(element, document.querySelector("#root"));
     }
 }

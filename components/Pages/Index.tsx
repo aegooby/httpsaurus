@@ -9,8 +9,8 @@ const Lazy = React.lazy(() => import("./Lazy/Index.tsx"));
 import Page from "../Page.tsx";
 
 const query = graphql`
-        query IndexQuery($id: ID!) {
-            queryUser(id: $id) {
+        query IndexQuery {
+            readCurrentUser {
                 user {
                     id
                     email
@@ -19,16 +19,13 @@ const query = graphql`
         }
     `;
 
+let preloadedQuery: Relay.PreloadedQuery<IndexQuery> | undefined = undefined;
+const variables = {} as IndexQueryVariables;
+
 export default function Index()
 {
-    const state = ReactRouter.useLocation().state;
-    let preloadedQuery: Relay.PreloadedQuery<IndexQuery> | undefined = undefined;
-    if (state)
-    {
-        const variables = state as IndexQueryVariables;
-        const environment = Relay.useRelayEnvironment();
-        preloadedQuery = Relay.loadQuery(environment, query, variables);
-    }
+    const environment = Relay.useRelayEnvironment();
+    preloadedQuery = Relay.loadQuery(environment, query, variables);
     const element: React.ReactElement =
         <Page
             helmet={<title>httpsaurus</title>}

@@ -16,7 +16,10 @@ export default function Index(props: Props)
 
     let data: IndexQueryResponse | undefined = undefined;
     if (props.preloadedQuery)
-        data = Relay.usePreloadedQuery(props.query, props.preloadedQuery) as IndexQueryResponse;
+    {
+        try { data = Relay.usePreloadedQuery(props.query, props.preloadedQuery) as IndexQueryResponse; }
+        catch { undefined; }
+    }
 
     const element =
         <div className="page">
@@ -25,7 +28,7 @@ export default function Index(props: Props)
             </p>
             <h1><strong>https</strong>aurus</h1>
             <h2>React v{React.version}</h2>
-            {data ? <h3>Logged in as <strong>{data.queryUser.user.email}</strong></h3> : <></>}
+            <h3>{data ? <>Logged in as <strong>{data.readCurrentUser.user.email}</strong></> : <>Not logged in</>}</h3>
             <p className="copyinfo">© 0000 Company, Inc.</p>
         </div>;
     return element;

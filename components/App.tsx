@@ -2,30 +2,26 @@
 import * as React from "react";
 import * as ReactRouter from "react-router-dom";
 
-import { useToken } from "./Core/Core.tsx";
 import { Spinner } from "./Loading.tsx";
 import Index from "./Pages/Index.tsx";
 import MobileProf from "./Pages/MobileProf.tsx";
 import Login from "./Pages/Login.tsx";
 import Register from "./Pages/Register.tsx";
 import Error from "./Pages/Error.tsx";
+import type { Client } from "../client/client.tsx";
 
-export default function App()
+interface Props
+{
+    client: Client;
+}
+export default function App(props: Props)
 {
     const [loading, setLoading] = React.useState(true);
     const effect = function ()
     {
         const refresh = async function ()
         {
-            const options: RequestInit =
-            {
-                method: "POST",
-                credentials: "include"
-            };
-            const response = await fetch("https://localhost:3443/jwt/refresh", options);
-
-            if (response.ok)
-                useToken((await response.json()).token);
+            await props.client.fetchRefresh();
             setLoading(false);
         };
         refresh();

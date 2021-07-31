@@ -65,7 +65,8 @@ export type MutationRevokeUserArgs = {
 export type Query = {
   __typename?: 'Query';
   get?: Maybe<Scalars['String']>;
-  queryUser: QueryUserResponse;
+  readUser: ReadUserResponse;
+  readCurrentUser: ReadUserResponse;
 };
 
 
@@ -74,12 +75,12 @@ export type QueryGetArgs = {
 };
 
 
-export type QueryQueryUserArgs = {
+export type QueryReadUserArgs = {
   id: Scalars['ID'];
 };
 
-export type QueryUserResponse = {
-  __typename?: 'QueryUserResponse';
+export type ReadUserResponse = {
+  __typename?: 'ReadUserResponse';
   user: User;
 };
 
@@ -186,7 +187,7 @@ export type ResolversTypes = {
   Mutation: ResolverTypeWrapper<{}>;
   ID: ResolverTypeWrapper<Scalars['ID']>;
   Query: ResolverTypeWrapper<{}>;
-  QueryUserResponse: ResolverTypeWrapper<QueryUserResponse>;
+  ReadUserResponse: ResolverTypeWrapper<ReadUserResponse>;
   RevokeUserResponse: ResolverTypeWrapper<RevokeUserResponse>;
   User: ResolverTypeWrapper<User>;
 };
@@ -201,7 +202,7 @@ export type ResolversParentTypes = {
   Mutation: {};
   ID: Scalars['ID'];
   Query: {};
-  QueryUserResponse: QueryUserResponse;
+  ReadUserResponse: ReadUserResponse;
   RevokeUserResponse: RevokeUserResponse;
   User: User;
 };
@@ -232,10 +233,11 @@ export type MutationResolvers<ContextType = any, ParentType extends ResolversPar
 
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   get?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<QueryGetArgs, 'key'>>;
-  queryUser?: Resolver<ResolversTypes['QueryUserResponse'], ParentType, ContextType, RequireFields<QueryQueryUserArgs, 'id'>>;
+  readUser?: Resolver<ResolversTypes['ReadUserResponse'], ParentType, ContextType, RequireFields<QueryReadUserArgs, 'id'>>;
+  readCurrentUser?: Resolver<ResolversTypes['ReadUserResponse'], ParentType, ContextType>;
 };
 
-export type QueryUserResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['QueryUserResponse'] = ResolversParentTypes['QueryUserResponse']> = {
+export type ReadUserResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['ReadUserResponse'] = ResolversParentTypes['ReadUserResponse']> = {
   user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -258,7 +260,7 @@ export type Resolvers<ContextType = any> = {
   LogoutUserResponse?: LogoutUserResponseResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
-  QueryUserResponse?: QueryUserResponseResolvers<ContextType>;
+  ReadUserResponse?: ReadUserResponseResolvers<ContextType>;
   RevokeUserResponse?: RevokeUserResponseResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
 };

@@ -339,12 +339,12 @@ export async function bundleSnowpack(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} bundle:snowpack --graphql <endpoint>`);
+        Console.log(`usage: ${command} bundle:snowpack --url <endpoint> [--watch]`);
         return;
     }
-    if (!args.graphql)
+    if (!args.url)
     {
-        Console.error(`usage: ${command} bundle:snowpack --graphql <endpoint>`);
+        Console.error(`usage: ${command} bundle:snowpack --url <endpoint> [--watch]`);
         return;
     }
     const snowpackRunOptions: Deno.RunOptions =
@@ -354,13 +354,53 @@ export async function bundleSnowpack(args: Arguments)
                 "yarn", "run", "snowpack", "--config",
                 "config/snowpack.config.js", "build"
             ],
-        env: { SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT: args.graphql }
+        env:
+        {
+            SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT: new URL("/graphql", args.url).href,
+            SNOWPACK_PUBLIC_REFRESH_ENDPOINT: new URL("/jwt/refresh", args.url).href
+        }
     };
-    const snowpackProcess = Deno.run(snowpackRunOptions);
-    const snowpackStatus = await snowpackProcess.status();
-    snowpackProcess.close();
-    if (!snowpackStatus.success)
-        return snowpackStatus.code;
+    if (!args.watch)
+    {
+        const snowpackProcess = Deno.run(snowpackRunOptions);
+        await snowpackProcess.status();
+        snowpackProcess.close();
+        return;
+    }
+    const watcher = Deno.watchFs(["components", "client"], { recursive: true });
+    let lastPaths: Set<string> = new Set();
+    let newPath: boolean = false as const;
+    const resetLastPaths = async function ()
+    {
+        await async.delay(5000);
+        lastPaths = new Set();
+    };
+    for await (const change of watcher)
+    {
+        switch (change.kind)
+        {
+            case "access":
+                break;
+            default:
+                {
+                    for (const path of change.paths)
+                        if (!lastPaths.has(path))
+                            newPath = true;
+                    lastPaths = new Set(change.paths);
+
+                    if (newPath)
+                    {
+                        const snowpackProcess = Deno.run(snowpackRunOptions);
+                        await snowpackProcess.status();
+                        snowpackProcess.close();
+                        newPath = false;
+                        resetLastPaths();
+                    }
+                    break;
+                }
+        }
+
+    }
 }
 export async function codegen(args: Arguments)
 {
@@ -407,7 +447,7 @@ export async function localhostSnowpack(_args: Arguments)
 }
 export async function localhostDeno(_args: Arguments)
 {
-    await bundleSnowpack({ _: [], graphql: "https://localhost:3443/graphql" });
+    await bundleSnowpack({ _: [], url: "https://localhost:3443/" });
 
     const ready = async function (): Promise<void>
     {
@@ -423,7 +463,12 @@ export async function localhostDeno(_args: Arguments)
             catch { undefined; }
         }
     };
-    ready().then(async function () { await opener.open("https://localhost:3443/"); });
+    const onReady = async function () 
+    {
+        await opener.open("https://localhost:3443/");
+        await bundleSnowpack({ _: [], url: "https://localhost:3443/", watch: true });
+    };
+    ready().then(onReady);
 
     const serverRunOptions: Deno.RunOptions =
     {
@@ -436,9 +481,7 @@ export async function localhostDeno(_args: Arguments)
         env: { DENO_DIR: ".cache/" }
     };
     const serverProcess = Deno.run(serverRunOptions);
-    const serverStatus = await serverProcess.status();
-    serverProcess.close();
-    return serverStatus.code;
+    await serverProcess.status();
 }
 export function deploy(_args: Arguments)
 {

@@ -13,7 +13,8 @@ try
 {
     const clientAttributes =
     {
-        api: (import.meta as Snowpack).env.SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT,
+        graphql: (import.meta as Snowpack).env.SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT,
+        refresh: (import.meta as Snowpack).env.SNOWPACK_PUBLIC_REFRESH_ENDPOINT,
     };
     const httpclient = Client.create(clientAttributes);
 
@@ -24,7 +25,7 @@ try
                 const element: React.ReactElement =
                     <Relay.RelayEnvironmentProvider environment={httpclient.relayEnvironment}>
                         <ReactRouter.BrowserRouter>
-                            <App />
+                            <App client={httpclient} />
                         </ReactRouter.BrowserRouter>
                     </Relay.RelayEnvironmentProvider>;
                 httpclient.render(element);
@@ -38,7 +39,7 @@ try
                     <React.StrictMode>
                         <Relay.RelayEnvironmentProvider environment={httpclient.relayEnvironment}>
                             <ReactRouter.BrowserRouter>
-                                <App />
+                                <App client={httpclient} />
                             </ReactRouter.BrowserRouter>
                         </Relay.RelayEnvironmentProvider>
                     </React.StrictMode>;

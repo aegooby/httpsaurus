@@ -37,7 +37,6 @@ export default function Login()
     function onSubmit(event: React.FormEvent<HTMLFormElement>): void
     {
         event.preventDefault();
-        Console.log(environment());
         switch (environment())
         {
             case Environment.SERVER:
@@ -55,6 +54,7 @@ export default function Login()
 
         const onCompleted = function (data: unknown)
         {
+            Console.log(data);
             useToken((data as LoginMutationResponse).loginUser.token);
             const id = (data as LoginMutationResponse).loginUser.user.id;
             navigate("/", { state: { id: id } });

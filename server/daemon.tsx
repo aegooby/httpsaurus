@@ -29,7 +29,8 @@ try
         private constructor() 
         {
             this.get = this.get.bind(this);
-            this.queryUser = this.queryUser.bind(this);
+            this.readUser = this.readUser.bind(this);
+            this.readCurrentUser = this.readCurrentUser.bind(this);
         }
         public static create(): Query
         {
@@ -41,11 +42,20 @@ try
             return (await redis.main.get(args.key)) ?? null;
         }
         @Auth.authenticated(function (payload, args) { return payload.id === (args as Record<string, unknown>).id; })
-        async queryUser(_parent: unknown, args: { id: string; }, _context: Oak.Context)
+        async readUser(_parent: unknown, args: { id: string; }, _context: Oak.Context)
         {
             const results = JSON.parse(await redis.json.get(`users:${args.id}`, "$")) as unknown[];
             const user = results.pop() as User;
             user.id = args.id;
+            return { user: user };
+        }
+        @Auth.authenticated()
+        async readCurrentUser(_parent: unknown, _args: unknown, context: Oak.Context)
+        {
+            const payload = context.state.payload;
+            const results = JSON.parse(await redis.json.get(`users:${payload.id}`, "$")) as unknown[];
+            const user = results.pop() as User;
+            user.id = payload.id;
             return { user: user };
         }
     }

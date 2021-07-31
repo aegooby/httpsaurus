@@ -6,7 +6,7 @@ type User
     receipt: String
 }
 
-type QueryUserResponse
+type ReadUserResponse
 {
     user: User!
 }
@@ -31,7 +31,8 @@ type RevokeUserResponse
 type Query 
 { 
     get(key: String!): String
-    queryUser(id: ID!): QueryUserResponse!
+    readUser(id: ID!): ReadUserResponse!
+    readCurrentUser: ReadUserResponse!
 }
 type Mutation
 {

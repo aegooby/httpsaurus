@@ -3,11 +3,9 @@
 // @ts-nocheck
 
 import { ConcreteRequest } from "relay-runtime";
-export type IndexQueryVariables = {
-    id: string;
-};
+export type IndexQueryVariables = {};
 export type IndexQueryResponse = {
-    readonly queryUser: {
+    readonly readCurrentUser: {
         readonly user: {
             readonly id: string;
             readonly email: string;
@@ -22,10 +20,8 @@ export type IndexQuery = {
 
 
 /*
-query IndexQuery(
-  $id: ID!
-) {
-  queryUser(id: $id) {
+query IndexQuery {
+  readCurrentUser {
     user {
       id
       email
@@ -37,24 +33,11 @@ query IndexQuery(
 const node: ConcreteRequest = (function(){
 var v0 = [
   {
-    "defaultValue": null,
-    "kind": "LocalArgument",
-    "name": "id"
-  }
-],
-v1 = [
-  {
     "alias": null,
-    "args": [
-      {
-        "kind": "Variable",
-        "name": "id",
-        "variableName": "id"
-      }
-    ],
-    "concreteType": "QueryUserResponse",
+    "args": null,
+    "concreteType": "ReadUserResponse",
     "kind": "LinkedField",
-    "name": "queryUser",
+    "name": "readCurrentUser",
     "plural": false,
     "selections": [
       {
@@ -88,30 +71,30 @@ v1 = [
 ];
 return {
   "fragment": {
-    "argumentDefinitions": (v0/*: any*/),
+    "argumentDefinitions": [],
     "kind": "Fragment",
     "metadata": null,
     "name": "IndexQuery",
-    "selections": (v1/*: any*/),
+    "selections": (v0/*: any*/),
     "type": "Query",
     "abstractKey": null
   },
   "kind": "Request",
   "operation": {
-    "argumentDefinitions": (v0/*: any*/),
+    "argumentDefinitions": [],
     "kind": "Operation",
     "name": "IndexQuery",
-    "selections": (v1/*: any*/)
+    "selections": (v0/*: any*/)
   },
   "params": {
-    "cacheID": "03f3079f93d40db925b7d1abb2366a91",
+    "cacheID": "e709d06b76bbe8ecad021102823ccdd4",
     "id": null,
     "metadata": {},
     "name": "IndexQuery",
     "operationKind": "query",
-    "text": "query IndexQuery(\n  $id: ID!\n) {\n  queryUser(id: $id) {\n    user {\n      id\n      email\n    }\n  }\n}\n"
+    "text": "query IndexQuery {\n  readCurrentUser {\n    user {\n      id\n      email\n    }\n  }\n}\n"
   }
 };
 })();
-(node as any).hash = 'f5a0d008a8436d695fa2169abb3dde19';
+(node as any).hash = '79bead89bc0c836e5e71349bd23d75e1';
 export default node;

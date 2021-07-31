@@ -36,7 +36,6 @@ export default function Register()
     {
         event.preventDefault();
 
-        Console.log(environment());
         switch (environment())
         {
             case Environment.SERVER:

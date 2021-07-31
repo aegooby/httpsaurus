@@ -53,6 +53,21 @@ body
     font-weight: 700;
 }
 
+.page h3
+{
+    margin: 0;
+    line-height: 1.5;
+    font-size: 20px;
+    font-weight: 300;
+    text-align: center;
+    color: #000;
+}
+
+.page h3 strong 
+{
+    font-weight: 600;
+}
+
 .page p 
 {
     margin: 0;

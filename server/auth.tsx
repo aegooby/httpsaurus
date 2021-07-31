@@ -72,7 +72,13 @@ class RefreshToken extends Token
     {
         const signOptions = { expiresIn: this.lifetime };
         const result = jwt.sign(payload, this.keypair.private, signOptions);
-        const cookieOptions = { path: this.path, httpOnly: true };
+        const cookieOptions: Oak.CookiesSetDeleteOptions =
+        {
+            path: this.path,
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict"
+        };
         context.cookies.set("refresh", result, cookieOptions);
         return result;
     }
@@ -118,6 +124,7 @@ export class Auth<UserJWT extends UserJWTBase>
                 {
                     const token = authorization.replaceAll("Bearer ", "").replaceAll("bearer ", "");
                     const payload = Auth.access.verify<UserJWT>(token);
+                    context.state.payload = payload;
                     if (condition && !condition(payload, args))
                         throw new Error("Authentication condition not met");
 
