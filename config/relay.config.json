@@ -1,7 +1,7 @@
 {
     "src": "components",
     "language": "typescript",
-    "extensions": ["ts", "tsx"],
+    "extensions": "tsx",
     "schema": "graphql/schema.gql",
     "eagerESModules": true
 }

@@ -23,6 +23,7 @@ export class Client
 {
     private api: string = {} as string;
     public relayEnvironment: Relay.Environment = {} as Relay.Environment;
+    public static token: string = "" as const;
     private constructor()
     {
         this.fetchRelay = this.fetchRelay.bind(this);
@@ -46,10 +47,20 @@ export class Client
     }
     public async fetch(data: unknown): Promise<unknown>
     {
+        const headers: Headers = new Headers();
+        headers.set("Content-Type", "application/json");
+        switch (Client.token)
+        {
+            case "":
+                break;
+            default:
+                headers.set("Authorization", "Bearer " + Client.token);
+                break;
+        }
         const fetchOptions =
         {
             method: "POST",
-            headers: { "content-type": "application/json" },
+            headers: headers,
             body: JSON.stringify(data)
         };
         return await (await fetch(this.api, fetchOptions)).json();

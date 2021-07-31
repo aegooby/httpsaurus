@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { environment, Environment } from "../Core.tsx";
+import { environment, Environment } from "./Core.tsx";
 
 import nprogress from "nprogress";
 

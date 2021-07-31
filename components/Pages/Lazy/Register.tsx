@@ -1,28 +1,26 @@
 
 import * as React from "react";
 import Relay from "react-relay/hooks";
-import { graphql } from "relay-runtime";
 
-import { environment, Environment, Console, useToken } from "../../Core/Core.tsx";
+import { graphql } from "relay-runtime";
+import { environment, Environment, Console } from "../../Core/Core.tsx";
 import * as Loading from "../../Loading.tsx";
-import type { LoginUserResponse } from "../../../graphql/types.d.tsx";
 
 interface Value
 {
     value: string;
 }
 
-export default function Login()
+export default function Register()
 {
     Loading.useFinishLoading();
     const [email, setEmail] = React.useState("");
     const [password, setPassword] = React.useState("");
 
     const mutation = graphql`
-            mutation LoginMutation($email: String!, $password: String!) 
+            mutation RegisterMutation($email: String!, $password: String!) 
             {
-                loginUser(email: $email, password: $password) {
-                    token
+                createUser(email: $email, password: $password) {
                     user {
                         id
                     }
@@ -51,18 +49,7 @@ export default function Login()
             "password": password
         };
 
-        const onCompleted = function (data: unknown)
-        {
-            const token = useToken((data as { loginUser: LoginUserResponse; }).loginUser.token);
-            Console.log(token);
-        };
-
-        const onError = function (error: Error)
-        {
-            Console.error(error);
-        };
-
-        commit({ variables: variables, onCompleted: onCompleted, onError: onError });
+        commit({ variables: variables, onCompleted(data) { Console.log(data); }, onError(error) { Console.error(error); } });
     }
     const element =
         <div className="page">
@@ -83,7 +70,7 @@ export default function Login()
                         />
                     </div>
                     <div className="form-item-wrapper">
-                        <input type="submit" className="button shadow" value="Login" />
+                        <input type="submit" className="button shadow" value="Register" />
                     </div>
                 </form>
             </div>
