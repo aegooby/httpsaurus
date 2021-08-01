@@ -8,8 +8,9 @@ import * as scrypt from "scrypt";
 import { Server, Redis, Console, Auth } from "./server.tsx";
 import type { ServerAttributes } from "./server.tsx";
 import type { Resolvers, QueryResolvers, MutationResolvers } from "../graphql/types.d.tsx";
-import type { User, UserJwt } from "../graphql/types.d.tsx";
+import type { User, UserJwt, UserPayload } from "../graphql/types.d.tsx";
 import type { QueryReadUserArgs } from "../graphql/types.d.tsx";
+import type { UserInfo } from "../graphql/types.d.tsx";
 
 const args = yargs.default(Deno.args)
     .usage("usage: $0 server/daemon.tsx --hostname <host> [--domain <name>] [--tls <path>]")
@@ -23,14 +24,17 @@ try
 {
     const encoder = new TextEncoder();
     const redis = await Redis.create({ retries: 10 });
-    try { await redis.search.create("users", "JSON", [{ name: "$.email", type: "TAG", as: "email", sortable: true }]); }
+    try 
+    {
+        const schemaFields = [{ name: "$.email", type: "TAG", as: "email", sortable: true }];
+        await redis.search.create("users", "JSON", schemaFields, { prefix: [{ count: 1, name: "users:" }] });
+    }
     catch { undefined; }
 
     class Query implements QueryResolvers<Oak.Context>
     {
         private constructor() 
         {
-            this.get = this.get.bind(this);
             this.readUser = this.readUser.bind(this);
             this.readCurrentUser = this.readCurrentUser.bind(this);
         }
@@ -38,10 +42,6 @@ try
         {
             const instance = new Query();
             return instance;
-        }
-        async get(_parent: unknown, args: { key: string; }, _context: Oak.Context)
-        {
-            return (await redis.main.get(args.key)) ?? null;
         }
         @Auth.authenticated<UserJwt, QueryReadUserArgs>(function (payload, args) { return payload.id === args.id; })
         async readUser(_parent: unknown, args: QueryReadUserArgs, _context: Oak.Context)
@@ -66,7 +66,6 @@ try
     {
         private constructor() 
         {
-            this.set = this.set.bind(this);
             this.createUser = this.createUser.bind(this);
             this.loginUser = this.loginUser.bind(this);
             this.logoutUser = this.logoutUser.bind(this);
@@ -77,15 +76,11 @@ try
             const instance = new Mutation();
             return instance;
         }
-        async set(_parent: unknown, args: { key: string; value: string; }, _context: Oak.Context)
-        {
-            return await redis.main.set(args.key, args.value);
-        }
-        async createUser(_parent: unknown, args: { email: string; password: string; }, _context: Oak.Context)
+        async createUser(_parent: unknown, args: { input: UserInfo; }, _context: Oak.Context)
         {
             const id = await uuid.v5.generate(uuid.v1.generate() as string, encoder.encode(crypto.randomUUID()));
 
-            const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
+            const escapedEmail = args.input.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
             const search = await redis.search.search("users", `@email:{${escapedEmail}}`);
 
             switch (typeof search)
@@ -93,42 +88,54 @@ try
                 case "number":
                     break;
                 default:
-                    throw new Error(`Email address ${args.email} already in use`);
+                    throw new Error(`Email address ${args.input.email} already in use`);
             }
-            const password = await scrypt.hash(args.password);
-            const payload = { email: args.email, password: password };
+            const password = await scrypt.hash(args.input.password);
+            const payload: UserPayload =
+            {
+                email: args.input.email,
+                password: password,
+                receipt: null
+            };
             await redis.json.set(`users:${id}`, "$", JSON.stringify(payload));
-            const user = { id: id, email: args.email };
+            const user: User =
+            {
+                id: id,
+                ...payload
+            };
             return { user: user };
         }
-        async loginUser(_parent: unknown, args: { email: string; password: string; }, context: Oak.Context)
+        async loginUser(_parent: unknown, args: { input: UserInfo; }, context: Oak.Context)
         {
-            const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
+            const escapedEmail = args.input.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
             const search = await redis.search.search("users", `@email:{${escapedEmail}}`);
             switch (typeof search)
             {
                 case "number":
-                    throw new Error(`User with email ${args.email} does not exist`);
+                    throw new Error(`User with email ${args.input.email} does not exist`);
                 default:
                     break;
             }
-            const user = {} as User;
             if (search.at(0) as number > 1 || search.length > 3)
-                throw new Error(`More than one user found with email ${args.email}`);
+                throw new Error(`More than one user found with email ${args.input.email}`);
             const parsedSearch = search as [1, string, ["$", string]];
-            const userInfo = JSON.parse((parsedSearch.at(2) as ["$", string]).at(1) as string);
-            if (!await scrypt.verify(args.password, userInfo.password))
-                throw new Error(`Incorrect password for user with email ${args.email}`);
-            user.id = (parsedSearch.at(1) as string).replaceAll("users:", "");
-            user.email = userInfo.email;
-            user.receipt = userInfo.receipt;
+            const userInfo: UserPayload = JSON.parse((parsedSearch.at(2) as ["$", string]).at(1) as string);
+            if (!await scrypt.verify(args.input.password, userInfo.password))
+                throw new Error(`Incorrect password for user with email ${args.input.email}`);
+            const id = (parsedSearch.at(1) as string).replaceAll("users:", "");
+
+            const user: User =
+            {
+                id: id,
+                ...userInfo
+            };
 
             Auth.refresh.create<UserJwt>(user, context);
 
             const result =
             {
                 token: Auth.access.create<UserJwt>(user),
-                user: user,
+                user: user
             };
             return result;
         }

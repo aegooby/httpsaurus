@@ -56,13 +56,11 @@ export default function Login()
         {
             Console.log(data);
             useToken((data as LoginMutationResponse).loginUser.token);
-            const id = (data as LoginMutationResponse).loginUser.user.id;
-            navigate("/", { state: { id: id } });
+            navigate("/");
         };
 
-        const onError = function (error: Error)
+        const onError = function (_error: Error)
         {
-            Console.error(error);
             setEmail("");
             setPassword("");
         };

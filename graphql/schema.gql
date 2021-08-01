@@ -1,4 +1,10 @@
 
+interface UserPayload
+{
+    email: String!
+    receipt: String
+    password: String!
+}
 interface UserJWT
 {
     id: ID!
@@ -34,17 +40,21 @@ type RevokeUserResponse
     success: Boolean!
 }
 
+input UserInfo
+{
+    email: String!
+    password: String!
+}
+
 type Query 
 { 
-    get(key: String!): String
     readUser(id: ID!): ReadUserResponse!
     readCurrentUser: ReadUserResponse!
 }
 type Mutation
 {
-    set(key: String!, value: String!): String!
-    createUser(email: String!, password: String!): CreateUserResponse!
-    loginUser(email: String!, password: String!): LoginUserResponse!
+    createUser(input: UserInfo!): CreateUserResponse!
+    loginUser(input: UserInfo!): LoginUserResponse!
     logoutUser: LogoutUserResponse!
     revokeUser(id: ID!): RevokeUserResponse!
 }
