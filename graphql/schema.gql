@@ -1,5 +1,11 @@
 
-type User
+interface UserJWT
+{
+    id: ID!
+    email: String!
+    receipt: String
+}
+type User implements UserJWT
 {
     id: ID!
     email: String!

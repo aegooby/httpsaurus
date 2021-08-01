@@ -7,7 +7,9 @@ import * as scrypt from "scrypt";
 
 import { Server, Redis, Console, Auth } from "./server.tsx";
 import type { ServerAttributes } from "./server.tsx";
-import type { Resolvers, QueryResolvers, MutationResolvers, User } from "../graphql/types.d.tsx";
+import type { Resolvers, QueryResolvers, MutationResolvers } from "../graphql/types.d.tsx";
+import type { User, UserJwt } from "../graphql/types.d.tsx";
+import type { QueryReadUserArgs } from "../graphql/types.d.tsx";
 
 const args = yargs.default(Deno.args)
     .usage("usage: $0 server/daemon.tsx --hostname <host> [--domain <name>] [--tls <path>]")
@@ -41,15 +43,15 @@ try
         {
             return (await redis.main.get(args.key)) ?? null;
         }
-        @Auth.authenticated(function (payload, args) { return payload.id === (args as Record<string, unknown>).id; })
-        async readUser(_parent: unknown, args: { id: string; }, _context: Oak.Context)
+        @Auth.authenticated<UserJwt, QueryReadUserArgs>(function (payload, args) { return payload.id === args.id; })
+        async readUser(_parent: unknown, args: QueryReadUserArgs, _context: Oak.Context)
         {
             const results = JSON.parse(await redis.json.get(`users:${args.id}`, "$")) as unknown[];
             const user = results.pop() as User;
             user.id = args.id;
             return { user: user };
         }
-        @Auth.authenticated()
+        @Auth.authenticated<UserJwt>()
         async readCurrentUser(_parent: unknown, _args: unknown, context: Oak.Context)
         {
             const payload = context.state.payload;
@@ -121,11 +123,11 @@ try
             user.email = userInfo.email;
             user.receipt = userInfo.receipt;
 
-            Auth.refresh.create(user as User, context);
+            Auth.refresh.create<UserJwt>(user, context);
 
             const result =
             {
-                token: Auth.access.create(user as User),
+                token: Auth.access.create<UserJwt>(user),
                 user: user,
             };
             return result;
@@ -166,7 +168,7 @@ try
         schema: "graphql/schema.gql",
         resolvers: resolvers,
     };
-    const httpserver = await Server.create<User>(serverAttributes);
+    const httpserver = await Server.create<UserJwt>(serverAttributes);
 
     // const cleanup = function () { redis.main.close(); httpserver.close(); };
     // Deno.signals.interrupt().then(cleanup);

@@ -89,8 +89,14 @@ export type RevokeUserResponse = {
   success: Scalars['Boolean'];
 };
 
-export type User = {
+export type User = UserJwt & {
   __typename?: 'User';
+  id: Scalars['ID'];
+  email: Scalars['String'];
+  receipt?: Maybe<Scalars['String']>;
+};
+
+export type UserJwt = {
   id: Scalars['ID'];
   email: Scalars['String'];
   receipt?: Maybe<Scalars['String']>;
@@ -190,6 +196,7 @@ export type ResolversTypes = {
   ReadUserResponse: ResolverTypeWrapper<ReadUserResponse>;
   RevokeUserResponse: ResolverTypeWrapper<RevokeUserResponse>;
   User: ResolverTypeWrapper<User>;
+  UserJWT: ResolversTypes['User'];
 };
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -205,6 +212,7 @@ export type ResolversParentTypes = {
   ReadUserResponse: ReadUserResponse;
   RevokeUserResponse: RevokeUserResponse;
   User: User;
+  UserJWT: ResolversParentTypes['User'];
 };
 
 export type CreateUserResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['CreateUserResponse'] = ResolversParentTypes['CreateUserResponse']> = {
@@ -254,6 +262,13 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type UserJwtResolvers<ContextType = any, ParentType extends ResolversParentTypes['UserJWT'] = ResolversParentTypes['UserJWT']> = {
+  __resolveType: TypeResolveFn<'User', ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  receipt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
 export type Resolvers<ContextType = any> = {
   CreateUserResponse?: CreateUserResponseResolvers<ContextType>;
   LoginUserResponse?: LoginUserResponseResolvers<ContextType>;
@@ -263,6 +278,7 @@ export type Resolvers<ContextType = any> = {
   ReadUserResponse?: ReadUserResponseResolvers<ContextType>;
   RevokeUserResponse?: RevokeUserResponseResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
+  UserJWT?: UserJwtResolvers<ContextType>;
 };
 
 

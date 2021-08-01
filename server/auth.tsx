@@ -108,13 +108,13 @@ export class Auth<UserJWT extends UserJWTBase>
         instance.redis = attributes.redis;
         return await Promise.resolve(instance);
     }
-    public static authenticated<UserJWT extends UserJWTBase>(condition?: (payload: UserJWT, args: unknown) => boolean)
+    public static authenticated<UserJWT extends UserJWTBase, Args = unknown>(condition?: (payload: UserJWT, args: Args) => boolean)
     {
         return (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
         {
             const method = descriptor.value;
 
-            descriptor.value = (parent: unknown, args: unknown, context: Oak.Context) =>
+            descriptor.value = (parent: unknown, args: Args, context: Oak.Context) =>
             {
                 if (!context.request.headers.has("authorization"))
                     throw new Error("\"Authorization\" header not present");
