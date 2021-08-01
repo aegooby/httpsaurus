@@ -76,11 +76,6 @@ body
     color: #333;
 }
 
-.logo + p 
-{
-    margin-top: 6px;
-}
-
 .links span,
 .links a 
 {

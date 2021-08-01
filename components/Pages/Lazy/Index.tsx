@@ -23,9 +23,9 @@ export default function Index(props: Props)
 
     const element =
         <div className="page">
-            <p className="logo">
+            <div>
                 <img src="/logo.webp" height={304} width={256} alt="logo" />
-            </p>
+            </div>
             <h1><strong>https</strong>aurus</h1>
             <h2>React v{React.version}</h2>
             <h3>{data ? <>Logged in as <strong>{data.readCurrentUser.user.email}</strong></> : <>Not logged in</>}</h3>
