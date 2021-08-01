@@ -18,7 +18,7 @@ interface Props
 export default function App(props: Props)
 {
     const [loading, effect] = useRefresh(props.client.fetchRefresh);
-    React.useEffect(effect);
+    React.useEffect(effect, []);
     if (loading()) return <Spinner />;
     else
     {
