@@ -18,13 +18,10 @@ const query = graphql`
         }
     `;
 
-let preloadedQuery: Relay.PreloadedQuery<IndexQuery> | undefined = undefined;
-const variables = {} as IndexQueryVariables;
-
 export default function Index()
 {
-    const environment = Relay.useRelayEnvironment();
-    preloadedQuery = Relay.loadQuery(environment, query, variables);
+    const [preloadedQuery, loadQuery] = Relay.useQueryLoader<IndexQuery>(query);
+    React.useEffect(function () { loadQuery({}); }, []);
     const element: React.ReactElement =
         <Page
             helmet={<title>httpsaurus</title>}
