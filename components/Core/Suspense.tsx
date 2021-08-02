@@ -5,8 +5,10 @@ import { ErrorBoundary } from "./ErrorBoundary.tsx";
 
 import nprogress from "nprogress";
 
-interface SuspenseProps extends React.SuspenseProps
+interface SuspenseProps
 {
+    children?: React.ReactNode;
+    fallback: NonNullable<React.ReactNode> | null;
     loading?: true;
     errorFallback?: NonNullable<React.ReactNode> | null;
     noErrorBoundary?: true;
