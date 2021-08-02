@@ -1,14 +1,14 @@
 
 import * as React from "react";
-import { environment, Environment } from "./Core.tsx";
+import { environment, Environment } from "./Environment.tsx";
+import { ErrorBoundary } from "./ErrorBoundary.tsx";
 
 import nprogress from "nprogress";
 
-interface SuspenseProps
+interface SuspenseProps extends React.SuspenseProps
 {
-    fallback: NonNullable<React.ReactNode> | null;
-    children?: React.ReactNode;
     loading?: true;
+    noErrorBoundary?: true;
 }
 
 export function Suspense(props: SuspenseProps)
@@ -21,10 +21,16 @@ export function Suspense(props: SuspenseProps)
             {
                 if (props.loading && !nprogress.isStarted())
                     React.useState(nprogress.start());
-                const element: React.ReactElement =
+                const suspense: React.ReactElement =
                     <React.Suspense fallback={props.fallback}>
                         {props.children}
                     </React.Suspense>;
+                const element: React.ReactElement =
+                    props.noErrorBoundary ?
+                        suspense :
+                        <ErrorBoundary fallback={props.fallback}>
+                            {suspense}
+                        </ErrorBoundary>;
                 return element;
             }
     }
