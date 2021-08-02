@@ -23,8 +23,9 @@ export class ErrorBoundary extends React.Component<Props, State>
     }
     public componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void
     {
-        Console.error(error);
-        Console.error(errorInfo);
+        /** @todo Add conditional logging. */
+        // Console.error(error);
+        // Console.error(errorInfo);
     }
     public render(): React.ReactNode
     {

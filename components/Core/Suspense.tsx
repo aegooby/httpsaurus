@@ -8,6 +8,7 @@ import nprogress from "nprogress";
 interface SuspenseProps extends React.SuspenseProps
 {
     loading?: true;
+    errorFallback?: NonNullable<React.ReactNode> | null;
     noErrorBoundary?: true;
 }
 
@@ -28,7 +29,7 @@ export function Suspense(props: SuspenseProps)
                 const element: React.ReactElement =
                     props.noErrorBoundary ?
                         suspense :
-                        <ErrorBoundary fallback={props.fallback}>
+                        <ErrorBoundary fallback={props.errorFallback ?? props.fallback}>
                             {suspense}
                         </ErrorBoundary>;
                 return element;

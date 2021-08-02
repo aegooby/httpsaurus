@@ -1,8 +1,18 @@
 
 import { Client } from "../../client/client.tsx";
 
-export function useToken(value?: string): string | undefined
+export function useToken(value?: string | null): string | undefined
 {
-    if (value) Client.token = value;
+    switch (typeof value)
+    {
+        case "object":
+            Client.token = undefined;
+            break;
+        case "string":
+            Client.token = value;
+            break;
+        default:
+            break;
+    }
     return Client.token;
 }
