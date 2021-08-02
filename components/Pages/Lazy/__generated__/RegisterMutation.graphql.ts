@@ -3,9 +3,12 @@
 // @ts-nocheck
 
 import { ConcreteRequest } from "relay-runtime";
-export type RegisterMutationVariables = {
+export type UserInfo = {
     email: string;
     password: string;
+};
+export type RegisterMutationVariables = {
+    input: UserInfo;
 };
 export type RegisterMutationResponse = {
     readonly createUser: {
@@ -23,10 +26,9 @@ export type RegisterMutation = {
 
 /*
 mutation RegisterMutation(
-  $email: String!
-  $password: String!
+  $input: UserInfo!
 ) {
-  createUser(email: $email, password: $password) {
+  createUser(input: $input) {
     user {
       id
     }
@@ -39,12 +41,7 @@ var v0 = [
   {
     "defaultValue": null,
     "kind": "LocalArgument",
-    "name": "email"
-  },
-  {
-    "defaultValue": null,
-    "kind": "LocalArgument",
-    "name": "password"
+    "name": "input"
   }
 ],
 v1 = [
@@ -53,13 +50,8 @@ v1 = [
     "args": [
       {
         "kind": "Variable",
-        "name": "email",
-        "variableName": "email"
-      },
-      {
-        "kind": "Variable",
-        "name": "password",
-        "variableName": "password"
+        "name": "input",
+        "variableName": "input"
       }
     ],
     "concreteType": "CreateUserResponse",
@@ -107,14 +99,14 @@ return {
     "selections": (v1/*: any*/)
   },
   "params": {
-    "cacheID": "e4c34e550ff6f432a48437b12d80873b",
+    "cacheID": "f6b7d27a7bcb547ae94c7bec1c9445fb",
     "id": null,
     "metadata": {},
     "name": "RegisterMutation",
     "operationKind": "mutation",
-    "text": "mutation RegisterMutation(\n  $email: String!\n  $password: String!\n) {\n  createUser(email: $email, password: $password) {\n    user {\n      id\n    }\n  }\n}\n"
+    "text": "mutation RegisterMutation(\n  $input: UserInfo!\n) {\n  createUser(input: $input) {\n    user {\n      id\n    }\n  }\n}\n"
   }
 };
 })();
-(node as any).hash = 'af122e9991d3c612e7792431fccc484c';
+(node as any).hash = 'a48114d389795d95c48af78c46a4ff04';
 export default node;

@@ -3,9 +3,12 @@
 // @ts-nocheck
 
 import { ConcreteRequest } from "relay-runtime";
-export type LoginMutationVariables = {
+export type UserInfo = {
     email: string;
     password: string;
+};
+export type LoginMutationVariables = {
+    input: UserInfo;
 };
 export type LoginMutationResponse = {
     readonly loginUser: {
@@ -24,10 +27,9 @@ export type LoginMutation = {
 
 /*
 mutation LoginMutation(
-  $email: String!
-  $password: String!
+  $input: UserInfo!
 ) {
-  loginUser(email: $email, password: $password) {
+  loginUser(input: $input) {
     token
     user {
       id
@@ -41,12 +43,7 @@ var v0 = [
   {
     "defaultValue": null,
     "kind": "LocalArgument",
-    "name": "email"
-  },
-  {
-    "defaultValue": null,
-    "kind": "LocalArgument",
-    "name": "password"
+    "name": "input"
   }
 ],
 v1 = [
@@ -55,13 +52,8 @@ v1 = [
     "args": [
       {
         "kind": "Variable",
-        "name": "email",
-        "variableName": "email"
-      },
-      {
-        "kind": "Variable",
-        "name": "password",
-        "variableName": "password"
+        "name": "input",
+        "variableName": "input"
       }
     ],
     "concreteType": "LoginUserResponse",
@@ -116,14 +108,14 @@ return {
     "selections": (v1/*: any*/)
   },
   "params": {
-    "cacheID": "f5eea316dfc40052075341674576362f",
+    "cacheID": "611898a4746b8d627a7e1c31e81262f0",
     "id": null,
     "metadata": {},
     "name": "LoginMutation",
     "operationKind": "mutation",
-    "text": "mutation LoginMutation(\n  $email: String!\n  $password: String!\n) {\n  loginUser(email: $email, password: $password) {\n    token\n    user {\n      id\n    }\n  }\n}\n"
+    "text": "mutation LoginMutation(\n  $input: UserInfo!\n) {\n  loginUser(input: $input) {\n    token\n    user {\n      id\n    }\n  }\n}\n"
   }
 };
 })();
-(node as any).hash = 'eb80f02cd70f198b41b4b429cc1bbed6';
+(node as any).hash = '2f9352cd2bdf4d96c8b7f3d8bfaa3988';
 export default node;

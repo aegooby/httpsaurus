@@ -19,9 +19,9 @@ export default function Register()
     const [password, setPassword] = React.useState("");
 
     const mutation = graphql`
-            mutation RegisterMutation($email: String!, $password: String!) 
+            mutation RegisterMutation($input: UserInfo!) 
             {
-                createUser(email: $email, password: $password) {
+                createUser(input: $input) {
                     user {
                         id
                     }
@@ -47,8 +47,11 @@ export default function Register()
 
         const variables =
         {
-            "email": email,
-            "password": password
+            "input":
+            {
+                "email": email,
+                "password": password
+            }
         };
 
         const onCompleted = function (data: unknown)

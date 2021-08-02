@@ -251,7 +251,7 @@ button:active, .button:active
     left: 0;
     top: 0;
     animation: rotate-one 0.75s linear infinite;
-    border-bottom: 1.25rem solid #99a3ff;
+    border-bottom: 1.25rem solid #89e4ff;
 }
   
 .inner.two 
@@ -259,7 +259,7 @@ button:active, .button:active
     right: 0;
     top: 0;
     animation: rotate-two 1s linear infinite;
-    border-right: 1.25rem solid #6d76c9;
+    border-right: 1.25rem solid #57b7d4;
 }
   
 .inner.three 
@@ -267,7 +267,7 @@ button:active, .button:active
     right: 0;
     bottom: 0;
     animation: rotate-three 1.25s linear infinite;
-    border-top: 1.25rem solid #3d4691;
+    border-top: 1.25rem solid #1d85a5;
 }
   
 @keyframes rotate-one 

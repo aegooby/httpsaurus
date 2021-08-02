@@ -2,11 +2,10 @@
 import * as React from "react";
 import { graphql } from "relay-runtime";
 import Relay from "react-relay/hooks";
-import * as ReactRouter from "react-router-dom";
-import type { IndexQuery, IndexQueryVariables } from "./__generated__/IndexQuery.graphql.ts";
 
 const Lazy = React.lazy(() => import("./Lazy/Index.tsx"));
 import Page from "../Page.tsx";
+import type { IndexQuery, IndexQueryVariables } from "./__generated__/IndexQuery.graphql.ts";
 
 const query = graphql`
         query IndexQuery {

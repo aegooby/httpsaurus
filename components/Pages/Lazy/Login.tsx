@@ -20,9 +20,9 @@ export default function Login()
     const [password, setPassword] = React.useState("");
 
     const mutation = graphql`
-            mutation LoginMutation($email: String!, $password: String!) 
+            mutation LoginMutation($input: UserInfo!) 
             {
-                loginUser(email: $email, password: $password) {
+                loginUser(input: $input) {
                     token
                     user {
                         id
@@ -48,8 +48,11 @@ export default function Login()
 
         const variables =
         {
-            "email": email,
-            "password": password
+            "input":
+            {
+                "email": email,
+                "password": password
+            }
         };
 
         const onCompleted = function (data: unknown)
