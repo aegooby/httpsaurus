@@ -18,13 +18,9 @@ function LoginInfo(props: Props)
     if (props.preloadedQuery)
         data = Relay.usePreloadedQuery(props.query, props.preloadedQuery);
     const element: React.ReactElement =
-        <h3>
-            {
-                data ?
-                    <>Logged in as <strong>{data.readCurrentUser.user.email}</strong></> :
-                    <>Not logged in</>
-            }
-        </h3>;
+        data ?
+            <h3>Logged in as <strong>{data.readCurrentUser.user.email}</strong></h3> :
+            <h3>Not logged in</h3>;
     return element;
 }
 
@@ -34,12 +30,12 @@ export default function Index(props: Props)
 
     const element =
         <div className="page">
-            <div>
+            <p>
                 <img src="/logo.webp" height={304} width={256} alt="logo" />
-            </div>
+            </p>
             <h1><strong>https</strong>aurus</h1>
             <h2>React v{React.version}</h2>
-            <Suspense fallback={<>Not logged in</>}>
+            <Suspense fallback={<h3>Not logged in</h3>}>
                 <LoginInfo {...props} />
             </Suspense>
             <p className="copyinfo">© 0000 Company, Inc.</p>
