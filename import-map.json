@@ -28,6 +28,7 @@
         "nprogress": "https://esm.sh/nprogress",
         "apollo-graphql": "https://esm.sh/apollo-graphql",
         "graphql": "https://esm.sh/graphql",
+        "graphql-relay": "https://esm.sh/graphql-relay",
         "graphql-playground": "https://esm.sh/graphql-playground-html",
         "jsonwebtoken": "https://esm.sh/jsonwebtoken",
         "keypair": "https://esm.sh/keypair"

@@ -76,6 +76,7 @@ try
             const instance = new Mutation();
             return instance;
         }
+        @Auth.rateLimit(redis)
         async createUser(_parent: unknown, args: { input: UserInfo; }, _context: Oak.Context)
         {
             const id = await uuid.v5.generate(uuid.v1.generate() as string, encoder.encode(crypto.randomUUID()));

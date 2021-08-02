@@ -4,6 +4,7 @@ import * as async from "@std/async";
 import * as Oak from "oak";
 import * as Apollo from "apollo-graphql";
 import * as graphql from "graphql";
+import * as graphqlRelay from "graphql-relay";
 import * as playground from "graphql-playground";
 
 import { Console } from "./console.tsx";
@@ -140,7 +141,14 @@ export class GraphQL
                     operationName: query.operationName,
                 };
                 const result = await graphql.graphql(graphQLArgs);
-                context.response.status = Oak.Status.OK;
+                switch (context.response.status)
+                {
+                    case Oak.Status.NotFound:
+                        context.response.status = Oak.Status.OK;
+                        break;
+                    default:
+                        break;
+                }
                 context.response.body = JSON.stringify(result);
             }
             catch (error)
@@ -152,7 +160,7 @@ export class GraphQL
                     data: null,
                     errors: [{ message: error.message ?? error }],
                 };
-                context.response.status = Oak.Status.OK;
+                context.response.status = Oak.Status.InternalServerError;
                 context.response.body = JSON.stringify(jsonError);
             }
             await next();

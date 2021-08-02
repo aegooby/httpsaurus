@@ -114,7 +114,7 @@ export class Auth<UserJWT extends UserJWTBase>
         {
             const method = descriptor.value;
 
-            descriptor.value = (parent: unknown, args: Args, context: Oak.Context) =>
+            descriptor.value = async (parent: unknown, args: Args, context: Oak.Context) =>
             {
                 if (!context.request.headers.has("authorization"))
                     throw new Error("\"Authorization\" header not present");
@@ -128,12 +128,36 @@ export class Auth<UserJWT extends UserJWTBase>
                     if (condition && !condition(payload, args))
                         throw new Error("Authentication condition not met");
 
-                    return method(parent, args, context);
+                    return await method(parent, args, context);
                 }
                 catch (error)
                 {
                     throw new Error(`Authentication failed with error: ${error}`);
                 }
+            };
+        };
+    }
+    public static rateLimit(redis: Redis, options?: { limit?: number; expiry?: number; })
+    {
+        return (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
+        {
+            const method = descriptor.value;
+
+            descriptor.value = async (parent: unknown, args: unknown, context: Oak.Context) =>
+            {
+                const key = `rate-limit:${context.request.ip}`;
+                const count = await redis.main.incr(key);
+                const limit = options?.limit ?? 50;
+                const expiry = options?.expiry ?? 60 * 60;
+                if (count > limit)
+                {
+                    context.response.status = Oak.Status.TooManyRequests;
+                    const error = `${Oak.Status.TooManyRequests}: ${Oak.STATUS_TEXT.get(Oak.Status.TooManyRequests)}`;
+                    throw new Error(error);
+                }
+                else if (1 >= count)
+                    await redis.main.expire(key, expiry);
+                return await method(parent, args, context);
             };
         };
     }
