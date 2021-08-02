@@ -32,8 +32,6 @@ export default function Index(props: Props)
 {
     Loading.useFinishLoading();
 
-
-
     const element =
         <div className="page">
             <div>
