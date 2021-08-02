@@ -3,6 +3,7 @@ import * as React from "react";
 import Relay from "react-relay/hooks";
 import type { IndexQuery, IndexQueryResponse } from "../__generated__/IndexQuery.graphql.ts";
 
+import { Suspense } from "../../Core/Core.tsx";
 import * as Loading from "../../Loading.tsx";
 
 interface Props
@@ -16,10 +17,7 @@ export default function Index(props: Props)
 
     let data: IndexQueryResponse | undefined = undefined;
     if (props.preloadedQuery)
-    {
-        try { data = Relay.usePreloadedQuery(props.query, props.preloadedQuery) as IndexQueryResponse; }
-        catch { undefined; }
-    }
+        data = Relay.usePreloadedQuery(props.query, props.preloadedQuery) as IndexQueryResponse;
 
     const element =
         <div className="page">
@@ -28,7 +26,11 @@ export default function Index(props: Props)
             </div>
             <h1><strong>https</strong>aurus</h1>
             <h2>React v{React.version}</h2>
-            <h3>{data ? <>Logged in as <strong>{data.readCurrentUser.user.email}</strong></> : <>Not logged in</>}</h3>
+            <Suspense fallback={<></>}>
+                <h3>
+                    {data ? <>Logged in as <strong>{data.readCurrentUser.user.email}</strong></> : <>Not logged in</>}
+                </h3>
+            </Suspense>
             <p className="copyinfo">© 0000 Company, Inc.</p>
         </div>;
     return element;

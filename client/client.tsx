@@ -41,7 +41,8 @@ export class Client
         const relayEnvironmentConfig =
         {
             network: Relay.Network.create(instance.fetchRelay),
-            store: new Relay.Store(new Relay.RecordSource())
+            store: new Relay.Store(new Relay.RecordSource()),
+            configName: "Environment"
         };
         instance.relayEnvironment = new Relay.Environment(relayEnvironmentConfig);
         return instance;
