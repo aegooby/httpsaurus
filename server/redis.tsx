@@ -974,6 +974,7 @@ export interface RedisAttributes
 {
     url?: string;
     retries: number;
+    failable?: boolean;
 }
 
 export class Redis
@@ -1009,7 +1010,7 @@ export class Redis
             await async.delay(500);
         }
 
-        if (!instance.main.isConnected)
+        if (!instance.main.isConnected && !attributes.failable)
             throw new Error("Failed to connect to Redis");
 
         instance.json = await RedisJSON.create({ redisMain: instance.main });

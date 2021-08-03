@@ -406,7 +406,7 @@ export async function codegen(args: Arguments)
 {
     if (args.help)
     {
-        Console.error(`usage: ${command} codegen [--watch]`);
+        Console.log(`usage: ${command} codegen [--watch]`);
         return;
     }
     const watchArgs = args.watch ? ["--watch"] : [];
@@ -426,12 +426,17 @@ export async function codegen(args: Arguments)
 export function localhost(_args: Arguments)
 {
     Console.log(`commands:`);
-    Console.print(`  localhost:snowpack\t${colors.italic(colors.black("(runs Snowpack dev server)"))}`);
-    Console.print(`  localhost:deno\t${colors.italic(colors.black("(runs Deno live server)"))}`);
+    Console.print(`  localhost:snowpack\t\t\t${colors.italic(colors.black("(runs Snowpack dev server)"))}`);
+    Console.print(`  localhost:deno [--devtools] [--redis]\t${colors.italic(colors.black("(runs Deno live server)"))}`);
     return;
 }
-export async function localhostSnowpack(_args: Arguments)
+export async function localhostSnowpack(args: Arguments)
 {
+    if (args.help)
+    {
+        Console.log(`usage: ${command} localhost:snowpack`);
+        return;
+    }
     const runOptions: Deno.RunOptions =
     {
         cmd:
@@ -447,6 +452,11 @@ export async function localhostSnowpack(_args: Arguments)
 }
 export async function localhostDeno(args: Arguments)
 {
+    if (args.help)
+    {
+        Console.log(`usage: ${command} localhost:deno [--devtools] [--redis]`);
+        return;
+    }
     await bundleSnowpack({ _: [], url: "https://localhost:3443/" });
 
     const ready = async function (): Promise<void>
@@ -471,6 +481,22 @@ export async function localhostDeno(args: Arguments)
     ready().then(onReady);
 
     const devtools = args.devtools ? ["--devtools"] : [];
+    const redis = args.redis ? ["--redis"] : [];
+    const promises = [];
+    if (args.devtools)
+    {
+        const reactRunOptions: Deno.RunOptions =
+            { cmd: ["yarn", "run", "react-devtools"], };
+        const reactProcess = Deno.run(reactRunOptions);
+        const reactStatus = reactProcess.status();
+        promises.push(reactStatus);
+
+        const relayRunOptions: Deno.RunOptions =
+            { cmd: ["yarn", "run", "relay-devtools"], };
+        const relayProcess = Deno.run(relayRunOptions);
+        const relayStatus = relayProcess.status();
+        promises.push(relayStatus);
+    }
     const serverRunOptions: Deno.RunOptions =
     {
         cmd:
@@ -478,12 +504,14 @@ export async function localhostDeno(args: Arguments)
                 "deno", "run", "--unstable", "--watch", "--allow-all",
                 "--import-map", "import-map.json", "server/daemon.tsx",
                 "--hostname", "localhost", "--tls", "cert/localhost/",
-                ...devtools
+                ...devtools, ...redis
             ],
         env: { DENO_DIR: ".cache/" }
     };
     const serverProcess = Deno.run(serverRunOptions);
-    await serverProcess.status();
+    const serverStatus = serverProcess.status();
+    promises.push(serverStatus);
+    await Promise.race(promises);
 }
 export function deploy(_args: Arguments)
 {
@@ -511,7 +539,7 @@ export async function deployServer(args: Arguments)
                 "deno", "run", "--unstable", "--allow-all",
                 "--import-map", "import-map.json",
                 "server/daemon.tsx", "--hostname", "0.0.0.0",
-                "--domain", args.domain, "--dgraph"
+                "--domain", args.domain, "--redis"
             ],
         env: { DENO_DIR: ".cache/" }
     };

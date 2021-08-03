@@ -13,7 +13,7 @@ import type { QueryReadUserArgs } from "../graphql/types.d.tsx";
 import type { UserInfo } from "../graphql/types.d.tsx";
 
 const args = yargs.default(Deno.args)
-    .usage("usage: $0 server/daemon.tsx --hostname <host> [--domain <name>] [--tls <path>] [--devtools]")
+    .usage("usage: $0 server/daemon.tsx --hostname <host> [--domain <name>] [--tls <path>] [--devtools] [--redis]")
     .hide("help")
     .hide("version")
     .hide("hostname")
@@ -23,7 +23,8 @@ const args = yargs.default(Deno.args)
 try
 {
     const encoder = new TextEncoder();
-    const redis = await Redis.create({ retries: 10 });
+    const redisAttributes = { retries: 10, failable: !args.redis };
+    const redis = await Redis.create(redisAttributes);
     try 
     {
         const schemaFields =
