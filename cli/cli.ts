@@ -1,10 +1,6 @@
 
-import * as fs from "@std/fs";
-import * as colors from "@std/colors";
-import * as async from "@std/async";
-import * as yargs from "@yargs/yargs";
-import { Arguments } from "@yargs/types";
-import * as opener from "opener";
+import { std, opener, yargs } from "../deps.ts";
+import type { Arguments } from "../deps.ts";
 
 import { Console, version } from "../server/server.tsx";
 export { version } from "../server/server.tsx";
@@ -17,19 +13,19 @@ export function all(_: Arguments)
     Console.error(`usage: ${command} <command> [options]`);
     Console.log(`Try \`${command} <command> --help\` for more information`);
     Console.log(`commands:`);
-    Console.print(`  clean\t\t${colors.italic(colors.black("(cleans temporary directories)"))}`);
-    Console.print(`  install\t\t${colors.italic(colors.black("(installs Yarn)"))}`);
-    Console.print(`  upgrade\t\t${colors.italic(colors.black("(upgrades Deno)"))}`);
-    Console.print(`  pkg\t\t${colors.italic(colors.black("(manages packages)"))}`);
-    Console.print(`  cache\t\t${colors.italic(colors.black("(caches packages)"))}`);
-    Console.print(`  bundle\t\t${colors.italic(colors.black("(bundles JavaScript)"))}`);
-    Console.print(`  codegen\t\t${colors.italic(colors.black("(generates GraphQL types)"))}`);
-    Console.print(`  localhost\t\t${colors.italic(colors.black("(runs server on localhost)"))}`);
-    Console.print(`  deploy\t\t${colors.italic(colors.black("(runs live deployment)"))}`);
-    Console.print(`  test\t\t${colors.italic(colors.black("(runs automated tests)"))}`);
-    Console.print(`  docker\t\t${colors.italic(colors.black("(manages Docker)"))}`);
-    Console.print(`  sync\t\t${colors.italic(colors.black("(sync files to server)"))}`);
-    Console.print(`  help\t\t${colors.italic(colors.black("(prints help)"))}`);
+    Console.print(`  clean\t\t${std.colors.italic(std.colors.black("(cleans temporary directories)"))}`);
+    Console.print(`  install\t\t${std.colors.italic(std.colors.black("(installs Yarn)"))}`);
+    Console.print(`  upgrade\t\t${std.colors.italic(std.colors.black("(upgrades Deno)"))}`);
+    Console.print(`  pkg\t\t${std.colors.italic(std.colors.black("(manages packages)"))}`);
+    Console.print(`  cache\t\t${std.colors.italic(std.colors.black("(caches packages)"))}`);
+    Console.print(`  bundle\t\t${std.colors.italic(std.colors.black("(bundles JavaScript)"))}`);
+    Console.print(`  codegen\t\t${std.colors.italic(std.colors.black("(generates GraphQL types)"))}`);
+    Console.print(`  localhost\t\t${std.colors.italic(std.colors.black("(runs server on localhost)"))}`);
+    Console.print(`  deploy\t\t${std.colors.italic(std.colors.black("(runs live deployment)"))}`);
+    Console.print(`  test\t\t${std.colors.italic(std.colors.black("(runs automated tests)"))}`);
+    Console.print(`  docker\t\t${std.colors.italic(std.colors.black("(manages Docker)"))}`);
+    Console.print(`  sync\t\t${std.colors.italic(std.colors.black("(sync files to server)"))}`);
+    Console.print(`  help\t\t${std.colors.italic(std.colors.black("(prints help)"))}`);
     return;
 }
 export async function clean(args: Arguments)
@@ -51,11 +47,11 @@ export async function clean(args: Arguments)
         directories.push("node_modules/");
 
     for (const directory of directories)
-        if (await fs.exists(directory))
+        if (await std.fs.exists(directory))
             await Deno.remove(directory, { recursive: true });
 
     for (const directory of directories)
-        await fs.ensureDir(directory);
+        await std.fs.ensureDir(directory);
 }
 export async function install(args: Arguments)
 {
@@ -90,9 +86,9 @@ export async function upgrade(args: Arguments)
 export function pkg(_args: Arguments)
 {
     Console.log(`commands:`);
-    Console.print(`  pkg:add --host <host> <packages...>\t${colors.italic(colors.black("(adds new packages)"))}`);
-    Console.print(`  pkg:remove <packages...>\t\t\t${colors.italic(colors.black("(removes existing packages)"))}`);
-    Console.print(`  pkg:update [packages...]\t\t\t${colors.italic(colors.black("(updates pacakges)"))}`);
+    Console.print(`  pkg:add --host <host> <packages...>\t${std.colors.italic(std.colors.black("(adds new packages)"))}`);
+    Console.print(`  pkg:remove <packages...>\t\t\t${std.colors.italic(std.colors.black("(removes existing packages)"))}`);
+    Console.print(`  pkg:update [packages...]\t\t\t${std.colors.italic(std.colors.black("(updates pacakges)"))}`);
     return;
 }
 export async function pkgAdd(args: Arguments)
@@ -239,11 +235,11 @@ export async function cache(args: Arguments)
         if (!status.success)
         {
             Console.error("Failed to unzip cache");
-            if (await fs.exists(".cache.zip"))
+            if (await std.fs.exists(".cache.zip"))
                 await Deno.remove(".cache.zip");
             return status.code;
         }
-        if (await fs.exists(".cache.zip"))
+        if (await std.fs.exists(".cache.zip"))
             await Deno.remove(".cache.zip");
     }
 
@@ -296,8 +292,8 @@ export async function cache(args: Arguments)
 export function bundle(_args: Arguments)
 {
     Console.log(`commands:`);
-    Console.print(`  bundle:relay\t${colors.italic(colors.black("(runs Relay compiler)"))}`);
-    Console.print(`  bundle:snowpack\t${colors.italic(colors.black("(runs Snowpack build)"))}`);
+    Console.print(`  bundle:relay\t${std.colors.italic(std.colors.black("(runs Relay compiler)"))}`);
+    Console.print(`  bundle:snowpack\t${std.colors.italic(std.colors.black("(runs Snowpack build)"))}`);
 }
 export async function bundleRelay(args: Arguments)
 {
@@ -372,7 +368,7 @@ export async function bundleSnowpack(args: Arguments)
     let newPath: boolean = false as const;
     const resetLastPaths = async function ()
     {
-        await async.delay(5000);
+        await std.async.delay(5000);
         lastPaths = new Set();
     };
     for await (const change of watcher)
@@ -426,8 +422,8 @@ export async function codegen(args: Arguments)
 export function localhost(_args: Arguments)
 {
     Console.log(`commands:`);
-    Console.print(`  localhost:snowpack\t\t\t${colors.italic(colors.black("(runs Snowpack dev server)"))}`);
-    Console.print(`  localhost:deno [--devtools] [--redis]\t${colors.italic(colors.black("(runs Deno live server)"))}`);
+    Console.print(`  localhost:snowpack\t\t\t${std.colors.italic(std.colors.black("(runs Snowpack dev server)"))}`);
+    Console.print(`  localhost:deno [--devtools]\t${std.colors.italic(std.colors.black("(runs Deno live server)"))}`);
     return;
 }
 export async function localhostSnowpack(args: Arguments)
@@ -454,7 +450,7 @@ export async function localhostDeno(args: Arguments)
 {
     if (args.help)
     {
-        Console.log(`usage: ${command} localhost:deno [--devtools] [--redis]`);
+        Console.log(`usage: ${command} localhost:deno [--devtools]`);
         return;
     }
     await bundleSnowpack({ _: [], url: "https://localhost:3443/" });
@@ -465,7 +461,7 @@ export async function localhostDeno(args: Arguments)
         {
             try
             {
-                await async.delay(750);
+                await std.async.delay(750);
                 const init = { headers: { "x-http-only": "" } };
                 await fetch("http://localhost:3080/", init);
                 return;
@@ -481,7 +477,6 @@ export async function localhostDeno(args: Arguments)
     ready().then(onReady);
 
     const devtools = args.devtools ? ["--devtools"] : [];
-    const redis = args.redis ? ["--redis"] : [];
     const promises = [];
     if (args.devtools)
     {
@@ -504,7 +499,7 @@ export async function localhostDeno(args: Arguments)
                 "deno", "run", "--unstable", "--watch", "--allow-all",
                 "--import-map", "import-map.json", "server/daemon.tsx",
                 "--hostname", "localhost", "--tls", "cert/localhost/",
-                ...devtools, ...redis
+                ...devtools
             ],
         env: { DENO_DIR: ".cache/" }
     };
@@ -516,8 +511,8 @@ export async function localhostDeno(args: Arguments)
 export function deploy(_args: Arguments)
 {
     Console.log(`commands:`);
-    Console.print(`  deploy:server --domain <domain>\t${colors.italic(colors.black("(runs webserver)"))}`);
-    Console.print(`  deploy:dgraph\t\t\t${colors.italic(colors.black("(runs DGraph Zero and Alpha node)"))}`);
+    Console.print(`  deploy:server --domain <domain>\t${std.colors.italic(std.colors.black("(runs webserver)"))}`);
+    Console.print(`  deploy:dgraph\t\t\t${std.colors.italic(std.colors.black("(runs DGraph Zero and Alpha node)"))}`);
     return;
 }
 export async function deployServer(args: Arguments)
@@ -539,7 +534,7 @@ export async function deployServer(args: Arguments)
                 "deno", "run", "--unstable", "--allow-all",
                 "--import-map", "import-map.json",
                 "server/daemon.tsx", "--hostname", "0.0.0.0",
-                "--domain", args.domain, "--redis"
+                "--domain", args.domain
             ],
         env: { DENO_DIR: ".cache/" }
     };
@@ -604,9 +599,9 @@ export async function test(args: Arguments)
 export function docker(_args: Arguments)
 {
     Console.log(`commands:`);
-    Console.print(`  docker:prune\t\t\t\t\t${colors.italic(colors.black("(prunes unused resources)"))}`);
-    Console.print(`  docker:image --target <target> --tag <tag>\t${colors.italic(colors.black("(builds Docker image)"))}`);
-    Console.print(`  docker:container --tag <tag>\t\t\t${colors.italic(colors.black("(runs Docker container)"))}`);
+    Console.print(`  docker:prune\t\t\t\t\t${std.colors.italic(std.colors.black("(prunes unused resources)"))}`);
+    Console.print(`  docker:image --target <target> --tag <tag>\t${std.colors.italic(std.colors.black("(builds Docker image)"))}`);
+    Console.print(`  docker:container --tag <tag>\t\t\t${std.colors.italic(std.colors.black("(runs Docker container)"))}`);
     return;
 }
 export async function dockerPrune(args: Arguments)
@@ -721,19 +716,19 @@ export function help(_: Arguments)
     Console.log(`usage: ${command} <command> [options]`);
     Console.log(`Try \`${command} <command> --help\` for more information`);
     Console.log(`commands:`);
-    Console.print(`  clean\t\t${colors.italic(colors.black("(cleans temporary directories)"))}`);
-    Console.print(`  install\t\t${colors.italic(colors.black("(installs Yarn)"))}`);
-    Console.print(`  upgrade\t\t${colors.italic(colors.black("(upgrades Deno)"))}`);
-    Console.print(`  pkg\t\t${colors.italic(colors.black("(manages packages)"))}`);
-    Console.print(`  cache\t\t${colors.italic(colors.black("(caches packages)"))}`);
-    Console.print(`  bundle\t\t${colors.italic(colors.black("(bundles JavaScript)"))}`);
-    Console.print(`  codegen\t\t${colors.italic(colors.black("(generates GraphQL types)"))}`);
-    Console.print(`  localhost\t\t${colors.italic(colors.black("(runs server on localhost)"))}`);
-    Console.print(`  deploy\t\t${colors.italic(colors.black("(runs live deployment)"))}`);
-    Console.print(`  test\t\t${colors.italic(colors.black("(runs automated tests)"))}`);
-    Console.print(`  docker\t\t${colors.italic(colors.black("(manages Docker)"))}`);
-    Console.print(`  sync\t\t${colors.italic(colors.black("(sync files to server)"))}`);
-    Console.print(`  help\t\t${colors.italic(colors.black("(prints help)"))}`);
+    Console.print(`  clean\t\t${std.colors.italic(std.colors.black("(cleans temporary directories)"))}`);
+    Console.print(`  install\t\t${std.colors.italic(std.colors.black("(installs Yarn)"))}`);
+    Console.print(`  upgrade\t\t${std.colors.italic(std.colors.black("(upgrades Deno)"))}`);
+    Console.print(`  pkg\t\t${std.colors.italic(std.colors.black("(manages packages)"))}`);
+    Console.print(`  cache\t\t${std.colors.italic(std.colors.black("(caches packages)"))}`);
+    Console.print(`  bundle\t\t${std.colors.italic(std.colors.black("(bundles JavaScript)"))}`);
+    Console.print(`  codegen\t\t${std.colors.italic(std.colors.black("(generates GraphQL types)"))}`);
+    Console.print(`  localhost\t\t${std.colors.italic(std.colors.black("(runs server on localhost)"))}`);
+    Console.print(`  deploy\t\t${std.colors.italic(std.colors.black("(runs live deployment)"))}`);
+    Console.print(`  test\t\t${std.colors.italic(std.colors.black("(runs automated tests)"))}`);
+    Console.print(`  docker\t\t${std.colors.italic(std.colors.black("(manages Docker)"))}`);
+    Console.print(`  sync\t\t${std.colors.italic(std.colors.black("(sync files to server)"))}`);
+    Console.print(`  help\t\t${std.colors.italic(std.colors.black("(prints help)"))}`);
     return;
 }
 
@@ -744,7 +739,7 @@ if (import.meta.main)
         .command("*", "", {}, all)
         .command("version", "", {}, function (_: Arguments)
         {
-            Console.log(`${colors.bold("https")}${colors.reset("aurus")} ${version.string()}`);
+            Console.log(`${std.colors.bold("https")}${std.colors.reset("aurus")} ${version.string()}`);
         })
         .command("clean", "", {}, clean)
         .command("install", "", {}, install)

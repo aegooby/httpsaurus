@@ -1,7 +1,5 @@
 
-import * as async from "@std/async";
-
-import * as redis from "redis";
+import { std, redis } from "../deps.ts";
 
 import { Console } from "./console.tsx";
 
@@ -1007,7 +1005,7 @@ export class Redis
                 if (!(error instanceof Deno.errors.ConnectionRefused))
                     throw new Error("Failed to connect to Redis");
             }
-            await async.delay(500);
+            await std.async.delay(500);
         }
 
         if (!instance.main.isConnected && !attributes.failable)

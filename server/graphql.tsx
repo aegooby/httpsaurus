@@ -1,11 +1,5 @@
 
-import * as async from "@std/async";
-
-import * as Oak from "oak";
-import * as Apollo from "apollo-graphql";
-import * as graphql from "graphql";
-import * as graphqlRelay from "graphql-relay";
-import * as playground from "graphql-playground";
+import { Oak, Apollo, graphql, Relay, playground, std } from "../deps.ts";
 
 import { Console } from "./console.tsx";
 
@@ -33,7 +27,7 @@ export class GraphQL
     private schema: string = {} as string;
     private resolverSchema: graphql.GraphQLSchema = {} as graphql.GraphQLSchema;
     private resolvers: Apollo.GraphQLResolverMap = {};
-    private playground: async.Deferred<string> = async.deferred();
+    private playground: std.async.Deferred<string> = std.async.deferred();
     private secure: boolean = {} as boolean;
 
     private constructor()

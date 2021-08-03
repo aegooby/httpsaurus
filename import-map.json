@@ -19,7 +19,6 @@
         "react-dom": "https://esm.sh/react-dom",
         "react-dom/server": "https://esm.sh/react-dom/server",
         "react-router-dom": "https://esm.sh/react-router-dom@next",
-        "react-router-dom/server": "https://esm.sh/react-router-dom@next/server",
         "react-helmet": "https://esm.sh/react-helmet",
         "react-responsive": "https://esm.sh/react-responsive",
         "react-relay": "https://esm.sh/react-relay",

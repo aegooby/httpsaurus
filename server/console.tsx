@@ -1,6 +1,5 @@
 
-import * as colors from "@std/colors";
-import * as datetime from "@std/datetime";
+import { std } from "../deps.ts";
 
 export interface ConsoleAttributes
 {
@@ -21,7 +20,7 @@ export class Console
     private static encoder: TextEncoder = new TextEncoder();
     private static timestamp(): string
     {
-        return datetime.format(new Date(), "MM-dd-yyyy hh:mm a");
+        return std.datetime.format(new Date(), "MM-dd-yyyy hh:mm a");
     }
     public static clear(stream: Stream, lines?: number)
     {
@@ -35,7 +34,7 @@ export class Console
     }
     private static write(stream: Stream, token: string, message: unknown, attributes?: ConsoleAttributes): void
     {
-        const time = attributes?.time ? colors.black(`(${this.timestamp()})`) : undefined;
+        const time = attributes?.time ? std.colors.black(`(${this.timestamp()})`) : undefined;
         const value = typeof message === "string" ? message as string : Deno.inspect(message);
         if (attributes?.clear)
             stream.writeSync(this.encoder.encode("\x1b[A\x1b[K"));
@@ -44,22 +43,22 @@ export class Console
     }
     public static log(message: unknown, attributes?: ConsoleAttributes): void
     {
-        const token = colors.bold(colors.cyan("[*]"));
+        const token = std.colors.bold(std.colors.cyan("[*]"));
         this.write(Deno.stdout, token, message, attributes);
     }
     public static success(message: unknown, attributes?: ConsoleAttributes): void
     {
-        const token = colors.bold(colors.green("[$]"));
+        const token = std.colors.bold(std.colors.green("[$]"));
         this.write(Deno.stdout, token, message, attributes);
     }
     public static warn(message: unknown, attributes?: ConsoleAttributes): void
     {
-        const token = colors.bold(colors.yellow("[?]"));
+        const token = std.colors.bold(std.colors.yellow("[?]"));
         this.write(Deno.stderr, token, message, attributes);
     }
     public static error(message: unknown, attributes?: ConsoleAttributes): void
     {
-        const token = colors.bold(colors.red("[!]"));
+        const token = std.colors.bold(std.colors.red("[!]"));
         this.write(Deno.stderr, token, message, attributes);
     }
     public static print(message: unknown, attributes?: ConsoleAttributes): void

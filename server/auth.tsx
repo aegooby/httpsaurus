@@ -1,7 +1,5 @@
 
-import * as jwt from "jsonwebtoken";
-import * as keypair from "keypair";
-import * as Oak from "oak";
+import { jwt, keypair, Oak } from "../deps.ts";
 
 import { Console } from "./console.tsx";
 import { Redis } from "./redis.tsx";
@@ -25,10 +23,11 @@ abstract class Token
     {
         this.verify = this.verify.bind(this);
     }
-    public verify<UserJWT extends UserJWTBase>(token: string): UserJWT
+    public verify<UserJWT extends UserJWTBase = never>(token: string): UserJWT
     {
-        const result = jwt.verify(token, this.keypair.private, { complete: true });
-        return (result as jwt.Jwt).payload as UserJWT;
+        const verified = jwt.verify(token, this.keypair.private, { complete: true });
+        const result = (verified as jwt.Jwt).payload as UserJWT;
+        return result;
     }
 }
 
@@ -46,7 +45,7 @@ class AccessToken extends Token
         instance.lifetime = attributes.lifetime;
         return instance;
     }
-    public create<UserJWT extends UserJWTBase>(payload: UserJWT): string
+    public create<UserJWT extends UserJWTBase = never>(payload: UserJWT): string
     {
         const options = { expiresIn: this.lifetime };
         const result = jwt.sign(payload, this.keypair.private, options);
@@ -68,7 +67,7 @@ class RefreshToken extends Token
         instance.lifetime = attributes.lifetime;
         return instance;
     }
-    public create<UserJWT extends UserJWTBase>(payload: UserJWT, context: Oak.Context): string
+    public create<UserJWT extends UserJWTBase = never>(payload: UserJWT, context: Oak.Context): string
     {
         const signOptions = { expiresIn: this.lifetime };
         const result = jwt.sign(payload, this.keypair.private, signOptions);
@@ -93,7 +92,7 @@ export interface AuthAttributes
 {
     redis: Redis;
 }
-export class Auth<UserJWT extends UserJWTBase>
+export class Auth<UserJWT extends UserJWTBase = never>
 {
     public static access = AccessToken.create({ path: "/jwt/access", lifetime: "15m" });
     public static refresh = RefreshToken.create({ path: "/jwt/refresh", lifetime: "7d" });
@@ -102,13 +101,13 @@ export class Auth<UserJWT extends UserJWTBase>
 
     private constructor() { }
 
-    public static async create<UserJWT extends UserJWTBase>(attributes: AuthAttributes): Promise<Auth<UserJWT>>
+    public static async create<UserJWT extends UserJWTBase = never>(attributes: AuthAttributes): Promise<Auth<UserJWT>>
     {
         const instance = new Auth<UserJWT>();
         instance.redis = attributes.redis;
         return await Promise.resolve(instance);
     }
-    public static authenticated<UserJWT extends UserJWTBase, Args = unknown>(condition?: (payload: UserJWT, args: Args) => boolean)
+    public static authenticated<UserJWT extends UserJWTBase = never, Args = unknown>(condition?: (payload: UserJWT, args: Args) => boolean)
     {
         return (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
         {
@@ -123,7 +122,7 @@ export class Auth<UserJWT extends UserJWTBase>
                 try
                 {
                     const token = authorization.replaceAll("Bearer ", "").replaceAll("bearer ", "");
-                    const payload = Auth.access.verify<UserJWT>(token);
+                    const payload: UserJWT = Auth.access.verify<UserJWT>(token);
                     context.state.payload = payload;
                     if (condition && !condition(payload, args))
                         throw new Error("Authentication condition not met");
@@ -137,14 +136,15 @@ export class Auth<UserJWT extends UserJWTBase>
             };
         };
     }
-    public static rateLimit(redis: Redis, options?: { limit?: number; expiry?: number; })
+    public static rateLimit(options?: { limit?: number; expiry?: number; })
     {
-        return (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
+        return (target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
         {
             const method = descriptor.value;
 
             descriptor.value = async (parent: unknown, args: unknown, context: Oak.Context) =>
             {
+                const redis = (target as Record<string, unknown>).redis as Redis;
                 const key = `rate-limit:${context.request.ip}`;
                 const count = await redis.main.incr(key);
                 const limit = options?.limit ?? 50;

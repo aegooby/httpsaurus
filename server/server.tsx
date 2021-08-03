@@ -1,13 +1,5 @@
 
-import * as path from "@std/path";
-import * as fs from "@std/fs";
-import * as colors from "@std/colors";
-import * as async from "@std/async";
-
-import * as React from "react";
-import * as ReactDOMServer from "react-dom/server";
-import * as Oak from "oak";
-import * as denoflate from "denoflate";
+import { std, React, ReactDOMServer, Oak, denoflate } from "../deps.ts";
 
 import { GraphQL } from "./graphql.tsx";
 import { Listener } from "./listener.tsx";
@@ -73,7 +65,7 @@ interface OakServer
     router: Oak.Router;
 }
 
-export class Server<UserJWT extends UserJWTBase>
+export class Server<UserJWT extends UserJWTBase = never>
 {
     private secure: boolean = {} as boolean;
     private domain: string = {} as string;
@@ -89,7 +81,7 @@ export class Server<UserJWT extends UserJWTBase>
     private port: number = {} as number;
     private portTls: number | undefined;
 
-    private closed: async.Deferred<StatusCode> = async.deferred();
+    private closed: std.async.Deferred<StatusCode> = std.async.deferred();
 
     private graphql: GraphQL = {} as GraphQL;
     private auth: Auth<UserJWT> = {} as Auth<UserJWT>;
@@ -117,7 +109,7 @@ export class Server<UserJWT extends UserJWTBase>
         this.serve = this.serve.bind(this);
         this.close = this.close.bind(this);
     }
-    public static async create<UserJWT extends UserJWTBase>(attributes: ServerAttributes): Promise<Server<UserJWT>>
+    public static async create<UserJWT extends UserJWTBase = never>(attributes: ServerAttributes): Promise<Server<UserJWT>>
     {
         const instance = new Server<UserJWT>();
 
@@ -157,8 +149,8 @@ export class Server<UserJWT extends UserJWTBase>
             {
                 hostname: attributes.hostname,
                 port: attributes.portTls as number,
-                certFile: path.join(attributes.cert ?? "", "fullchain.pem"),
-                keyFile: path.join(attributes.cert ?? "", "privkey.pem"),
+                certFile: std.path.join(attributes.cert ?? "", "fullchain.pem"),
+                keyFile: std.path.join(attributes.cert ?? "", "privkey.pem"),
                 alpnProtocols: ["http/1.1", "h2"],
                 transport: "tcp",
                 secure: true,
@@ -221,14 +213,15 @@ export class Server<UserJWT extends UserJWTBase>
             gzip: true,
             hidden: true,
             maxbuffer: 0x400,
-            root: path.join(".", this.public)
+            root: std.path.join(".", this.public)
         };
 
         /* Google verification pages */
-        const filename = path.basename(filepath);
+        const filename = std.path.basename(filepath);
         if (filename.startsWith("google") && filename.endsWith(".html"))
         {
-            const body = await Deno.readTextFile(path.join(".", this.public, `${filepath}.txt`));
+            const textfile = std.path.join(".", this.public, `${filepath}.txt`);
+            const body = await Deno.readTextFile(textfile);
             context.response.body = body;
             context.response.type = "text/plain";
             return;
@@ -297,10 +290,10 @@ export class Server<UserJWT extends UserJWTBase>
             }
 
             /* Convert URL to filepath. */
-            const filepath = path.join(".", this.public, context.request.url.pathname);
+            const filepath = std.path.join(".", this.public, context.request.url.pathname);
 
             /* File path not found or is not a file -> not static. */
-            if (!await fs.exists(filepath) || !(await Deno.stat(filepath)).isFile)
+            if (!await std.fs.exists(filepath) || !(await Deno.stat(filepath)).isFile)
                 return await this.react(context);
 
             await this.static(context);
@@ -354,10 +347,10 @@ export class Server<UserJWT extends UserJWTBase>
     private async compress(): Promise<void>
     {
         const ext = [".js", ".map", ".txt", ".css"];
-        const folder = path.join(".", this.public, "**", "*");
-        for await (const file of fs.expandGlob(folder))
+        const folder = std.path.join(".", this.public, "**", "*");
+        for await (const file of std.fs.expandGlob(folder))
         {
-            if ((await Deno.stat(file.path)).isFile && ext.includes(path.extname(file.path)))
+            if ((await Deno.stat(file.path)).isFile && ext.includes(std.path.extname(file.path)))
             {
                 const gunzipped = await Deno.readFile(file.path);
                 const gzipped = denoflate.gzip(gunzipped, undefined);
@@ -372,10 +365,10 @@ export class Server<UserJWT extends UserJWTBase>
             this.scriptElements.push(<script src="http://localhost:8097"></script>);
             this.scriptElements.push(<script src="http://localhost:9097"></script>);
         }
-        const folder = path.join(".", this.public, "scripts", "webpack", "*.js");
-        for await (const file of fs.expandGlob(folder))
+        const folder = std.path.join(".", this.public, "scripts", "webpack", "*.js");
+        for await (const file of std.fs.expandGlob(folder))
         {
-            const basename = path.basename(file.path);
+            const basename = std.path.basename(file.path);
             const [name, id, _] = basename.split(".", 3);
             if (name !== id)
                 this.scriptElements.push(<script src={`/scripts/webpack/${basename}`} defer></script>);
@@ -383,7 +376,7 @@ export class Server<UserJWT extends UserJWTBase>
     }
     public async serve(): Promise<never>
     {
-        Console.log(`${colors.bold("https")}${colors.reset("aurus")} ${version.string()}`);
+        Console.log(`${std.colors.bold("https")}${std.colors.reset("aurus")} ${version.string()}`);
         Console.log(`Building GraphQL...`);
         await this.graphql.build({ url: this.domain });
         Console.success(`GraphQL built`, { clear: true });
@@ -413,7 +406,7 @@ export class Server<UserJWT extends UserJWTBase>
 
         const linkString = function (link: string)
         {
-            return colors.underline(colors.magenta(link));
+            return std.colors.underline(std.colors.magenta(link));
         };
 
         while (true)
@@ -428,13 +421,13 @@ export class Server<UserJWT extends UserJWTBase>
                 const status = await Promise.race(promises);
                 Console.warn(`Restarting (status: ${status})`, { time: true, clear: true });
                 this.close();
-                this.closed = async.deferred();
+                this.closed = std.async.deferred();
             }
             catch (error)
             {
                 Console.warn(`Restarting due to error ${Deno.inspect(error)}`, { time: true });
                 this.close();
-                this.closed = async.deferred();
+                this.closed = std.async.deferred();
             }
         }
     }
