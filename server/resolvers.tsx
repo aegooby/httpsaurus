@@ -1,42 +1,30 @@
 
 import { std, Oak, scrypt } from "../deps.ts";
 
-import { Auth, Redis } from "./server.tsx";
+import { Auth, Redis, Server } from "./server.tsx";
 import type { Resolvers as GraphQLResolvers, QueryResolvers, MutationResolvers } from "../graphql/types.d.tsx";
 import type { User, UserJwt, UserPayload } from "../graphql/types.d.tsx";
 import type { QueryReadUserArgs } from "../graphql/types.d.tsx";
 import type { UserInfo } from "../graphql/types.d.tsx";
 
 const encoder = new TextEncoder();
-interface ResolverAttributes
+
+class Query implements QueryResolvers<Oak.Context>
 {
-    redis: Redis;
-}
-abstract class Resolver
-{
-    protected redis: Redis = {} as Redis;
-    constructor(attributes: ResolverAttributes)
+    private constructor() 
     {
-        this.redis = attributes.redis;
-    }
-}
-class Query extends Resolver implements QueryResolvers<Oak.Context>
-{
-    private constructor(attributes: ResolverAttributes) 
-    {
-        super(attributes);
         this.readUser = this.readUser.bind(this);
         this.readCurrentUser = this.readCurrentUser.bind(this);
     }
-    public static create(attributes: ResolverAttributes): Query
+    public static create(): Query
     {
-        const instance = new Query(attributes);
+        const instance = new Query();
         return instance;
     }
     @Auth.authenticated<UserJwt, QueryReadUserArgs>(function (payload, args) { return payload.id === args.id; })
     async readUser(_parent: unknown, args: QueryReadUserArgs, _context: Oak.Context)
     {
-        const results = JSON.parse(await this.redis.json.get(`users:${args.id}`, "$")) as unknown[];
+        const results = JSON.parse(await Server.redis.json.get(`users:${args.id}`, "$")) as unknown[];
         const user = results.pop() as User;
         user.id = args.id;
         return { user: user };
@@ -45,35 +33,34 @@ class Query extends Resolver implements QueryResolvers<Oak.Context>
     async readCurrentUser(_parent: unknown, _args: unknown, context: Oak.Context)
     {
         const payload = context.state.payload;
-        const results = JSON.parse(await this.redis.json.get(`users:${payload.id}`, "$")) as unknown[];
+        const results = JSON.parse(await Server.redis.json.get(`users:${payload.id}`, "$")) as unknown[];
         const user = results.pop() as User;
         user.id = payload.id;
         return { user: user };
     }
 }
 
-class Mutation extends Resolver implements MutationResolvers<Oak.Context>
+class Mutation implements MutationResolvers<Oak.Context>
 {
-    private constructor(attributes: ResolverAttributes) 
+    private constructor()
     {
-        super(attributes);
         this.createUser = this.createUser.bind(this);
         this.loginUser = this.loginUser.bind(this);
         this.logoutUser = this.logoutUser.bind(this);
         this.revokeUser = this.revokeUser.bind(this);
     }
-    public static create(attributes: ResolverAttributes): MutationResolvers<Oak.Context>
+    public static create(): MutationResolvers<Oak.Context>
     {
-        const instance = new Mutation(attributes);
+        const instance = new Mutation();
         return instance;
     }
-    @Auth.rateLimit()
+    @Auth.rateLimit(Server.redis)
     async createUser(_parent: unknown, args: { input: UserInfo; }, _context: Oak.Context)
     {
         const id = await std.uuid.v5.generate(std.uuid.v1.generate() as string, encoder.encode(crypto.randomUUID()));
 
         const escapedEmail = args.input.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
-        const search = await this.redis.search.search("users", `@email:{${escapedEmail}}`);
+        const search = await Server.redis.search.search("users", `@email:{${escapedEmail}}`);
 
         switch (typeof search)
         {
@@ -89,7 +76,7 @@ class Mutation extends Resolver implements MutationResolvers<Oak.Context>
             password: password,
             receipt: null
         };
-        await this.redis.json.set(`users:${id}`, "$", JSON.stringify(payload));
+        await Server.redis.json.set(`users:${id}`, "$", JSON.stringify(payload));
         const user: User =
         {
             id: id,
@@ -100,7 +87,7 @@ class Mutation extends Resolver implements MutationResolvers<Oak.Context>
     async loginUser(_parent: unknown, args: { input: UserInfo; }, context: Oak.Context)
     {
         const escapedEmail = args.input.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
-        const search = await this.redis.search.search("users", `@email:{${escapedEmail}}`);
+        const search = await Server.redis.search.search("users", `@email:{${escapedEmail}}`);
         switch (typeof search)
         {
             case "number":
@@ -139,21 +126,21 @@ class Mutation extends Resolver implements MutationResolvers<Oak.Context>
     async revokeUser(_parent: unknown, args: { id: string; }, _context: Oak.Context)
     {
         const receipt = await std.uuid.v5.generate(std.uuid.v1.generate() as string, encoder.encode(crypto.randomUUID()));
-        await this.redis.json.set(`users:${args.id}`, "$.receipt", `"${receipt}"`);
+        await Server.redis.json.set(`users:${args.id}`, "$.receipt", `"${receipt}"`);
         return { success: true };
     }
 }
 
-export class Resolvers implements GraphQLResolvers<Oak.Context>
+export class Resolvers
 {
-    Query: QueryResolvers<Oak.Context> = {} as QueryResolvers<Oak.Context>;
-    Mutation: MutationResolvers<Oak.Context> = {} as MutationResolvers<Oak.Context>;
     private constructor() { }
-    public static create(attributes: ResolverAttributes): Resolvers
+    public static create(): GraphQLResolvers<Oak.Context>
     {
-        const instance = new Resolvers();
-        instance.Query = Query.create(attributes);
-        instance.Mutation = Mutation.create(attributes);
-        return instance;
+        const resolvers: GraphQLResolvers<Oak.Context> =
+        {
+            Query: Query.create(),
+            Mutation: Mutation.create()
+        };
+        return resolvers;
     }
 }

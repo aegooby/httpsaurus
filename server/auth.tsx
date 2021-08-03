@@ -136,15 +136,14 @@ export class Auth<UserJWT extends UserJWTBase = never>
             };
         };
     }
-    public static rateLimit(options?: { limit?: number; expiry?: number; })
+    public static rateLimit(redis: Redis, options?: { limit?: number; expiry?: number; })
     {
-        return (target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
+        return (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
         {
             const method = descriptor.value;
 
             descriptor.value = async (parent: unknown, args: unknown, context: Oak.Context) =>
             {
-                const redis = (target as Record<string, unknown>).redis as Redis;
                 const key = `rate-limit:${context.request.ip}`;
                 const count = await redis.main.incr(key);
                 const limit = options?.limit ?? 50;

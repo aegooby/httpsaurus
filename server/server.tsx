@@ -51,8 +51,6 @@ export interface ServerAttributes
 
     headElements: Array<React.ReactElement>;
 
-    redis: Redis;
-
     devtools: boolean;
 
     schema: string;
@@ -65,8 +63,12 @@ interface OakServer
     router: Oak.Router;
 }
 
+const redis = await Redis.create({ retries: 10 });
+
 export class Server<UserJWT extends UserJWTBase = never>
 {
+    public static redis: Redis = redis;
+
     private secure: boolean = {} as boolean;
     private domain: string = {} as string;
     private routes: Map<string, string> = new Map<string, string>();
@@ -162,7 +164,7 @@ export class Server<UserJWT extends UserJWTBase = never>
         instance.oak = { app: new Oak.Application(), router: new Oak.Router() };
 
         instance.graphql = await GraphQL.create(attributes);
-        instance.auth = await Auth.create<UserJWT>(attributes);
+        instance.auth = await Auth.create<UserJWT>({ redis: Server.redis });
 
         instance.devtools = attributes.devtools;
 

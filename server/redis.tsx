@@ -972,7 +972,6 @@ export interface RedisAttributes
 {
     url?: string;
     retries: number;
-    failable?: boolean;
 }
 
 export class Redis
@@ -1003,12 +1002,12 @@ export class Redis
             catch (error: unknown)
             {
                 if (!(error instanceof Deno.errors.ConnectionRefused))
-                    throw new Error("Failed to connect to Redis");
+                    throw error;
             }
             await std.async.delay(500);
         }
 
-        if (!instance.main.isConnected && !attributes.failable)
+        if (!instance.main.isConnected)
             throw new Error("Failed to connect to Redis");
 
         instance.json = await RedisJSON.create({ redisMain: instance.main });

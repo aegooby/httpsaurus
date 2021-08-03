@@ -16,14 +16,12 @@ const args = yargs.default(Deno.args)
 
 try
 {
-    const redisAttributes = { retries: 10 };
-    const redis = await Redis.create(redisAttributes);
     try 
     {
         const schemaFields =
             [{ name: "$.email", type: "TAG", as: "email", sortable: true }];
         const parameters = { prefix: [{ count: 1, name: "users:" }] };
-        await redis.search.create("users", "JSON", schemaFields, parameters);
+        await Server.redis.search.create("users", "JSON", schemaFields, parameters);
     }
     catch { undefined; }
 
@@ -40,12 +38,10 @@ try
 
         headElements: [],
 
-        redis: redis,
-
         devtools: !!args.devtools,
 
         schema: "graphql/schema.gql",
-        resolvers: Resolvers.create({ redis: redis }),
+        resolvers: Resolvers.create(),
     };
     const httpserver = await Server.create<UserJwt>(serverAttributes);
 
