@@ -368,7 +368,10 @@ export class Server<UserJWT extends UserJWTBase>
     private async scripts(): Promise<void>
     {
         if (this.devtools)
+        {
             this.scriptElements.push(<script src="http://localhost:8097"></script>);
+            this.scriptElements.push(<script src="http://localhost:9097"></script>);
+        }
         const folder = path.join(".", this.public, "scripts", "webpack", "*.js");
         for await (const file of fs.expandGlob(folder))
         {
