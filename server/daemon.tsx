@@ -13,7 +13,7 @@ import type { QueryReadUserArgs } from "../graphql/types.d.tsx";
 import type { UserInfo } from "../graphql/types.d.tsx";
 
 const args = yargs.default(Deno.args)
-    .usage("usage: $0 server/daemon.tsx --hostname <host> [--domain <name>] [--tls <path>]")
+    .usage("usage: $0 server/daemon.tsx --hostname <host> [--domain <name>] [--tls <path>] [--devtools]")
     .hide("help")
     .hide("version")
     .hide("hostname")
@@ -26,10 +26,13 @@ try
     const redis = await Redis.create({ retries: 10 });
     try 
     {
-        const schemaFields = [{ name: "$.email", type: "TAG", as: "email", sortable: true }];
-        await redis.search.create("users", "JSON", schemaFields, { prefix: [{ count: 1, name: "users:" }] });
+        const schemaFields =
+            [{ name: "$.email", type: "TAG", as: "email", sortable: true }];
+        const parameters = { prefix: [{ count: 1, name: "users:" }] };
+        await redis.search.create("users", "JSON", schemaFields, parameters);
     }
     catch { undefined; }
+
 
     class Query implements QueryResolvers<Oak.Context>
     {
@@ -172,6 +175,8 @@ try
         headElements: [],
 
         redis: redis,
+
+        devtools: !!args.devtools,
 
         schema: "graphql/schema.gql",
         resolvers: resolvers,

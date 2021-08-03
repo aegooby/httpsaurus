@@ -61,6 +61,8 @@ export interface ServerAttributes
 
     redis: Redis;
 
+    devtools: boolean;
+
     schema: string;
     resolvers: unknown;
 }
@@ -91,6 +93,8 @@ export class Server<UserJWT extends UserJWTBase>
 
     private graphql: GraphQL = {} as GraphQL;
     private auth: Auth<UserJWT> = {} as Auth<UserJWT>;
+
+    private devtools: boolean = {} as boolean;
 
     private headElements: Array<React.ReactElement> = [];
 
@@ -167,6 +171,8 @@ export class Server<UserJWT extends UserJWTBase>
 
         instance.graphql = await GraphQL.create(attributes);
         instance.auth = await Auth.create<UserJWT>(attributes);
+
+        instance.devtools = attributes.devtools;
 
         if (attributes.domain)
         {
@@ -361,6 +367,8 @@ export class Server<UserJWT extends UserJWTBase>
     }
     private async scripts(): Promise<void>
     {
+        if (this.devtools)
+            this.scriptElements.push(<script src="http://localhost:8097"></script>);
         const folder = path.join(".", this.public, "scripts", "webpack", "*.js");
         for await (const file of fs.expandGlob(folder))
         {

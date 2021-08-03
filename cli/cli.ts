@@ -445,7 +445,7 @@ export async function localhostSnowpack(_args: Arguments)
     process.close();
     return;
 }
-export async function localhostDeno(_args: Arguments)
+export async function localhostDeno(args: Arguments)
 {
     await bundleSnowpack({ _: [], url: "https://localhost:3443/" });
 
@@ -470,13 +470,15 @@ export async function localhostDeno(_args: Arguments)
     };
     ready().then(onReady);
 
+    const devtools = args.devtools ? ["--devtools"] : [];
     const serverRunOptions: Deno.RunOptions =
     {
         cmd:
             [
                 "deno", "run", "--unstable", "--watch", "--allow-all",
                 "--import-map", "import-map.json", "server/daemon.tsx",
-                "--hostname", "localhost", "--tls", "cert/localhost/"
+                "--hostname", "localhost", "--tls", "cert/localhost/",
+                ...devtools
             ],
         env: { DENO_DIR: ".cache/" }
     };
