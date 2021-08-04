@@ -16,15 +16,6 @@ const args = yargs.default(Deno.args)
 
 try
 {
-    try 
-    {
-        const schemaFields =
-            [{ name: "$.email", type: "TAG", as: "email", sortable: true }];
-        const parameters = { prefix: [{ count: 1, name: "users:" }] };
-        await Server.redis.search.create("users", "JSON", schemaFields, parameters);
-    }
-    catch { undefined; }
-
     const serverAttributes: ServerAttributes =
     {
         secure: !!args.tls,
@@ -44,6 +35,15 @@ try
         resolvers: Resolvers.create(),
     };
     const httpserver = await Server.create<UserJwt>(serverAttributes);
+
+    try 
+    {
+        const schemaFields =
+            [{ name: "$.email", type: "TAG", as: "email", sortable: true }];
+        const parameters = { prefix: [{ count: 1, name: "users:" }] };
+        await Server.redis.search.create("users", "JSON", schemaFields, parameters);
+    }
+    catch { undefined; }
 
     await httpserver.serve();
 }
