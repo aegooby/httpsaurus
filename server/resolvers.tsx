@@ -54,7 +54,7 @@ class Mutation implements MutationResolvers<Oak.Context>
         const instance = new Mutation();
         return instance;
     }
-    @Auth.rateLimit(Server.redis)
+    @Auth.rateLimit()
     async createUser(_parent: unknown, args: { input: UserInfo; }, _context: Oak.Context)
     {
         const id = await std.uuid.v5.generate(std.uuid.v1.generate() as string, encoder.encode(crypto.randomUUID()));

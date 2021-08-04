@@ -96,15 +96,15 @@ export class Auth<UserJWT extends UserJWTBase = never>
 {
     public static access = AccessToken.create({ path: "/jwt/access", lifetime: "15m" });
     public static refresh = RefreshToken.create({ path: "/jwt/refresh", lifetime: "7d" });
-
-    private redis: Redis = {} as Redis;
+    private static redis: Redis = {} as Redis;
 
     private constructor() { }
 
     public static async create<UserJWT extends UserJWTBase = never>(attributes: AuthAttributes): Promise<Auth<UserJWT>>
     {
+        Auth.redis = attributes.redis;
+
         const instance = new Auth<UserJWT>();
-        instance.redis = attributes.redis;
         return await Promise.resolve(instance);
     }
     public static authenticated<UserJWT extends UserJWTBase = never, Args = unknown>(condition?: (payload: UserJWT, args: Args) => boolean)
@@ -136,7 +136,7 @@ export class Auth<UserJWT extends UserJWTBase = never>
             };
         };
     }
-    public static rateLimit(redis: Redis, options?: { limit?: number; expiry?: number; })
+    public static rateLimit(options?: { limit?: number; expiry?: number; })
     {
         return (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
         {
@@ -145,7 +145,7 @@ export class Auth<UserJWT extends UserJWTBase = never>
             descriptor.value = async (parent: unknown, args: unknown, context: Oak.Context) =>
             {
                 const key = `rate-limit:${context.request.ip}`;
-                const count = await redis.main.incr(key);
+                const count = await Auth.redis.main.incr(key);
                 const limit = options?.limit ?? 50;
                 const expiry = options?.expiry ?? 60 * 60;
                 if (count > limit)
@@ -155,7 +155,7 @@ export class Auth<UserJWT extends UserJWTBase = never>
                     throw new Error(error);
                 }
                 else if (1 >= count)
-                    await redis.main.expire(key, expiry);
+                    await Auth.redis.main.expire(key, expiry);
                 return await method(parent, args, context);
             };
         };
@@ -174,7 +174,7 @@ export class Auth<UserJWT extends UserJWTBase = never>
             try 
             {
                 const payload = Auth.refresh.verify<UserJWT>(refresh);
-                const result = JSON.parse(await this.redis.json.get(`users:${payload.id}`, "$")).pop();
+                const result = JSON.parse(await Auth.redis.json.get(`users:${payload.id}`, "$")).pop();
                 if (!result)
                     throw new Error("User not found");
                 result.id = payload.id;

@@ -63,11 +63,9 @@ interface OakServer
     router: Oak.Router;
 }
 
-const redis = await Redis.create({ retries: 10 });
-
 export class Server<UserJWT extends UserJWTBase = never>
 {
-    public static redis: Redis = redis;
+    public static redis: Redis = {} as Redis;
 
     private secure: boolean = {} as boolean;
     private domain: string = {} as string;
@@ -113,6 +111,8 @@ export class Server<UserJWT extends UserJWTBase = never>
     }
     public static async create<UserJWT extends UserJWTBase = never>(attributes: ServerAttributes): Promise<Server<UserJWT>>
     {
+        Server.redis = await Redis.create({ retries: 10 });
+
         const instance = new Server<UserJWT>();
 
         instance.secure = attributes.secure;
