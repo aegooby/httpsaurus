@@ -13,25 +13,6 @@ export { Console } from "./console.tsx";
 export { Redis } from "./redis.tsx";
 export { Auth } from "./auth.tsx";
 
-class Version
-{
-    public major: number;
-    public minor: number;
-    public patch: number;
-
-    constructor(major: number, minor: number, patch: number)
-    {
-        this.major = major;
-        this.minor = minor;
-        this.patch = patch;
-    }
-    public string()
-    {
-        return `v${this.major}.${this.minor}.${this.patch}`;
-    }
-}
-export const version: Version = new Version(2, 1, 0);
-
 enum StatusCode
 {
     success = 0,
@@ -378,7 +359,7 @@ export class Server<UserJWT extends UserJWTBase = never>
     }
     public async serve(): Promise<never>
     {
-        Console.log(`${std.colors.bold("https")}${std.colors.reset("aurus")} ${version.string()}`);
+        Console.log(`${std.colors.bold("https")}${std.colors.reset("aurus")}`);
         Console.log(`Building GraphQL...`);
         await this.graphql.build({ url: this.domain });
         Console.success(`GraphQL built`, { clear: true });
