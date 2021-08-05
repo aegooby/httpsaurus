@@ -8,7 +8,7 @@ export { version } from "../server/server.tsx";
 Deno.env.set("DENO_DIR", ".cache/");
 const [args, command] = [Deno.args, "turtle"];
 
-export function all(_: Arguments)
+export function all(_args: Arguments)
 {
     Console.error(`usage: ${command} <command> [options]`);
     Console.log(`Try \`${command} <command> --help\` for more information`);
@@ -26,14 +26,14 @@ export function all(_: Arguments)
     Console.print(`  docker\t\t${std.colors.italic(std.colors.black("(manages Docker)"))}`);
     Console.print(`  sync\t\t${std.colors.italic(std.colors.black("(sync files to server)"))}`);
     Console.print(`  help\t\t${std.colors.italic(std.colors.black("(prints help)"))}`);
-    return;
+    Deno.exit();
 }
 export async function clean(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} clean [--cache] [--dist] [--node]`);
-        return;
+        Deno.exit();
     }
     if (!args.cache && !args.dist && !args.node)
         args.all = true;
@@ -52,36 +52,38 @@ export async function clean(args: Arguments)
 
     for (const directory of directories)
         await std.fs.ensureDir(directory);
+
+    Deno.exit();
 }
 export async function install(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} install`);
-        return;
+        Deno.exit();
     }
     const npmProcess = Deno.run({ cmd: ["npm", "install", "--global", "yarn", "n"] });
     const npmStatus = await npmProcess.status();
     npmProcess.close();
     if (!npmStatus.success)
-        return npmStatus.code;
+        Deno.exit(npmStatus.code);
 
     const nProcess = Deno.run({ cmd: ["n", "latest"] });
     const nStatus = await nProcess.status();
     nProcess.close();
-    return nStatus.code;
+    Deno.exit(nStatus.code);
 }
 export async function upgrade(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} upgrade`);
-        return;
+        Deno.exit();
     }
     const process = Deno.run({ cmd: ["deno", "upgrade"] });
     const status = await process.status();
     process.close();
-    return status.code;
+    Deno.exit(status.code);
 }
 export function pkg(_args: Arguments)
 {
@@ -89,19 +91,19 @@ export function pkg(_args: Arguments)
     Console.print(`  pkg:add --host <host> <packages...>\t${std.colors.italic(std.colors.black("(adds new packages)"))}`);
     Console.print(`  pkg:remove <packages...>\t\t\t${std.colors.italic(std.colors.black("(removes existing packages)"))}`);
     Console.print(`  pkg:update [packages...]\t\t\t${std.colors.italic(std.colors.black("(updates pacakges)"))}`);
-    return;
+    Deno.exit();
 }
 export async function pkgAdd(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} pkg-add --host <host> <packages...>`);
-        return;
+        Deno.exit();
     }
     if (!args.host)
     {
         Console.error(`usage: ${command} pkg-add --host <host> <packages...>`);
-        return;
+        Deno.exit();
     }
     const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
     for (const arg of args._.slice(1) as string[])
@@ -148,13 +150,14 @@ export async function pkgAdd(args: Arguments)
         }
     }
     await Deno.writeTextFile("import-map.json", JSON.stringify(importMap, undefined, 4));
+    Deno.exit();
 }
 export async function pkgRemove(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} pkg-remove <packages...>`);
-        return;
+        Deno.exit();
     }
     const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
     for (const arg of args._ as string[])
@@ -163,13 +166,14 @@ export async function pkgRemove(args: Arguments)
             importMap.imports[arg] = undefined;
     }
     await Deno.writeTextFile("import-map.json", JSON.stringify(importMap, undefined, 4));
+    Deno.exit();
 }
 export async function pkgUpdate(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} pkg-update [packages...]`);
-        return;
+        Deno.exit();
     }
     const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
     const keys = (args._.length > 1 ? args._ : Object.keys(importMap.imports)) as string[];
@@ -205,13 +209,14 @@ export async function pkgUpdate(args: Arguments)
         catch { undefined; }
     }
     await Deno.writeTextFile("import-map.json", JSON.stringify(importMap, undefined, 4));
+    Deno.exit();
 }
 export async function cache(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} cache [--reload] [--remote]`);
-        return;
+        Deno.exit();
     }
 
     if (args.remote)
@@ -221,7 +226,7 @@ export async function cache(args: Arguments)
         if (!response.body)
         {
             Console.error("Unable to fetch remote cache");
-            return;
+            Deno.exit();
         }
         const body = await response.arrayBuffer();
         const binary = new Uint8Array(body);
@@ -237,7 +242,7 @@ export async function cache(args: Arguments)
             Console.error("Failed to unzip cache");
             if (await std.fs.exists(".cache.zip"))
                 await Deno.remove(".cache.zip");
-            return status.code;
+            Deno.exit(status.code);
         }
         if (await std.fs.exists(".cache.zip"))
             await Deno.remove(".cache.zip");
@@ -285,22 +290,24 @@ export async function cache(args: Arguments)
     yarnProcess.close();
 
     if (!denoStatus.success)
-        return denoStatus.code;
+        Deno.exit(denoStatus.code);
     if (!yarnStatus.success)
-        return yarnStatus.code;
+        Deno.exit(yarnStatus.code);
+    Deno.exit();
 }
 export function bundle(_args: Arguments)
 {
     Console.log(`commands:`);
     Console.print(`  bundle:relay\t${std.colors.italic(std.colors.black("(runs Relay compiler)"))}`);
     Console.print(`  bundle:snowpack\t${std.colors.italic(std.colors.black("(runs Snowpack build)"))}`);
+    Deno.exit();
 }
 export async function bundleRelay(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} bundle:relay`);
-        return;
+        Deno.exit();
     }
 
     const options: string[] = [];
@@ -328,20 +335,19 @@ export async function bundleRelay(args: Arguments)
     const relayProcess = Deno.run(relayRunOptions);
     const relayStatus = await relayProcess.status();
     relayProcess.close();
-    if (!relayStatus.success)
-        return relayStatus.code;
+    Deno.exit(relayStatus.code);
 }
 export async function bundleSnowpack(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} bundle:snowpack --url <endpoint> [--watch]`);
-        return;
+        Deno.exit();
     }
     if (!args.url)
     {
         Console.error(`usage: ${command} bundle:snowpack --url <endpoint> [--watch]`);
-        return;
+        Deno.exit();
     }
     const snowpackRunOptions: Deno.RunOptions =
     {
@@ -361,7 +367,7 @@ export async function bundleSnowpack(args: Arguments)
         const snowpackProcess = Deno.run(snowpackRunOptions);
         await snowpackProcess.status();
         snowpackProcess.close();
-        return;
+        Deno.exit();
     }
     const watcher = Deno.watchFs(["components", "client"], { recursive: true });
     let lastPaths: Set<string> = new Set();
@@ -397,13 +403,14 @@ export async function bundleSnowpack(args: Arguments)
         }
 
     }
+    Deno.exit();
 }
 export async function codegen(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} codegen [--watch]`);
-        return;
+        Deno.exit();
     }
     const watchArgs = args.watch ? ["--watch"] : [];
     const runOptions: Deno.RunOptions =
@@ -417,21 +424,21 @@ export async function codegen(args: Arguments)
     const process = Deno.run(runOptions);
     const status = await process.status();
     process.close();
-    return status.code;
+    Deno.exit(status.code);
 }
 export function localhost(_args: Arguments)
 {
     Console.log(`commands:`);
     Console.print(`  localhost:snowpack\t\t\t${std.colors.italic(std.colors.black("(runs Snowpack dev server)"))}`);
     Console.print(`  localhost:deno [--devtools]\t${std.colors.italic(std.colors.black("(runs Deno live server)"))}`);
-    return;
+    Deno.exit();
 }
 export async function localhostSnowpack(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} localhost:snowpack`);
-        return;
+        Deno.exit();
     }
     const runOptions: Deno.RunOptions =
     {
@@ -442,16 +449,16 @@ export async function localhostSnowpack(args: Arguments)
             ]
     };
     const process = Deno.run(runOptions);
-    await process.status();
+    const status = await process.status();
     process.close();
-    return;
+    Deno.exit(status.code);
 }
 export async function localhostDeno(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} localhost:deno [--devtools]`);
-        return;
+        Deno.exit();
     }
     await bundleSnowpack({ _: [], url: "https://localhost:3443/" });
 
@@ -507,25 +514,26 @@ export async function localhostDeno(args: Arguments)
     const serverStatus = serverProcess.status();
     promises.push(serverStatus);
     await Promise.race(promises);
+    Deno.exit();
 }
 export function deploy(_args: Arguments)
 {
     Console.log(`commands:`);
     Console.print(`  deploy:server --domain <domain>\t${std.colors.italic(std.colors.black("(runs webserver)"))}`);
     Console.print(`  deploy:dgraph\t\t\t${std.colors.italic(std.colors.black("(runs DGraph Zero and Alpha node)"))}`);
-    return;
+    Deno.exit();
 }
 export async function deployServer(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} deploy:server --domain <domain>`);
-        return;
+        Deno.exit();
     }
     if (!args.domain)
     {
         Console.error(`usage: ${command} deploy:server --domain <domain>`);
-        return;
+        Deno.exit();
     }
     const serverRunOptions: Deno.RunOptions =
     {
@@ -539,16 +547,16 @@ export async function deployServer(args: Arguments)
         env: { DENO_DIR: ".cache/" }
     };
     const serverProcess = Deno.run(serverRunOptions);
-    try { await serverProcess.status(); }
-    catch { undefined; }
+    const serverStatus = await serverProcess.status();
     serverProcess.close();
+    Deno.exit(serverStatus.code);
 }
 export async function deployDgraph(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} deploy:dgraph`);
-        return;
+        Deno.exit();
     }
     const zero = async function (): Promise<void>
     {
@@ -574,13 +582,14 @@ export async function deployDgraph(args: Arguments)
     };
 
     await Promise.race([zero(), alpha()]);
+    Deno.exit();
 }
 export async function test(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} test`);
-        return;
+        Deno.exit();
     }
     const runOptions: Deno.RunOptions =
     {
@@ -594,7 +603,7 @@ export async function test(args: Arguments)
     const process = Deno.run(runOptions);
     const status = await process.status();
     process.close();
-    return status.code;
+    Deno.exit(status.code);
 }
 export function docker(_args: Arguments)
 {
@@ -602,40 +611,42 @@ export function docker(_args: Arguments)
     Console.print(`  docker:prune\t\t\t\t\t${std.colors.italic(std.colors.black("(prunes unused resources)"))}`);
     Console.print(`  docker:image --target <target> --tag <tag>\t${std.colors.italic(std.colors.black("(builds Docker image)"))}`);
     Console.print(`  docker:container --tag <tag>\t\t\t${std.colors.italic(std.colors.black("(runs Docker container)"))}`);
-    return;
+    Deno.exit();
 }
 export async function dockerPrune(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} prune`);
-        return;
+        Deno.exit();
     }
     const containerProcess =
         Deno.run({ cmd: ["docker", "container", "prune", "--force"] });
     const containerStatus = await containerProcess.status();
     containerProcess.close();
     if (!containerStatus.success)
-        return containerStatus.code;
+        Deno.exit(containerStatus.code);
 
     const imageProcess =
         Deno.run({ cmd: ["docker", "image", "prune", "--force"] });
     const imageStatus = await imageProcess.status();
     imageProcess.close();
     if (!imageStatus.success)
-        return imageStatus.code;
+        Deno.exit(imageStatus.code);
+
+    Deno.exit();
 }
 export async function dockerImage(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} image --target <value> --tag <name> [--prune]`);
-        return;
+        Deno.exit();
     }
     if (!args.target || !args.tag)
     {
         Console.error(`usage: ${command} image --target <value> --tag <name> [--prune]`);
-        return;
+        Deno.exit();
     }
 
     if (args.prune)
@@ -647,19 +658,21 @@ export async function dockerImage(args: Arguments)
     const imageStatus = await imageProcess.status();
     imageProcess.close();
     if (!imageStatus.success)
-        return imageStatus.code;
+        Deno.exit(imageStatus.code);
+
+    Deno.exit();
 }
 export async function dockerContainer(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} container --tag <name> [--prune]`);
-        return;
+        Deno.exit();
     }
     if (!args.tag)
     {
         Console.error(`usage: ${command} container --tag <name> [--prune]`);
-        return;
+        Deno.exit();
     }
 
     if (args.prune)
@@ -679,14 +692,16 @@ export async function dockerContainer(args: Arguments)
     const containerStatus = await containerProcess.status();
     containerProcess.close();
     if (!containerStatus.success)
-        return containerStatus.code;
+        Deno.exit(containerStatus.code);
+
+    Deno.exit();
 }
 export async function sync(args: Arguments)
 {
     if (args.help)
     {
         Console.log(`usage: ${command} sync [--key <path>]`);
-        return;
+        Deno.exit();
     }
     const file = await Deno.readFile("config/rsync.json");
     const decoder = new TextDecoder();
@@ -709,7 +724,7 @@ export async function sync(args: Arguments)
     };
     const process = Deno.run(runOptions);
     const status = await process.status();
-    return status.code;
+    Deno.exit(status.code);
 }
 export function help(_: Arguments)
 {
@@ -729,7 +744,7 @@ export function help(_: Arguments)
     Console.print(`  docker\t\t${std.colors.italic(std.colors.black("(manages Docker)"))}`);
     Console.print(`  sync\t\t${std.colors.italic(std.colors.black("(sync files to server)"))}`);
     Console.print(`  help\t\t${std.colors.italic(std.colors.black("(prints help)"))}`);
-    return;
+    Deno.exit();
 }
 
 if (import.meta.main)
@@ -737,9 +752,10 @@ if (import.meta.main)
     yargs.default(args)
         .help(false)
         .command("*", "", {}, all)
-        .command("version", "", {}, function (_: Arguments)
+        .command("version", "", {}, function (_args: Arguments)
         {
             Console.log(`${std.colors.bold("https")}${std.colors.reset("aurus")} ${version.string()}`);
+            Deno.exit();
         })
         .command("clean", "", {}, clean)
         .command("install", "", {}, install)
