@@ -19,7 +19,7 @@ export default function Page(props: Props)
             <ReactHelmet.Helmet>
                 {props.helmet}
             </ReactHelmet.Helmet>
-            <Suspense fallback={props.lazy ? <></> : props.content} loading={props.lazy}>
+            <Suspense fallback={props.lazy ? <></> : props.content}>
                 {props.content}
             </Suspense>
         </>;
