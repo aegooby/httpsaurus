@@ -78,6 +78,8 @@ class RefreshToken extends Token
             secure: true,
             sameSite: "strict"
         };
+        /** @todo Check if this works with NGINX. */
+        context.cookies = new Oak.Cookies(context.request, context.response, cookieOptions);
         context.cookies.set("refresh", result, cookieOptions);
         return result;
     }
