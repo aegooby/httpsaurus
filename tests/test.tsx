@@ -6,6 +6,7 @@ try
     const tests: Deno.TestDefinition[] = [];
     for (const test of tests)
         Deno.test(test);
+    Deno.exit();
 }
 catch (error)
 {
