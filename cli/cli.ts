@@ -417,7 +417,7 @@ export function bundleSnowpack(): Command
             snowpackProcess.close();
             return;
         }
-        const watcher = Deno.watchFs(["components", "client"], { recursive: true });
+        const watcher = Deno.watchFs(["components", "client", "public"], { recursive: true });
         let lastPaths: Set<string> = new Set();
         let newPath: boolean = false as const;
         const resetLastPaths = async function ()
