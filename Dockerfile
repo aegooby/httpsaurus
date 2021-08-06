@@ -5,7 +5,7 @@ FROM aegooby/turtle:latest AS httpsaurus
 EXPOSE 3080
 
 WORKDIR /root/httpsaurus
-ADD . /root/httpsaurus
+COPY . /root/httpsaurus
 RUN cli/install.sh
 RUN turtle upgrade
 RUN turtle cache
