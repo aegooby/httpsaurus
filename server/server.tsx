@@ -227,6 +227,7 @@ export class Server<UserJWT extends UserJWTBase = never>
                     {this.scriptElements}
                     <link rel="icon" href="/favicon.ico" />
                     <link rel="stylesheet" href="/index.css" />
+                    <link rel="stylesheet" href="/nprogress.css" />
                     {this.headElements}
                 </head>
                 <body>

@@ -11,8 +11,13 @@
         "@graphql-codegen/typescript-resolvers": "^1.20.0",
         "@snowpack/plugin-react-refresh": "^2.5.0",
         "@snowpack/plugin-webpack": "^2.3.1",
+        "@types/nprogress": "^0.2.0",
         "@types/react": "^17.0.4",
         "@types/react-dom": "^17.0.3",
+        "@types/react-helmet": "^6.1.2",
+        "@types/react-relay": "^11.0.2",
+        "@types/react-responsive": "^8.0.3",
+        "@types/relay-runtime": "^11.0.2",
         "@types/snowpack-env": "^2.3.3",
         "babel-loader": "^8.2.2",
         "babel-plugin-relay": "^11.0.2",
@@ -27,6 +32,7 @@
         "typescript": "^4.2.3"
     },
     "dependencies": {
+        "@tanem/react-nprogress": "^3.0.76",
         "nprogress": "^0.2.0",
         "react": "^17.0.2",
         "react-dom": "^17.0.2",

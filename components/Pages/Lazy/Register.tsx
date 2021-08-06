@@ -4,8 +4,7 @@ import Relay from "react-relay/hooks";
 import * as ReactRouter from "react-router-dom";
 
 import { graphql } from "relay-runtime";
-import { environment, Environment, Console } from "../../Core/Core.tsx";
-import * as Loading from "../../Loading.tsx";
+import { environment, Environment, Console, useStartLoading } from "../../Core/Core.tsx";
 
 interface Value
 {
@@ -14,7 +13,6 @@ interface Value
 
 export default function Register()
 {
-    Loading.useFinishLoading();
     const [email, setEmail] = React.useState("");
     const [password, setPassword] = React.useState("");
 
@@ -57,7 +55,8 @@ export default function Register()
         const onCompleted = function (data: unknown)
         {
             Console.log(data);
-            navigate("/login");
+            useStartLoading();
+            navigate("/login", { state: { redirected: true, loading: useStartLoading() } });
         };
 
         const onError = function (error: unknown) 

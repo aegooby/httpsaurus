@@ -2,7 +2,7 @@
 import * as React from "react";
 import * as ReactRouter from "react-router-dom";
 
-import { useRefresh } from "./Core/Core.tsx";
+import { useRefresh, useStartLoading, useFinishLoading } from "./Core/Core.tsx";
 import { Spinner } from "./Loading.tsx";
 import Index from "./Pages/Index.tsx";
 import MobileProf from "./Pages/MobileProf.tsx";
@@ -19,6 +19,27 @@ export default function App(props: Props)
 {
     const [loading, effect] = useRefresh(props.client.fetchRefresh);
     React.useEffect(effect, []);
+
+    const state = ReactRouter.useLocation().state;
+    if (state && (state as Record<string, unknown>).redirected)
+    {
+        useFinishLoading();
+        (state as Record<string, unknown>).redirected = false;
+    }
+    const [loaded, setLoaded] = React.useState(false);
+    const loadingEffect = function ()
+    {
+        if (!loaded)
+            useStartLoading();
+        return function ()
+        {
+            useFinishLoading();
+            if (!loaded)
+                setLoaded(true);
+        };
+    };
+    React.useEffect(loadingEffect);
+
     if (loading()) return <Spinner />;
     else
     {

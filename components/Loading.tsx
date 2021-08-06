@@ -1,33 +1,5 @@
 
 import * as React from "react";
-import nprogress from "nprogress";
-
-import { environment, Environment } from "./Core/Core.tsx";
-
-export function useStartLoading()
-{
-    switch (environment())
-    {
-        case Environment.SERVER:
-            break;
-        case Environment.CLIENT:
-            if (!nprogress.isStarted())
-                nprogress.start();
-            break;
-    }
-}
-export function useFinishLoading()
-{
-    switch (environment())
-    {
-        case Environment.SERVER:
-            break;
-        case Environment.CLIENT:
-            if (nprogress.isStarted())
-                nprogress.done();
-            break;
-    }
-}
 
 export function Spinner()
 {

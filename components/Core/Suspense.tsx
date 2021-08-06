@@ -22,8 +22,6 @@ export function Suspense(props: SuspenseProps)
             { return <>{props.fallback}</>; }
         case Environment.CLIENT:
             {
-                if (props.loading && !nprogress.isStarted())
-                    React.useState(nprogress.start());
                 const suspense: React.ReactElement =
                     <React.Suspense fallback={props.fallback}>
                         {props.children}

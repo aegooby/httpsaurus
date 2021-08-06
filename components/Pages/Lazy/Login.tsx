@@ -4,8 +4,7 @@ import Relay from "react-relay/hooks";
 import { graphql } from "relay-runtime";
 import * as ReactRouter from "react-router-dom";
 
-import { environment, Environment, Console, useToken } from "../../Core/Core.tsx";
-import * as Loading from "../../Loading.tsx";
+import { environment, Environment, Console, useToken, useStartLoading } from "../../Core/Core.tsx";
 import type { LoginMutationResponse } from "./__generated__/LoginMutation.graphql.ts";
 
 interface Value
@@ -15,7 +14,6 @@ interface Value
 
 export default function Login()
 {
-    Loading.useFinishLoading();
     const [email, setEmail] = React.useState("");
     const [password, setPassword] = React.useState("");
 
@@ -59,7 +57,7 @@ export default function Login()
         {
             Console.log(data);
             useToken((data as LoginMutationResponse).loginUser.token);
-            navigate("/");
+            navigate("/", { state: { redirected: true, loading: useStartLoading() } });
         };
 
         const onError = function (_error: Error)

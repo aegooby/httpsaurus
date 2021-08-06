@@ -4,7 +4,6 @@ import Relay from "react-relay/hooks";
 import type { IndexQuery, IndexQueryResponse } from "../__generated__/IndexQuery.graphql.ts";
 
 import { Suspense } from "../../Core/Core.tsx";
-import * as Loading from "../../Loading.tsx";
 
 interface Props
 {
@@ -26,8 +25,6 @@ function LoginInfo(props: Props)
 
 export default function Index(props: Props)
 {
-    Loading.useFinishLoading();
-
     const element =
         <div className="page">
             <p>
