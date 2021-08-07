@@ -20,25 +20,15 @@ export default function App(props: Props)
     const [loading, effect] = useRefresh(props.client.fetchRefresh);
     React.useEffect(effect, []);
 
-    const state = ReactRouter.useLocation().state;
-    if (state && (state as Record<string, unknown>).redirected)
+    const location = ReactRouter.useLocation();
+    const state = location.state as Record<string, unknown> | null;
+    if (state && state.redirected)
     {
         useFinishLoading();
-        (state as Record<string, unknown>).redirected = false;
+        state.redirected = false;
     }
-    const [loaded, setLoaded] = React.useState(false);
-    const loadingEffect = function ()
-    {
-        if (!loaded)
-            useStartLoading();
-        return function ()
-        {
-            useFinishLoading();
-            if (!loaded)
-                setLoaded(true);
-        };
-    };
-    React.useEffect(loadingEffect);
+    React.useState(useStartLoading());
+    React.useState(useFinishLoading());
 
     if (loading()) return <Spinner />;
     else
