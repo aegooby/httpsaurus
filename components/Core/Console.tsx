@@ -1,2 +1,2 @@
 
-export { Console } from "../../client/console.tsx";
+export { Console } from "../../client/console.ts";

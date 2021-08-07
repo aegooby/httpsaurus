@@ -3,8 +3,8 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as Relay from "relay-runtime";
 
-import { Console } from "./console.tsx";
-export { Console } from "./console.tsx";
+import { Console } from "./console.ts";
+export { Console } from "./console.ts";
 
 interface Document
 {

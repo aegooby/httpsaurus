@@ -2,10 +2,9 @@
 import { std, Oak, scrypt } from "../deps.ts";
 
 import { Auth, Server } from "./server.tsx";
-import type { Resolvers as GraphQLResolvers, QueryResolvers, MutationResolvers } from "../graphql/types.d.tsx";
-import type { User, UserJwt, UserPayload } from "../graphql/types.d.tsx";
-import type { QueryReadUserArgs } from "../graphql/types.d.tsx";
-import type { UserInfo } from "../graphql/types.d.tsx";
+import type { Resolvers as GraphQLResolvers, QueryResolvers, MutationResolvers } from "../graphql/types.d.ts";
+import type { User, UserJwt, UserPayload } from "../graphql/types.d.ts";
+import type { UserInfo } from "../graphql/types.d.ts";
 
 const encoder = new TextEncoder();
 
@@ -21,8 +20,8 @@ class Query implements QueryResolvers<Oak.Context>
         const instance = new Query();
         return instance;
     }
-    @Auth.authenticated<UserJwt, QueryReadUserArgs>(function (payload, args) { return payload.id === args.id; })
-    async readUser(_parent: unknown, args: QueryReadUserArgs, _context: Oak.Context)
+    @Auth.authenticated<UserJwt, { id: string; }>(function (payload, args) { return payload.id === args.id; })
+    async readUser(_parent: unknown, args: { id: string; }, _context: Oak.Context)
     {
         const results = JSON.parse(await Server.redis.json.get(`users:${args.id}`, "$")) as unknown[];
         const result = results.pop();

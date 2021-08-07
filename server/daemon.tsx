@@ -1,10 +1,10 @@
 
 import { yargs } from "../deps.ts";
 
-import { Resolvers } from "./resolvers.tsx";
+import { Resolvers } from "./resolvers.ts";
 import { Server, Console } from "./server.tsx";
 import type { ServerAttributes } from "./server.tsx";
-import type { UserJwt } from "../graphql/types.d.tsx";
+import type { UserJwt } from "../graphql/types.d.ts";
 
 const args = yargs.default(Deno.args)
     .usage("usage: $0 server/daemon.tsx --hostname <host> [--domain <name>] [--tls <path>] [--devtools]")

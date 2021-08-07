@@ -1,7 +1,7 @@
 
 import { std, redis } from "../deps.ts";
 
-import { Console } from "./console.tsx";
+import { Console } from "./console.ts";
 
 interface RedisModuleAttributes
 {

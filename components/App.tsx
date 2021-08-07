@@ -9,7 +9,7 @@ import MobileProf from "./Pages/MobileProf.tsx";
 import Login from "./Pages/Login.tsx";
 import Register from "./Pages/Register.tsx";
 import Error from "./Pages/Error.tsx";
-import type { Client } from "../client/client.tsx";
+import type { Client } from "../client/client.ts";
 
 interface Props
 {

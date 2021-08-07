@@ -1,7 +1,7 @@
 
 import { Oak, Apollo, graphql, Relay, playground, std } from "../deps.ts";
 
-import { Console } from "./console.tsx";
+import { Console } from "./console.ts";
 
 
 interface GraphQLQuery
@@ -16,6 +16,8 @@ interface GraphQLAttributes
     schema: string;
     resolvers: unknown;
     secure: boolean;
+    port: number;
+    portTls: number | undefined;
 }
 interface GraphQLBuildAttributes
 {
@@ -29,6 +31,8 @@ export class GraphQL
     private resolvers: Apollo.GraphQLResolverMap = {};
     private playground: std.async.Deferred<string> = std.async.deferred();
     private secure: boolean = {} as boolean;
+    private port: number = {} as number;
+    private portTls: number | undefined = undefined;
 
     private constructor()
     {
@@ -48,6 +52,8 @@ export class GraphQL
         instance.schema = attributes.schema;
         instance.resolvers = attributes.resolvers as Apollo.GraphQLResolverMap;
         instance.secure = attributes.secure;
+        instance.port = attributes.port;
+        instance.portTls = attributes.portTls;
 
         return await Promise.resolve(instance);
     }
@@ -63,7 +69,9 @@ export class GraphQL
         switch (urlParsed.hostname)
         {
             case "localhost":
-                return this.secure ? "https://localhost:3443" : "http://localhost:3080";
+                return this.secure ?
+                    `https://localhost:${this.portTls}` :
+                    `http://localhost:${this.port}`;
             default:
                 return url;
         }

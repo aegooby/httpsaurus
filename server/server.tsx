@@ -1,17 +1,17 @@
 
 import { std, React, ReactDOMServer, Oak, denoflate } from "../deps.ts";
 
-import { GraphQL } from "./graphql.tsx";
-import { Listener } from "./listener.tsx";
-import type { ListenOptions, ListenBaseOptions, ListenTlsOptions } from "./listener.tsx";
-import { Auth } from "./auth.tsx";
-import { Redis } from "./redis.tsx";
-import type { UserJWTBase } from "./auth.tsx";
-import { Console } from "./console.tsx";
+import { GraphQL } from "./graphql.ts";
+import { Listener } from "./listener.ts";
+import type { ListenOptions, ListenBaseOptions, ListenTlsOptions } from "./listener.ts";
+import { Auth } from "./auth.ts";
+import { Redis } from "./redis.ts";
+import type { UserJWTBase } from "./auth.ts";
+import { Console } from "./console.ts";
 
-export { Console } from "./console.tsx";
-export { Redis } from "./redis.tsx";
-export { Auth } from "./auth.tsx";
+export { Console } from "./console.ts";
+export { Redis } from "./redis.ts";
+export { Auth } from "./auth.ts";
 
 enum StatusCode
 {

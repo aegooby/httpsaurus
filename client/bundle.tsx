@@ -3,8 +3,8 @@ import * as React from "react";
 import * as ReactRouter from "react-router-dom";
 import Relay from "react-relay/hooks";
 
-import { Client, Console } from "./client.tsx";
-import type { Snowpack } from "./client.tsx";
+import { Client, Console } from "./client.ts";
+import type { Snowpack } from "./client.ts";
 
 import App from "../components/App.tsx";
 

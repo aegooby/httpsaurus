@@ -1,5 +1,5 @@
 
-import { Client } from "../../client/client.tsx";
+import { Client } from "../../client/client.ts";
 
 export function useToken(value?: string | null): string | undefined
 {

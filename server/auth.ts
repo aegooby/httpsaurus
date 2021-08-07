@@ -1,8 +1,7 @@
 
 import { jwt, keypair, Oak } from "../deps.ts";
 
-import { Console } from "./console.tsx";
-import { Redis } from "./redis.tsx";
+import { Redis } from "./redis.ts";
 
 interface TokenAttributes
 {
