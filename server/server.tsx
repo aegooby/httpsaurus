@@ -33,6 +33,7 @@ export interface ServerAttributes
     headElements: Array<React.ReactElement>;
 
     devtools: boolean;
+    redis: boolean;
 
     schema: string;
     resolvers: unknown;
@@ -92,7 +93,8 @@ export class Server<UserJWT extends UserJWTBase = never>
     }
     public static async create<UserJWT extends UserJWTBase = never>(attributes: ServerAttributes): Promise<Server<UserJWT>>
     {
-        Server.redis = await Redis.create({ retries: 10 });
+        if (!attributes.redis)
+            Server.redis = await Redis.create({});
 
         const instance = new Server<UserJWT>();
 
@@ -173,7 +175,7 @@ export class Server<UserJWT extends UserJWTBase = never>
     {
         return `${this.protocol}://${this.hostname}`;
     }
-    private www(): Oak.Middleware
+    public www(): Oak.Middleware
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
@@ -188,7 +190,7 @@ export class Server<UserJWT extends UserJWTBase = never>
             await next();
         };
     }
-    private async static(context: Oak.Context): Promise<void>
+    public async static(context: Oak.Context): Promise<void>
     {
         const filepath = context.request.url.pathname;
         const sendOptions: Oak.SendOptions =
@@ -212,7 +214,7 @@ export class Server<UserJWT extends UserJWTBase = never>
 
         await Oak.send(context, filepath, sendOptions);
     }
-    private async react(context: Oak.Context): Promise<void>
+    public async react(context: Oak.Context): Promise<void>
     {
         context.response.type = "text/html";
 
@@ -247,7 +249,7 @@ export class Server<UserJWT extends UserJWTBase = never>
         context.response.status = staticContext.statusCode as Oak.Status ?? Oak.Status.OK;
         context.response.body = body;
     }
-    private get(): Oak.Middleware
+    public get(): Oak.Middleware
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
@@ -284,7 +286,7 @@ export class Server<UserJWT extends UserJWTBase = never>
             await next();
         };
     }
-    private head(): Oak.Middleware
+    public head(): Oak.Middleware
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
@@ -296,7 +298,7 @@ export class Server<UserJWT extends UserJWTBase = never>
             await next();
         };
     }
-    private async handle(connection: Deno.Conn, secure: boolean): Promise<void>
+    public async handle(connection: Deno.Conn, secure: boolean): Promise<void>
     {
         try
         {
@@ -318,7 +320,7 @@ export class Server<UserJWT extends UserJWTBase = never>
         }
         catch { undefined; }
     }
-    private async accept(key: number): Promise<StatusCode>
+    public async accept(key: number): Promise<StatusCode>
     {
         const secure = this.listener.secure(key);
         for await (const connection of this.listener.connections(key))
@@ -328,7 +330,7 @@ export class Server<UserJWT extends UserJWTBase = never>
         }
         return StatusCode.failure;
     }
-    private async compress(): Promise<void>
+    public async compress(): Promise<void>
     {
         const ext = [".js", ".map", ".txt", ".css"];
         const folder = std.path.join(".", this.public, "**", "*");
@@ -342,7 +344,7 @@ export class Server<UserJWT extends UserJWTBase = never>
             }
         }
     }
-    private async scripts(): Promise<void>
+    public async scripts(): Promise<void>
     {
         if (this.devtools)
         {

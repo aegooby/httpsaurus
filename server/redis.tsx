@@ -971,7 +971,6 @@ class RedisSearch extends RedisModule
 export interface RedisAttributes
 {
     url?: string;
-    retries: number;
 }
 
 export class Redis
@@ -991,22 +990,7 @@ export class Redis
         const options: redis.RedisConnectOptions = redis.parseURL(url);
         const instance = new Redis();
 
-        for (let i = 0; i < attributes.retries; ++i)
-        {
-            try 
-            {
-                instance.main = await redis.connect(options);
-                if (instance.main.isConnected)
-                    break;
-            }
-            catch (error: unknown)
-            {
-                if (!(error instanceof Deno.errors.ConnectionRefused))
-                    throw error;
-            }
-            await std.async.delay(500);
-        }
-
+        instance.main = await redis.connect(options);
         if (!instance.main.isConnected)
             throw new Error("Failed to connect to Redis");
 

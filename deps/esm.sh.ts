@@ -1,5 +1,6 @@
 
-export { default as React } from "https://esm.sh/react";
+import * as React from "https://esm.sh/react";
+export { React };
 export * as ReactDOM from "https://esm.sh/react-dom";
 export * as ReactDOMServer from "https://esm.sh/react-dom/server";
 export * as Apollo from "https://esm.sh/apollo-graphql";

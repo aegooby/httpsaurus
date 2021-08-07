@@ -30,6 +30,7 @@ try
         headElements: [],
 
         devtools: !!args.devtools,
+        redis: true,
 
         schema: "graphql/schema.gql",
         resolvers: Resolvers.create(),
