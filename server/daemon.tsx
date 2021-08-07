@@ -46,7 +46,7 @@ if (import.meta.main)
             const parameters = { prefix: [{ count: 1, name: "users:" }] };
             await Server.redis.search.create("users", "JSON", schemaFields, parameters);
         }
-        catch { undefined; }
+        catch (error) { Console.log(error); }
 
         await httpserver.serve();
     }

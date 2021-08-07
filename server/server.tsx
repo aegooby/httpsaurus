@@ -119,7 +119,7 @@ export class Server<UserJWT extends UserJWTBase = never>
      */
     public static async create<UserJWT extends UserJWTBase = never>(attributes: ServerAttributes): Promise<Server<UserJWT>>
     {
-        if (!attributes.redis)
+        if (attributes.redis)
             Server.redis = await Redis.create({});
 
         const instance = new Server<UserJWT>();
