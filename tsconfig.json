@@ -14,10 +14,12 @@
     "module": "esnext",
     "noImplicitAny": true,
     "lib": [
+        "dom",
+        "dom.iterable",
+        "dom.asynciterable",
         "deno.ns",
         "deno.unstable",
-        "esnext",
-        "dom"
+        "esnext"
     ],
     "target": "es5",
     "strict": true
