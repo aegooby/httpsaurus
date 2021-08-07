@@ -1,8 +1,8 @@
 
 import { yargs } from "../deps.ts";
 
-import { Server, Redis, Console } from "./server.tsx";
 import { Resolvers } from "./resolvers.tsx";
+import { Server, Console } from "./server.tsx";
 import type { ServerAttributes } from "./server.tsx";
 import type { UserJwt } from "../graphql/types.d.tsx";
 
