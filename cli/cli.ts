@@ -6,10 +6,20 @@ import { Console } from "../server/server.tsx";
 Deno.env.set("DENO_DIR", ".cache/");
 const [args, command] = [Deno.args, "turtle"];
 
-type Command = (args: Arguments) => undefined | number | Promise<undefined | number>;
+/** Command handler type for CLI tools. */
+export type Command = (args: Arguments) => undefined | number | Promise<undefined | number>;
 
+/**
+ * Utility class for manipulating CLI command handlers.
+ */
 export class CLIUtil
 {
+    /**
+     * Wraps a CLI command handler to ensure Deno exits after the command.
+     * 
+     * @param command Command handler to be wrapped.
+     * @returns Wrapped command handler.
+     */
     public static exit(command: Command): Command
     {
         return async (args: Arguments) =>
@@ -18,6 +28,10 @@ export class CLIUtil
         };
     }
 }
+
+/**
+ * Class containing CLI functions.
+ */
 export class CLI
 {
     public static all(): Command
