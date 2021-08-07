@@ -21,51 +21,44 @@ enum StatusCode
 
 /**
  * Parameters passed ot the server at creation time.
- * 
- * @param {boolean} secure Whether the server runs on HTTPS or HTTP
- * @param {string | undefined} domain Outside-facing domain the server listens from
- * @param {string} hostname Local IP address the server listens on
- * @param {number} port Port the server listens on for HTTP connections
- * @param {Record<string, string>} routes Pre-mapped REST routes
- * 
- * @param {number | undefined} portTls Port the server listens on for HTTPS connections
- * @param {string | undefined} cert Path to folder containing TLS certificates
- * 
- * @param {Array<React.ReactElement>} headElements React elements included in document head on SSR
- * 
- * @param {boolean} devtools Enable React and Relay devtools (Electron)
- * @param {boolean} redis Enable Redis DB
- * 
- * @param {string} schema Path to GraphQL schema
- * @param {unknown} resolvers GraphQL resolvers object
  */
 export interface ServerAttributes
 {
+    /** Whether the server runs on HTTPS or HTTP. */
     secure: boolean;
+    /** Outside-facing domain the server listens from. */
     domain: string | undefined;
+    /** Local IP address the server listens on. */
     hostname: string;
+    /** Port the server listens on for HTTP connections. */
     port: number;
+    /** Pre-mapped REST routes. */
     routes: Record<string, string>;
 
+    /** Port the server listens on for HTTPS connections. */
     portTls: number | undefined;
+    /** Path to folder containing TLS certificates. */
     cert: string | undefined;
 
+    /** React elements included in document head on SSR. */
     headElements: Array<React.ReactElement>;
 
+    /** Enable React and Relay devtools (Electron). */
     devtools: boolean;
+    /** Enable Redis database. */
     redis: boolean;
 
+    /** Path to GraphQL schema. */
     schema: string;
+    /** GraphQL resolvers object. */
     resolvers: unknown;
 }
 
-/**
- * @param {Oak.Application} app Oak application
- * @param {Oak.Router} router Oak router
- */
 interface OakServer
 {
+    /** Oak application. */
     app: Oak.Application;
+    /** Oak router. */
     router: Oak.Router;
 }
 
@@ -74,6 +67,7 @@ interface OakServer
  */
 export class Server<UserJWT extends UserJWTBase = never>
 {
+    /** Redis database connection. */
     public static redis: Redis = {} as Redis;
 
     private secure: boolean = {} as boolean;
@@ -119,8 +113,9 @@ export class Server<UserJWT extends UserJWTBase = never>
         this.close = this.close.bind(this);
     }
     /**
-     * @param {ServerAttributes} attributes Options passed to server at creation time.
-     * @returns {Promise<Server>} 
+     * Creates a new HTTP/S server.
+     * 
+     * @param attributes Options passed to server at creation time.
      */
     public static async create<UserJWT extends UserJWTBase = never>(attributes: ServerAttributes): Promise<Server<UserJWT>>
     {
@@ -195,29 +190,29 @@ export class Server<UserJWT extends UserJWTBase = never>
         return await Promise.resolve(instance);
     }
     /** 
-     * Whether the server is running on HTTP or HTTPS
+     * Whether the server is running on HTTP or HTTPS.
      */
     public get protocol(): "http" | "https"
     {
         return this.secure ? "https" : "http";
     }
     /** 
-     * URL with port
+     * URL with port.
      */
     public get url(): string
     {
         return `${this.protocol}://${this.hostname}:${this.portTls ?? this.port}`;
     }
     /** 
-     * URL without port
+     * URL without port.
      */
     public get urlSimple(): string
     {
         return `${this.protocol}://${this.hostname}`;
     }
     /** 
-     * Generates middleware function for ensuring WWW URLs as canonical
-     * @returns {Oak.Middleware} Middleware that routes non-WWW URLs to WWW URL
+     * Generates middleware function for ensuring WWW URLs as canonical.
+     * @return Middleware that routes non-WWW URLs to WWW URL.
      */
     private www(): Oak.Middleware
     {
@@ -237,8 +232,7 @@ export class Server<UserJWT extends UserJWTBase = never>
     /**
      * Handles serving static content.
      * 
-     * @param {Oak.Context} context Oak context object 
-     * @returns {Promise<void>}
+     * @param context Oak context object.
      */
     private async static(context: Oak.Context): Promise<void>
     {
@@ -267,8 +261,7 @@ export class Server<UserJWT extends UserJWTBase = never>
     /**
      * Handles serving React pages.
      * 
-     * @param {Oak.Context} context Oak context object 
-     * @returns {Promise<void>}
+     * @param context Oak context object.
      */
     private async react(context: Oak.Context): Promise<void>
     {
@@ -308,7 +301,7 @@ export class Server<UserJWT extends UserJWTBase = never>
     /**
      * Handles GET requests to all URLs except JWT and GraphQL endpoints.
      * 
-     * @returns {Oak.Middleware} Middleware for handling GET requests
+     * @return Middleware for handling GET requests.
      */
     private get(): Oak.Middleware
     {
@@ -350,7 +343,7 @@ export class Server<UserJWT extends UserJWTBase = never>
     /**
      * Handles HEAD requests to all URLs except JWT and GraphQL endpoints.
      * 
-     * @returns {Oak.Middleware} Middleware for handling HEAD requests
+     * @return Middleware for handling HEAD requests.
      */
     private head(): Oak.Middleware
     {
@@ -367,9 +360,8 @@ export class Server<UserJWT extends UserJWTBase = never>
     /**
      * Handles a single Deno connection.
      * 
-     * @param {Deno.Conn} connection Incoming connection
-     * @param {boolean} secure Whether the connection is encrpted or not
-     * @returns {Promise<void>}
+     * @param connection Incoming connection.
+     * @param secure Whether the connection is encrpted or not.
      */
     private async handle(connection: Deno.Conn, secure: boolean): Promise<void>
     {
@@ -396,8 +388,8 @@ export class Server<UserJWT extends UserJWTBase = never>
     /**
      * Handles connection stream for one listener RID.
      * 
-     * @param {number} connection Listener RID
-     * @returns {Promise<StatusCode>} Whether handling the connection stream succeded or failed
+     * @param connection Listener RID.
+     * @return Whether handling the connection stream succeded or failed.
      */
     private async accept(key: number): Promise<StatusCode>
     {
@@ -411,8 +403,6 @@ export class Server<UserJWT extends UserJWTBase = never>
     }
     /**
      * Compresses static content using GZip.
-     * 
-     * @returns {Promise<void>}
      */
     public async compress(): Promise<void>
     {
@@ -430,8 +420,6 @@ export class Server<UserJWT extends UserJWTBase = never>
     }
     /**
      * Loads Webpack scripts into React SSR.
-     * 
-     * @returns {Promise<void>}
      */
     private async scripts(): Promise<void>
     {
@@ -451,8 +439,6 @@ export class Server<UserJWT extends UserJWTBase = never>
     }
     /**
      * Starts server.
-     * 
-     * @returns {Promise<never>}
      */
     public async serve(): Promise<never>
     {
@@ -513,8 +499,6 @@ export class Server<UserJWT extends UserJWTBase = never>
     }
     /**
      * Stops server.
-     * 
-     * @returns {void}
      */
     public close(): void
     {
