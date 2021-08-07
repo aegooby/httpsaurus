@@ -1,5 +1,5 @@
 
-import { std, redis } from "../deps.ts";
+import { redis } from "../deps.ts";
 
 import { Console } from "./console.ts";
 

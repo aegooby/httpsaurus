@@ -1,5 +1,5 @@
 
-import { Oak, Apollo, graphql, Relay, playground, std } from "../deps.ts";
+import { Oak, Apollo, graphql, Relay as _Relay, playground, std } from "../deps.ts";
 
 import { Console } from "./console.ts";
 
