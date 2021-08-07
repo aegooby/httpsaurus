@@ -1,3 +1,3 @@
 
 export * from "./server/server.tsx";
-export * as cli from "./cli/cli.ts";
+export * from "./cli/cli.ts";
