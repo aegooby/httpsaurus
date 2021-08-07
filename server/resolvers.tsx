@@ -25,7 +25,10 @@ class Query implements QueryResolvers<Oak.Context>
     async readUser(_parent: unknown, args: QueryReadUserArgs, _context: Oak.Context)
     {
         const results = JSON.parse(await Server.redis.json.get(`users:${args.id}`, "$")) as unknown[];
-        const user = results.pop() as User;
+        const result = results.pop();
+        if (!result)
+            throw new Error(`No user found with id ${args.id}`);
+        const user = result as User;
         user.id = args.id;
         return { user: user };
     }
@@ -34,7 +37,10 @@ class Query implements QueryResolvers<Oak.Context>
     {
         const payload = context.state.payload;
         const results = JSON.parse(await Server.redis.json.get(`users:${payload.id}`, "$")) as unknown[];
-        const user = results.pop() as User;
+        const result = results.pop();
+        if (!result)
+            throw new Error(`No user found with id ${payload.id}`);
+        const user = result as User;
         user.id = payload.id;
         return { user: user };
     }

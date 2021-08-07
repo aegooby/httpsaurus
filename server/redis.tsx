@@ -116,7 +116,7 @@ class RedisJSON extends RedisModule
             }
         }
         if (path) args.push(path);
-        return await this.sendCommand("JSON.GET", args) as string;
+        return ((await this.sendCommand("JSON.GET", args)) ?? "null") as string;
     }
 
     async mget(keys: string[], path?: string): Promise<string[]>
