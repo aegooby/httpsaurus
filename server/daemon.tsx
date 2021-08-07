@@ -14,38 +14,41 @@ const args = yargs.default(Deno.args)
     .demandOption(["hostname"])
     .parse();
 
-try
+if (import.meta.main)
 {
-    const serverAttributes: ServerAttributes =
+    try
     {
-        secure: !!args.tls,
-        domain: args.domain,
-        routes: {},
-        hostname: args.hostname,
-        port: 3080,
+        const serverAttributes: ServerAttributes =
+        {
+            secure: !!args.tls,
+            domain: args.domain,
+            routes: {},
+            hostname: args.hostname,
+            port: 3080,
 
-        portTls: 3443,
-        cert: args.tls,
+            portTls: 3443,
+            cert: args.tls,
 
-        headElements: [],
+            headElements: [],
 
-        devtools: !!args.devtools,
-        redis: true,
+            devtools: !!args.devtools,
+            redis: true,
 
-        schema: "graphql/schema.gql",
-        resolvers: Resolvers.create(),
-    };
-    const httpserver = await Server.create<UserJwt>(serverAttributes);
+            schema: "graphql/schema.gql",
+            resolvers: Resolvers.create(),
+        };
+        const httpserver = await Server.create<UserJwt>(serverAttributes);
 
-    try 
-    {
-        const schemaFields =
-            [{ name: "$.email", type: "TAG", as: "email", sortable: true }];
-        const parameters = { prefix: [{ count: 1, name: "users:" }] };
-        await Server.redis.search.create("users", "JSON", schemaFields, parameters);
+        try 
+        {
+            const schemaFields =
+                [{ name: "$.email", type: "TAG", as: "email", sortable: true }];
+            const parameters = { prefix: [{ count: 1, name: "users:" }] };
+            await Server.redis.search.create("users", "JSON", schemaFields, parameters);
+        }
+        catch { undefined; }
+
+        await httpserver.serve();
     }
-    catch { undefined; }
-
-    await httpserver.serve();
+    catch (error) { Console.error(error); }
 }
-catch (error) { Console.error(error); }
