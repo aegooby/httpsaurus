@@ -1,7 +1,7 @@
 
 import { std, Oak, scrypt } from "../deps.ts";
 
-import { Auth, Redis, Server } from "./server.tsx";
+import { Auth, Server } from "./server.tsx";
 import type { Resolvers as GraphQLResolvers, QueryResolvers, MutationResolvers } from "../graphql/types.d.tsx";
 import type { User, UserJwt, UserPayload } from "../graphql/types.d.tsx";
 import type { QueryReadUserArgs } from "../graphql/types.d.tsx";
