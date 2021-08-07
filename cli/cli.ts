@@ -18,7 +18,7 @@ export class CLIUtil
      * Wraps a CLI command handler to ensure Deno exits after the command.
      * 
      * @param command Command handler to be wrapped.
-     * @returns Wrapped command handler.
+     * @return Wrapped command handler.
      */
     public static exit(command: Command): Command
     {
