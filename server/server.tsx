@@ -19,6 +19,26 @@ enum StatusCode
     failure = 1,
 }
 
+/**
+ * Parameters passed ot the server at creation time.
+ * 
+ * @param {boolean} secure Whether the server runs on HTTPS or HTTP
+ * @param {string | undefined} domain Outside-facing domain the server listens from
+ * @param {string} hostname Local IP address the server listens on
+ * @param {number} port Port the server listens on for HTTP connections
+ * @param {Record<string, string>} routes Pre-mapped REST routes
+ * 
+ * @param {number | undefined} portTls Port the server listens on for HTTPS connections
+ * @param {string | undefined} cert Path to folder containing TLS certificates
+ * 
+ * @param {Array<React.ReactElement>} headElements React elements included in document head on SSR
+ * 
+ * @param {boolean} devtools Enable React and Relay devtools (Electron)
+ * @param {boolean} redis Enable Redis DB
+ * 
+ * @param {string} schema Path to GraphQL schema
+ * @param {unknown} resolvers GraphQL resolvers object
+ */
 export interface ServerAttributes
 {
     secure: boolean;
@@ -39,12 +59,19 @@ export interface ServerAttributes
     resolvers: unknown;
 }
 
+/**
+ * @param {Oak.Application} app Oak application
+ * @param {Oak.Router} router Oak router
+ */
 interface OakServer
 {
     app: Oak.Application;
     router: Oak.Router;
 }
 
+/** 
+ * HTTP/S server.
+ */
 export class Server<UserJWT extends UserJWTBase = never>
 {
     public static redis: Redis = {} as Redis;
@@ -91,6 +118,10 @@ export class Server<UserJWT extends UserJWTBase = never>
         this.serve = this.serve.bind(this);
         this.close = this.close.bind(this);
     }
+    /**
+     * @param {ServerAttributes} attributes Options passed to server at creation time.
+     * @returns {Promise<Server>} 
+     */
     public static async create<UserJWT extends UserJWTBase = never>(attributes: ServerAttributes): Promise<Server<UserJWT>>
     {
         if (!attributes.redis)
@@ -163,19 +194,32 @@ export class Server<UserJWT extends UserJWTBase = never>
 
         return await Promise.resolve(instance);
     }
+    /** 
+     * Whether the server is running on HTTP or HTTPS
+     */
     public get protocol(): "http" | "https"
     {
         return this.secure ? "https" : "http";
     }
+    /** 
+     * URL with port
+     */
     public get url(): string
     {
         return `${this.protocol}://${this.hostname}:${this.portTls ?? this.port}`;
     }
+    /** 
+     * URL without port
+     */
     public get urlSimple(): string
     {
         return `${this.protocol}://${this.hostname}`;
     }
-    public www(): Oak.Middleware
+    /** 
+     * Generates middleware function for ensuring WWW URLs as canonical
+     * @returns {Oak.Middleware} Middleware that routes non-WWW URLs to WWW URL
+     */
+    private www(): Oak.Middleware
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
@@ -190,7 +234,13 @@ export class Server<UserJWT extends UserJWTBase = never>
             await next();
         };
     }
-    public async static(context: Oak.Context): Promise<void>
+    /**
+     * Handles serving static content.
+     * 
+     * @param {Oak.Context} context Oak context object 
+     * @returns {Promise<void>}
+     */
+    private async static(context: Oak.Context): Promise<void>
     {
         const filepath = context.request.url.pathname;
         const sendOptions: Oak.SendOptions =
@@ -214,7 +264,13 @@ export class Server<UserJWT extends UserJWTBase = never>
 
         await Oak.send(context, filepath, sendOptions);
     }
-    public async react(context: Oak.Context): Promise<void>
+    /**
+     * Handles serving React pages.
+     * 
+     * @param {Oak.Context} context Oak context object 
+     * @returns {Promise<void>}
+     */
+    private async react(context: Oak.Context): Promise<void>
     {
         context.response.type = "text/html";
 
@@ -249,7 +305,12 @@ export class Server<UserJWT extends UserJWTBase = never>
         context.response.status = staticContext.statusCode as Oak.Status ?? Oak.Status.OK;
         context.response.body = body;
     }
-    public get(): Oak.Middleware
+    /**
+     * Handles GET requests to all URLs except JWT and GraphQL endpoints.
+     * 
+     * @returns {Oak.Middleware} Middleware for handling GET requests
+     */
+    private get(): Oak.Middleware
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
@@ -286,7 +347,12 @@ export class Server<UserJWT extends UserJWTBase = never>
             await next();
         };
     }
-    public head(): Oak.Middleware
+    /**
+     * Handles HEAD requests to all URLs except JWT and GraphQL endpoints.
+     * 
+     * @returns {Oak.Middleware} Middleware for handling HEAD requests
+     */
+    private head(): Oak.Middleware
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
@@ -298,7 +364,14 @@ export class Server<UserJWT extends UserJWTBase = never>
             await next();
         };
     }
-    public async handle(connection: Deno.Conn, secure: boolean): Promise<void>
+    /**
+     * Handles a single Deno connection.
+     * 
+     * @param {Deno.Conn} connection Incoming connection
+     * @param {boolean} secure Whether the connection is encrpted or not
+     * @returns {Promise<void>}
+     */
+    private async handle(connection: Deno.Conn, secure: boolean): Promise<void>
     {
         try
         {
@@ -320,7 +393,13 @@ export class Server<UserJWT extends UserJWTBase = never>
         }
         catch { undefined; }
     }
-    public async accept(key: number): Promise<StatusCode>
+    /**
+     * Handles connection stream for one listener RID.
+     * 
+     * @param {number} connection Listener RID
+     * @returns {Promise<StatusCode>} Whether handling the connection stream succeded or failed
+     */
+    private async accept(key: number): Promise<StatusCode>
     {
         const secure = this.listener.secure(key);
         for await (const connection of this.listener.connections(key))
@@ -330,6 +409,11 @@ export class Server<UserJWT extends UserJWTBase = never>
         }
         return StatusCode.failure;
     }
+    /**
+     * Compresses static content using GZip.
+     * 
+     * @returns {Promise<void>}
+     */
     public async compress(): Promise<void>
     {
         const ext = [".js", ".map", ".txt", ".css"];
@@ -344,7 +428,12 @@ export class Server<UserJWT extends UserJWTBase = never>
             }
         }
     }
-    public async scripts(): Promise<void>
+    /**
+     * Loads Webpack scripts into React SSR.
+     * 
+     * @returns {Promise<void>}
+     */
+    private async scripts(): Promise<void>
     {
         if (this.devtools)
         {
@@ -360,6 +449,11 @@ export class Server<UserJWT extends UserJWTBase = never>
                 this.scriptElements.push(<script src={`/scripts/webpack/${basename}`} defer></script>);
         }
     }
+    /**
+     * Starts server.
+     * 
+     * @returns {Promise<never>}
+     */
     public async serve(): Promise<never>
     {
         Console.log(`${std.colors.bold("https")}${std.colors.reset("aurus")}`);
@@ -417,6 +511,11 @@ export class Server<UserJWT extends UserJWTBase = never>
             }
         }
     }
+    /**
+     * Stops server.
+     * 
+     * @returns {void}
+     */
     public close(): void
     {
         this.listener.close();
