@@ -32,7 +32,7 @@ jobs:
             - name: Upgrade Node
               run: sudo npm install --global n && sudo n latest
             - name: Download remote cache
-              run: curl -O https://dl.dropboxusercontent.com/s/g7sy2qc69xdj3db/.cache.zip && unzip -oq .cache.zip
+              run: curl -O https://dl.dropboxusercontent.com/s/gtjdehk8eqoqtl3/.cache.zip && unzip -oq .cache.zip
             - name: Cache dependencies
               run: DENO_DIR=.cache deno run --unstable --allow-all --import-map import-map.json cli/cli.ts cache
             - name: Test server

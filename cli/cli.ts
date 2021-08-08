@@ -273,7 +273,7 @@ export class CLI
 
             if (args.remote)
             {
-                const remoteCache = "https://dl.dropboxusercontent.com/s/g7sy2qc69xdj3db/.cache.zip";
+                const remoteCache = "https://dl.dropboxusercontent.com/s/gtjdehk8eqoqtl3/.cache.zip";
                 const response = await fetch(remoteCache);
                 if (!response.body)
                 {
