@@ -1,4 +1,5 @@
 
+import "./raf.polyfill.js";
 import * as React from "https://esm.sh/react";
 export { React };
 export * as ReactDOM from "https://esm.sh/react-dom";

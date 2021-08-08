@@ -5,15 +5,13 @@ import Relay from "react-relay/hooks";
 
 const Lazy = React.lazy(() => import("./Lazy/Index.tsx"));
 import Page from "../Page.tsx";
-import type { IndexQuery, IndexQueryVariables } from "./__generated__/IndexQuery.graphql.ts";
+import type { IndexQuery } from "./__generated__/IndexQuery.graphql.ts";
 
 const query = graphql`
         query IndexQuery {
             readCurrentUser {
-                user {
-                    id
-                    email
-                }
+                id
+                email
             }
         }
     `;

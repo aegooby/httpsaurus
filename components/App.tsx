@@ -17,9 +17,11 @@ interface Props
 }
 export default function App(props: Props)
 {
+    /* Obtains refresh JWT. */
     const [loading, effect] = useRefresh(props.client.fetchRefresh);
     React.useEffect(effect, []);
 
+    /* Handles loading bars. */
     const location = ReactRouter.useLocation();
     const state = location.state as Record<string, unknown> | null;
     if (state && state.redirected)

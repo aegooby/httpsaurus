@@ -1,14 +1,15 @@
 
-import { std, Oak, scrypt } from "../deps.ts";
+import { std, Oak, scrypt, graphql } from "../deps.ts";
 
 import { Auth, Server } from "./server.tsx";
 import type { Resolvers as GraphQLResolvers, QueryResolvers, MutationResolvers } from "../graphql/types.d.ts";
 import type { User, UserJwt, UserPayload } from "../graphql/types.d.ts";
-import type { UserInfo } from "../graphql/types.d.ts";
 
 const encoder = new TextEncoder();
 
-class Query implements QueryResolvers<Oak.Context>
+type Context = Oak.Context;
+
+class Query implements QueryResolvers<Context>
 {
     private constructor() 
     {
@@ -20,8 +21,12 @@ class Query implements QueryResolvers<Oak.Context>
         const instance = new Query();
         return instance;
     }
+    // node(_parent: unknown, args: { id: string; }, _context: Context, _info: graphql.GraphQLResolveInfo)
+    // {
+    //     return { __typename: "", id: args.id };
+    // }
     @Auth.authenticated<UserJwt, { id: string; }>(function (payload, args) { return payload.id === args.id; })
-    async readUser(_parent: unknown, args: { id: string; }, _context: Oak.Context)
+    async readUser(_parent: unknown, args: { id: string; }, _context: Context, _info: graphql.GraphQLResolveInfo)
     {
         const results = JSON.parse(await Server.redis.json.get(`users:${args.id}`, "$")) as unknown[];
         const result = results.pop();
@@ -29,10 +34,10 @@ class Query implements QueryResolvers<Oak.Context>
             throw new Error(`No user found with id ${args.id}`);
         const user = result as User;
         user.id = args.id;
-        return { user: user };
+        return user;
     }
     @Auth.authenticated<UserJwt>()
-    async readCurrentUser(_parent: unknown, _args: unknown, context: Oak.Context)
+    async readCurrentUser(_parent: unknown, _args: unknown, context: Context, _info: graphql.GraphQLResolveInfo)
     {
         const payload = context.state.payload;
         const results = JSON.parse(await Server.redis.json.get(`users:${payload.id}`, "$")) as unknown[];
@@ -41,11 +46,11 @@ class Query implements QueryResolvers<Oak.Context>
             throw new Error(`No user found with id ${payload.id}`);
         const user = result as User;
         user.id = payload.id;
-        return { user: user };
+        return user;
     }
 }
 
-class Mutation implements MutationResolvers<Oak.Context>
+class Mutation implements MutationResolvers<Context>
 {
     private constructor()
     {
@@ -54,17 +59,17 @@ class Mutation implements MutationResolvers<Oak.Context>
         this.logoutUser = this.logoutUser.bind(this);
         this.revokeUser = this.revokeUser.bind(this);
     }
-    public static create(): MutationResolvers<Oak.Context>
+    public static create(): MutationResolvers<Context>
     {
         const instance = new Mutation();
         return instance;
     }
     @Auth.rateLimit()
-    async createUser(_parent: unknown, args: { input: UserInfo; }, _context: Oak.Context)
+    async createUser(_parent: unknown, args: { email: string; password: string; }, _context: Context, _info: graphql.GraphQLResolveInfo)
     {
         const id = await std.uuid.v5.generate(std.uuid.v1.generate() as string, encoder.encode(crypto.randomUUID()));
 
-        const escapedEmail = args.input.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
+        const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
         const search = await Server.redis.search.search("users", `@email:{${escapedEmail}}`);
 
         switch (typeof search)
@@ -72,76 +77,62 @@ class Mutation implements MutationResolvers<Oak.Context>
             case "number":
                 break;
             default:
-                throw new Error(`Email address ${args.input.email} already in use`);
+                throw new Error(`Email address ${args.email} already in use`);
         }
-        const password = await scrypt.hash(args.input.password);
+        const password = await scrypt.hash(args.password);
         const payload: UserPayload =
         {
-            email: args.input.email,
+            id: id,
+            email: args.email,
             password: password,
             receipt: null
         };
         await Server.redis.json.set(`users:${id}`, "$", JSON.stringify(payload));
-        const user: User =
-        {
-            id: id,
-            ...payload
-        };
-        return { user: user };
+        const user: User = { ...payload };
+        return user;
     }
-    async loginUser(_parent: unknown, args: { input: UserInfo; }, context: Oak.Context)
+    async loginUser(_parent: unknown, args: { email: string; password: string; }, context: Context, _info: graphql.GraphQLResolveInfo)
     {
-        const escapedEmail = args.input.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
+        const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
         const search = await Server.redis.search.search("users", `@email:{${escapedEmail}}`);
         switch (typeof search)
         {
             case "number":
-                throw new Error(`User with email ${args.input.email} does not exist`);
+                throw new Error(`User with email ${args.email} does not exist`);
             default:
                 break;
         }
         if (search.at(0) as number > 1 || search.length > 3)
-            throw new Error(`More than one user found with email ${args.input.email}`);
+            throw new Error(`More than one user found with email ${args.email}`);
         const parsedSearch = search as [1, string, ["$", string]];
         const userInfo: UserPayload = JSON.parse((parsedSearch.at(2) as ["$", string]).at(1) as string);
-        if (!await scrypt.verify(args.input.password, userInfo.password))
-            throw new Error(`Incorrect password for user with email ${args.input.email}`);
-        const id = (parsedSearch.at(1) as string).replaceAll("users:", "");
+        if (!await scrypt.verify(args.password, userInfo.password))
+            throw new Error(`Incorrect password for user with email ${args.email}`);
 
-        const user: User =
-        {
-            id: id,
-            ...userInfo
-        };
+        const user: User = { ...userInfo };
 
         Auth.refresh.create<UserJwt>(user, context);
-
-        const result =
-        {
-            token: Auth.access.create<UserJwt>(user),
-            user: user
-        };
-        return result;
+        return Auth.access.create<UserJwt>(user);
     }
-    logoutUser(_parent: unknown, _args: unknown, context: Oak.Context)
+    logoutUser(_parent: unknown, _args: unknown, context: Context, _info: graphql.GraphQLResolveInfo)
     {
         Auth.refresh.reset(context);
-        return { success: true };
+        return true;
     }
-    async revokeUser(_parent: unknown, args: { id: string; }, _context: Oak.Context)
+    async revokeUser(_parent: unknown, args: { id: string; }, _context: Context, _info: graphql.GraphQLResolveInfo)
     {
         const receipt = await std.uuid.v5.generate(std.uuid.v1.generate() as string, encoder.encode(crypto.randomUUID()));
         await Server.redis.json.set(`users:${args.id}`, "$.receipt", `"${receipt}"`);
-        return { success: true };
+        return true;
     }
 }
 
 export class Resolvers
 {
     private constructor() { }
-    public static create(): GraphQLResolvers<Oak.Context>
+    public static create(): GraphQLResolvers<Context>
     {
-        const resolvers: GraphQLResolvers<Oak.Context> =
+        const resolvers: GraphQLResolvers<Context> =
         {
             Query: Query.create(),
             Mutation: Mutation.create()

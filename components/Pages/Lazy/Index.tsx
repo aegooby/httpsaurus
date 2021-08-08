@@ -17,8 +17,8 @@ function LoginInfo(props: Props)
     if (props.preloadedQuery)
         data = Relay.usePreloadedQuery(props.query, props.preloadedQuery);
     const element: React.ReactElement =
-        data ?
-            <h3>Logged in as <strong>{data.readCurrentUser.user.email}</strong></h3> :
+        data && data.readCurrentUser ?
+            <h3>Logged in as <strong>{data.readCurrentUser.email}</strong></h3> :
             <h3>Not logged in</h3>;
     return element;
 }

@@ -1,6 +1,17 @@
 
-interface UserPayload
+interface Node { id: ID! }
+
+type Error { message: String! }
+
+type Post implements Node
 {
+    id: ID!
+    text: String!
+}
+
+interface UserPayload implements Node
+{
+    id: ID!
     email: String!
     receipt: String
     password: String!
@@ -11,50 +22,24 @@ interface UserJWT
     email: String!
     receipt: String
 }
-type User implements UserJWT
+type User implements Node & UserJWT
 {
     id: ID!
     email: String!
     receipt: String
 }
 
-type ReadUserResponse
-{
-    user: User!
-}
-type CreateUserResponse
-{
-    user: User!
-}
-type LoginUserResponse
-{
-    token: String!
-    user: User!
-}
-type LogoutUserResponse
-{
-    success: Boolean!
-}
-type RevokeUserResponse
-{
-    success: Boolean!
-}
-
-input UserInfo
-{
-    email: String!
-    password: String!
-}
-
 type Query 
 { 
-    readUser(id: ID!): ReadUserResponse!
-    readCurrentUser: ReadUserResponse!
+    node(id: ID!): Node
+
+    readUser(id: ID!): User
+    readCurrentUser: User
 }
 type Mutation
 {
-    createUser(input: UserInfo!): CreateUserResponse!
-    loginUser(input: UserInfo!): LoginUserResponse!
-    logoutUser: LogoutUserResponse!
-    revokeUser(id: ID!): RevokeUserResponse!
+    createUser(email: String!, password: String!): User!
+    loginUser(email: String!, password: String!): String!
+    logoutUser: Boolean!
+    revokeUser(id: ID!): Boolean!
 }

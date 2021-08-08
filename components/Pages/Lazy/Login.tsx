@@ -18,14 +18,8 @@ export default function Login()
     const [password, setPassword] = React.useState("");
 
     const mutation = graphql`
-            mutation LoginMutation($input: UserInfo!) 
-            {
-                loginUser(input: $input) {
-                    token
-                    user {
-                        id
-                    }
-                }
+            mutation LoginMutation($email: String!, $password: String!) {
+                loginUser(email: $email, password: $password)
             }
         `;
 
@@ -46,17 +40,14 @@ export default function Login()
 
         const variables =
         {
-            "input":
-            {
-                "email": email,
-                "password": password
-            }
+            "email": email,
+            "password": password
         };
 
         const onCompleted = function (data: unknown)
         {
             Console.log(data);
-            useToken((data as LoginMutationResponse).loginUser.token);
+            useToken((data as LoginMutationResponse).loginUser);
             navigate("/", { state: { redirected: true, loading: useStartLoading() } });
         };
 
