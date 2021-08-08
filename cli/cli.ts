@@ -300,35 +300,14 @@ export class CLI
                     await Deno.remove(".cache.zip");
             }
 
-            const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
-            const packages: string[] = Object.values(importMap.imports);
-
             const flags = args.reload ? ["--reload"] : [];
-            switch (typeof args.reload)
-            {
-                case "string":
-                    {
-                        const reloadNames = args.reload.split(",");
-                        const map = function (value: string) 
-                        {
-                            try { return (new URL(value)).href; }
-                            catch { return importMap.imports[value]; }
-                        };
-                        const urlReloads = reloadNames.map(map);
-                        const filteredReloads = urlReloads.filter(function (value: unknown) { return value !== undefined; });
-                        const reloads = filteredReloads.join(",");
-                        if (!filteredReloads.length)
-                            flags.pop();
-                        else
-                            flags[0] += "=" + reloads;
-                        break;
-                    }
-                default:
-                    break;
-            }
             const denoRunOptions: Deno.RunOptions =
             {
-                cmd: ["deno", "cache", "--unstable", ...flags, "--import-map", "import-map.json", ...packages],
+                cmd:
+                    [
+                        "deno", "cache", "--unstable", ...flags,
+                        "--import-map", "import-map.json", "deps.ts"
+                    ],
                 env: { DENO_DIR: ".cache/" }
             };
             const yarnRunOptions: Deno.RunOptions = { cmd: ["yarn", "install"] };
