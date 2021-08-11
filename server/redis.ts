@@ -979,7 +979,7 @@ export class Redis
     public search: RedisSearch = {} as RedisSearch;
     public main: redis.Redis = {} as redis.Redis;
 
-    private static default: string = "redis://localhost:6379/" as const;
+    private static default: string = "redis://0.0.0.0:6379/" as const;
 
     private constructor() { }
     public static async create(attributes: RedisAttributes): Promise<Redis>
