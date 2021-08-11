@@ -165,36 +165,22 @@ export class Auth<UserJWT extends UserJWTBase = never>
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
-            const refresh = context.cookies.get("refresh");
-            if (!refresh)
-            {
-                const body = { error: `Refresh cookie not found` };
-                context.response.body = JSON.stringify(body);
-                context.response.status = Oak.Status.Forbidden;
-                await next();
-                return;
-            }
             try 
             {
-                const payload = Auth.refresh.verify<UserJWT>(refresh);
-                const result = JSON.parse(await Auth.redis.json.get(`users:${payload.id}`, "$")).pop();
+                const refresh = context.cookies.get("refresh");
+                if (!refresh)
+                    throw new Error(`Refresh cookie not found`);
+                const jwtPayload = Auth.refresh.verify<UserJWT>(refresh);
+                const result = JSON.parse(await Auth.redis.json.get(`nodes:users:${jwtPayload.id}`, "$"));
                 if (!result)
-                {
-                    const body = { error: `User with id ${payload.id} not found` };
-                    context.response.body = JSON.stringify(body);
-                    context.response.status = Oak.Status.Forbidden;
-                    return;
-                }
-                result.id = payload.id;
-                const user = result as UserJWT;
-                if (user.receipt !== payload.receipt)
-                {
-                    const body = { error: `Receipts do not match` };
-                    context.response.body = JSON.stringify(body);
-                    context.response.status = Oak.Status.Forbidden;
-                    await next();
-                    return;
-                }
+                    throw new Error(`No JSON data returned for user with id ${jwtPayload.id}`);
+                const user: UserJWT | undefined =
+                    (result as unknown[]).pop() as (UserJWT | undefined);
+                if (!user)
+                    throw new Error(`No user found with id ${jwtPayload.id}`);
+                user.id = jwtPayload.id;
+                if (user.receipt !== jwtPayload.receipt)
+                    throw new Error(`Receipts do not match`);
 
                 Auth.refresh.create(user, context);
 
