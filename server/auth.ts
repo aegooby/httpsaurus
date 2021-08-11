@@ -15,7 +15,7 @@ export interface UserJWTBase
 }
 abstract class Token
 {
-    public keypair: keypair.KeypairResults = keypair.default();
+    public readonly keypair: keypair.KeypairResults = keypair.default();
     public path: string = {} as string;
     protected lifetime: string = {} as string;
     protected constructor()

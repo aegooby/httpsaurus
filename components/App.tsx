@@ -2,23 +2,18 @@
 import * as React from "react";
 import * as ReactRouter from "react-router-dom";
 
-import { useRefresh, useStartLoading, useFinishLoading } from "./Core/Core.tsx";
+import { Suspense, useRefresh, useStartLoading, useFinishLoading, Client } from "./Core/Core.tsx";
 import { Spinner } from "./Loading.tsx";
 import Index from "./Pages/Index.tsx";
 import MobileProf from "./Pages/MobileProf.tsx";
 import Login from "./Pages/Login.tsx";
 import Register from "./Pages/Register.tsx";
 import Error from "./Pages/Error.tsx";
-import type { Client } from "../client/client.ts";
 
-interface Props
-{
-    client: Client;
-}
-export default function App(props: Props)
+export default function App()
 {
     /* Obtains refresh JWT. */
-    const [loading, effect] = useRefresh(props.client.fetchRefresh);
+    const [loading, effect] = useRefresh(Client.fetchRefresh);
     React.useEffect(effect, []);
 
     /* Handles loading bars. */
@@ -30,19 +25,21 @@ export default function App(props: Props)
         state.redirected = false;
     }
     React.useState(useStartLoading());
-    React.useState(useFinishLoading());
+    React.useState(!loading() && useFinishLoading());
 
-    if (loading()) return <Spinner />;
+    if (loading()) return <Spinner padding="10rem" />;
     else
     {
         const element =
-            <ReactRouter.Routes>
-                <ReactRouter.Route path="/" element={<Index />} />
-                <ReactRouter.Route path="/mobile-prof" element={<MobileProf />} />
-                <ReactRouter.Route path="/login" element={<Login />} />
-                <ReactRouter.Route path="/register" element={<Register />} />
-                <ReactRouter.Route path="*" element={<Error code={404} text="Not Found" />} />
-            </ReactRouter.Routes>;
+            <Suspense fallback={<Spinner padding="5rem" />}>
+                <ReactRouter.Routes>
+                    <ReactRouter.Route path="/" element={<Index />} />
+                    <ReactRouter.Route path="/mobile-prof" element={<MobileProf />} />
+                    <ReactRouter.Route path="/login" element={<Login />} />
+                    <ReactRouter.Route path="/register" element={<Register />} />
+                    <ReactRouter.Route path="*" element={<Error code={404} text="Not Found" />} />
+                </ReactRouter.Routes>
+            </Suspense>;
         return element;
     }
 }

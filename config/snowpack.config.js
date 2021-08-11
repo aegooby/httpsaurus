@@ -11,6 +11,7 @@ const config =
     plugins: 
     [
         "@snowpack/plugin-react-refresh",
+        "./snowpack-plugins/relay.plugin.js",
         [
             "@snowpack/plugin-webpack",
             {

@@ -74,7 +74,7 @@ export class Server<UserJWT extends UserJWTBase = never>
     private domain: string = {} as string;
     private routes: Map<string, string> = new Map<string, string>();
 
-    private public: string = "/dist" as const;
+    private readonly public: string = "/dist" as const;
     private scriptElements: Array<React.ReactElement> = [];
 
     private oak: OakServer = {} as OakServer;

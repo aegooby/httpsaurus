@@ -3,12 +3,6 @@ interface Node { id: ID! }
 
 type Error { message: String! }
 
-type Post implements Node
-{
-    id: ID!
-    text: String!
-}
-
 interface UserPayload implements Node
 {
     id: ID!
@@ -33,7 +27,7 @@ type Query
 { 
     node(id: ID!): Node
 
-    readUser(id: ID!): User
+    readUser(email: String!): User
     readCurrentUser: User
 }
 type Mutation

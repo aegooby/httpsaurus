@@ -21,10 +21,10 @@ export type Error = {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  createUser?: Maybe<User>;
-  loginUser?: Maybe<Scalars['String']>;
-  logoutUser?: Maybe<Scalars['Boolean']>;
-  revokeUser?: Maybe<Scalars['Boolean']>;
+  createUser: User;
+  loginUser: Scalars['String'];
+  logoutUser: Scalars['Boolean'];
+  revokeUser: Scalars['Boolean'];
 };
 
 
@@ -48,12 +48,6 @@ export type Node = {
   id: Scalars['ID'];
 };
 
-export type Post = Node & {
-  __typename?: 'Post';
-  id: Scalars['ID'];
-  text: Scalars['String'];
-};
-
 export type Query = {
   __typename?: 'Query';
   node?: Maybe<Node>;
@@ -68,7 +62,7 @@ export type QueryNodeArgs = {
 
 
 export type QueryReadUserArgs = {
-  id: Scalars['ID'];
+  email: Scalars['String'];
 };
 
 export type User = Node & UserJwt & {
@@ -179,8 +173,7 @@ export type ResolversTypes = {
   Mutation: ResolverTypeWrapper<{}>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']>;
   ID: ResolverTypeWrapper<Scalars['ID']>;
-  Node: ResolversTypes['Post'] | ResolversTypes['User'];
-  Post: ResolverTypeWrapper<Post>;
+  Node: ResolversTypes['User'];
   Query: ResolverTypeWrapper<{}>;
   User: ResolverTypeWrapper<User>;
   UserJWT: ResolversTypes['User'];
@@ -194,8 +187,7 @@ export type ResolversParentTypes = {
   Mutation: {};
   Boolean: Scalars['Boolean'];
   ID: Scalars['ID'];
-  Node: ResolversParentTypes['Post'] | ResolversParentTypes['User'];
-  Post: Post;
+  Node: ResolversParentTypes['User'];
   Query: {};
   User: User;
   UserJWT: ResolversParentTypes['User'];
@@ -208,26 +200,20 @@ export type ErrorResolvers<ContextType = any, ParentType extends ResolversParent
 };
 
 export type MutationResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
-  createUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationCreateUserArgs, 'email' | 'password'>>;
-  loginUser?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationLoginUserArgs, 'email' | 'password'>>;
-  logoutUser?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  revokeUser?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, RequireFields<MutationRevokeUserArgs, 'id'>>;
+  createUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationCreateUserArgs, 'email' | 'password'>>;
+  loginUser?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationLoginUserArgs, 'email' | 'password'>>;
+  logoutUser?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  revokeUser?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRevokeUserArgs, 'id'>>;
 };
 
 export type NodeResolvers<ContextType = any, ParentType extends ResolversParentTypes['Node'] = ResolversParentTypes['Node']> = {
-  __resolveType: TypeResolveFn<'Post' | 'User', ParentType, ContextType>;
+  __resolveType: TypeResolveFn<'User', ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-};
-
-export type PostResolvers<ContextType = any, ParentType extends ResolversParentTypes['Post'] = ResolversParentTypes['Post']> = {
-  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  text?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   node?: Resolver<Maybe<ResolversTypes['Node']>, ParentType, ContextType, RequireFields<QueryNodeArgs, 'id'>>;
-  readUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryReadUserArgs, 'id'>>;
+  readUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryReadUserArgs, 'email'>>;
   readCurrentUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
 };
 
@@ -257,7 +243,6 @@ export type Resolvers<ContextType = any> = {
   Error?: ErrorResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   Node?: NodeResolvers<ContextType>;
-  Post?: PostResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   UserJWT?: UserJwtResolvers<ContextType>;

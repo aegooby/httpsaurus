@@ -222,16 +222,12 @@ button:active, .button:active
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 5rem;
+    padding: 0;
+    margin: 0;
 }
 
 .load-spinner 
 {
-    --size: 7rem;
-
-    width: var(--size);
-    height: var(--size);
-
     border-radius: 50%;
     perspective: 800px;
 }
@@ -251,7 +247,6 @@ button:active, .button:active
     left: 0;
     top: 0;
     animation: rotate-one 0.75s linear infinite;
-    border-bottom: 1.25rem solid #89e4ff;
 }
   
 .inner.two 
@@ -259,7 +254,6 @@ button:active, .button:active
     right: 0;
     top: 0;
     animation: rotate-two 1s linear infinite;
-    border-right: 1.25rem solid #57b7d4;
 }
   
 .inner.three 
@@ -267,7 +261,6 @@ button:active, .button:active
     right: 0;
     bottom: 0;
     animation: rotate-three 1.25s linear infinite;
-    border-top: 1.25rem solid #1d85a5;
 }
   
 @keyframes rotate-one 

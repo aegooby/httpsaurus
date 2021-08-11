@@ -51,8 +51,9 @@ export default function Login()
             navigate("/", { state: { redirected: true, loading: useStartLoading() } });
         };
 
-        const onError = function (_error: Error)
+        const onError = function (error: Error)
         {
+            Console.error(error);
             setEmail("");
             setPassword("");
         };

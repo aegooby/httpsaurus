@@ -11,59 +11,51 @@ interface Document
     querySelector: (selectors: string) => DocumentFragment;
 }
 
-interface ClientAttributes
-{
-    graphql: string;
-    refresh: string;
-}
-
 export declare const document: Document;
-export type Snowpack = ImportMeta &
+export type SnowpackImportMeta = ImportMeta &
 { hot: { accept: () => unknown; }; env: Record<string, string>; };
 
 export class Client
 {
-    private graphql: string = {} as string;
-    private refresh: string = {} as string;
-    public relayEnvironment: Relay.Environment = {} as Relay.Environment;
-    public static token: string | undefined = undefined;
-    private constructor()
-    {
-        this.fetchRefresh = this.fetchRefresh.bind(this);
-        this.fetchRelay = this.fetchRelay.bind(this);
-        this.fetchGraphQL = this.fetchGraphQL.bind(this);
-    }
-    public static create(attributes: ClientAttributes): Client
-    {
-        const instance = new Client();
-        instance.graphql = attributes.graphql;
-        instance.refresh = attributes.refresh;
-        const relayEnvironmentConfig =
+    private static readonly graphql: string =
+        (import.meta as SnowpackImportMeta).env.SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT;
+    private static readonly refresh: string =
+        (import.meta as SnowpackImportMeta).env.SNOWPACK_PUBLIC_REFRESH_ENDPOINT;
+
+    private static relayEnvironmentConfig =
         {
-            network: Relay.Network.create(instance.fetchRelay),
+            network: Relay.Network.create(Client.fetchRelay),
             store: new Relay.Store(new Relay.RecordSource()),
             configName: "Environment"
         };
-        instance.relayEnvironment = new Relay.Environment(relayEnvironmentConfig);
+    public static relayEnvironment: Relay.Environment =
+        new Relay.Environment(Client.relayEnvironmentConfig);
+
+    public static token: string | undefined = undefined;
+
+    private constructor() { }
+    public static create(): Client
+    {
+        const instance = new Client();
         return instance;
     }
-    public async fetchRefresh(): Promise<void>
+    public static async fetchRefresh(): Promise<void>
     {
         const options: RequestInit =
         {
             method: "POST",
             credentials: "include"
         };
-        const response = await fetch(this.refresh, options);
+        const response = await fetch(Client.refresh, options);
 
         if (response.ok)
             Client.token = (await response.json()).token;
     }
-    private async fetchRelay(params: Relay.RequestParameters, variables: Relay.Variables): Promise<Relay.GraphQLResponse>
+    private static async fetchRelay(params: Relay.RequestParameters, variables: Relay.Variables): Promise<Relay.GraphQLResponse>
     {
-        return await this.fetchGraphQL({ query: params.text, variables: variables }) as Relay.GraphQLResponse;
+        return await Client.fetchGraphQL({ query: params.text, variables: variables }) as Relay.GraphQLResponse;
     }
-    private async fetchGraphQL(data: unknown): Promise<unknown>
+    private static async fetchGraphQL(data: unknown): Promise<unknown>
     {
         const headers: Headers = new Headers();
         headers.set("Content-Type", "application/json");
@@ -75,7 +67,7 @@ export class Client
             headers: headers,
             body: JSON.stringify(data)
         };
-        return await (await fetch(this.graphql, fetchOptions)).json();
+        return await (await fetch(Client.graphql, fetchOptions)).json();
     }
     public hydrate(element: React.ReactElement): void
     {

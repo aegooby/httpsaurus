@@ -4,7 +4,7 @@ import { yargs } from "../deps.ts";
 import { Resolvers } from "./resolvers.ts";
 import { Server, Console } from "./server.tsx";
 import type { ServerAttributes } from "./server.tsx";
-import type { UserJwt } from "../graphql/types.d.ts";
+import type { UserJwt } from "../graphql/types.ts";
 
 const args = yargs.default(Deno.args)
     .usage("usage: $0 server/daemon.tsx --hostname <host> [--domain <name>] [--tls <path>] [--devtools]")
@@ -39,14 +39,24 @@ if (import.meta.main)
         };
         const httpserver = await Server.create<UserJwt>(serverAttributes);
 
-        try 
+        try
         {
+            /* Global node index */
+            const schemaFields =
+                [{ name: "$.id", type: "TAG", as: "id" }];
+            const parameters = { prefix: [{ count: 1, name: "nodes:" }] };
+            await Server.redis.search.create("nodes", "JSON", schemaFields, parameters);
+        }
+        catch { undefined; }
+        try
+        {
+            /* Users index */
             const schemaFields =
                 [{ name: "$.email", type: "TAG", as: "email", sortable: true }];
-            const parameters = { prefix: [{ count: 1, name: "users:" }] };
+            const parameters = { prefix: [{ count: 1, name: "nodes:users:" }] };
             await Server.redis.search.create("users", "JSON", schemaFields, parameters);
         }
-        catch (error) { Console.log(error); }
+        catch { undefined; }
 
         await httpserver.serve();
     }
