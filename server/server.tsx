@@ -12,6 +12,7 @@ import { Console } from "./console.ts";
 export { Console } from "./console.ts";
 export { Redis } from "./redis.ts";
 export { Auth } from "./auth.ts";
+export { Util } from "./util.ts";
 
 enum StatusCode
 {
