@@ -171,7 +171,7 @@ export class Auth<UserJWT extends UserJWTBase = never>
                 if (!refresh)
                     throw new Error(`Refresh cookie not found`);
                 const jwtPayload = Auth.refresh.verify<UserJWT>(refresh);
-                const result = JSON.parse(await Auth.redis.json.get(`nodes:users:${jwtPayload.id}`, "$"));
+                const result = JSON.parse(await Auth.redis.json.get(`${jwtPayload.id}`, "$"));
                 if (!result)
                     throw new Error(`No JSON data returned for user with id ${jwtPayload.id}`);
                 const user: UserJWT | undefined =
