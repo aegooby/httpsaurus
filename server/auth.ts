@@ -168,6 +168,8 @@ export class Auth<UserJWT extends UserJWTBase = never>
             const refresh = context.cookies.get("refresh");
             if (!refresh)
             {
+                const body = { error: `Refresh cookie not found` };
+                context.response.body = JSON.stringify(body);
                 context.response.status = Oak.Status.Forbidden;
                 await next();
                 return;
@@ -177,11 +179,18 @@ export class Auth<UserJWT extends UserJWTBase = never>
                 const payload = Auth.refresh.verify<UserJWT>(refresh);
                 const result = JSON.parse(await Auth.redis.json.get(`users:${payload.id}`, "$")).pop();
                 if (!result)
-                    throw new Error("User not found");
+                {
+                    const body = { error: `User with id ${payload.id} not found` };
+                    context.response.body = JSON.stringify(body);
+                    context.response.status = Oak.Status.Forbidden;
+                    return;
+                }
                 result.id = payload.id;
                 const user = result as UserJWT;
                 if (user.receipt !== payload.receipt)
                 {
+                    const body = { error: `Receipts do not match` };
+                    context.response.body = JSON.stringify(body);
                     context.response.status = Oak.Status.Forbidden;
                     await next();
                     return;
@@ -192,7 +201,12 @@ export class Auth<UserJWT extends UserJWTBase = never>
                 context.response.status = Oak.Status.OK;
                 context.response.body = { token: Auth.access.create(user) };
             }
-            catch { context.response.status = Oak.Status.Forbidden; }
+            catch (error)
+            {
+                const body = { error: `${error}` };
+                context.response.body = JSON.stringify(body);
+                context.response.status = Oak.Status.Forbidden;
+            }
             await next();
         };
     }
