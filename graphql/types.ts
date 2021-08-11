@@ -14,6 +14,9 @@ export type Scalars = {
   Float: number;
 };
 
+
+
+
 export type Error = {
   __typename?: 'Error';
   message: Scalars['String'];
@@ -76,13 +79,6 @@ export type UserJwt = {
   id: Scalars['ID'];
   email: Scalars['String'];
   receipt?: Maybe<Scalars['String']>;
-};
-
-export type UserPayload = {
-  id: Scalars['ID'];
-  email: Scalars['String'];
-  receipt?: Maybe<Scalars['String']>;
-  password: Scalars['String'];
 };
 
 
@@ -177,7 +173,6 @@ export type ResolversTypes = {
   Query: ResolverTypeWrapper<{}>;
   User: ResolverTypeWrapper<User>;
   UserJWT: ResolversTypes['User'];
-  UserPayload: never;
 };
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -191,8 +186,21 @@ export type ResolversParentTypes = {
   Query: {};
   User: User;
   UserJWT: ResolversParentTypes['User'];
-  UserPayload: never;
 };
+
+export type IndexDirectiveArgs = {   name: Scalars['String'];
+  prefix: Scalars['String']; };
+
+export type IndexDirectiveResolver<Result, Parent, ContextType = any, Args = IndexDirectiveArgs> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
+
+export type SecretDirectiveArgs = {   name: Scalars['String'];
+  type: Scalars['String']; };
+
+export type SecretDirectiveResolver<Result, Parent, ContextType = any, Args = SecretDirectiveArgs> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
+
+export type TagDirectiveArgs = {  };
+
+export type TagDirectiveResolver<Result, Parent, ContextType = any, Args = TagDirectiveArgs> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
 
 export type ErrorResolvers<ContextType = any, ParentType extends ResolversParentTypes['Error'] = ResolversParentTypes['Error']> = {
   message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -231,14 +239,6 @@ export type UserJwtResolvers<ContextType = any, ParentType extends ResolversPare
   receipt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
 };
 
-export type UserPayloadResolvers<ContextType = any, ParentType extends ResolversParentTypes['UserPayload'] = ResolversParentTypes['UserPayload']> = {
-  __resolveType: TypeResolveFn<null, ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  receipt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  password?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-};
-
 export type Resolvers<ContextType = any> = {
   Error?: ErrorResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
@@ -246,7 +246,6 @@ export type Resolvers<ContextType = any> = {
   Query?: QueryResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   UserJWT?: UserJwtResolvers<ContextType>;
-  UserPayload?: UserPayloadResolvers<ContextType>;
 };
 
 
@@ -255,3 +254,45 @@ export type Resolvers<ContextType = any> = {
  * Use "Resolvers" root object instead. If you wish to get "IResolvers", add "typesPrefix: I" to your config.
  */
 export type IResolvers<ContextType = any> = Resolvers<ContextType>;
+export type DirectiveResolvers<ContextType = any> = {
+  index?: IndexDirectiveResolver<any, any, ContextType>;
+  secret?: SecretDirectiveResolver<any, any, ContextType>;
+  tag?: TagDirectiveResolver<any, any, ContextType>;
+};
+
+
+/**
+ * @deprecated
+ * Use "DirectiveResolvers" root object instead. If you wish to get "IDirectiveResolvers", add "typesPrefix: I" to your config.
+ */
+export type IDirectiveResolvers<ContextType = any> = DirectiveResolvers<ContextType>;
+
+/** REDIS TYPES PLUGIN */
+
+interface UserRedisPayload extends User { password: string; }
+
+export const redisPrefix = {
+  Node: "nodes:*:",
+  User: "nodes:users:*:",
+};
+
+export type RedisPayload = {
+  User: UserRedisPayload;
+};
+
+export const redisIndex = {
+  Node: {
+    name: "nodes",
+    schemaFields: [
+      { name: "$.id", type: "TAG", as: "id" }
+    ],
+    parameters: { prefix: [{ count: 1, name: "nodes:*:" }] },
+  },
+  User: {
+    name: "users",
+    schemaFields: [
+      { name: "$.email", type: "TAG", as: "email" }
+    ],
+    parameters: { prefix: [{ count: 1, name: "nodes:users:*:" }] },
+  },
+};

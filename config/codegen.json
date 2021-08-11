@@ -9,7 +9,8 @@
                 "add": {
                     "placement": "prepend",
                     "content": "// deno-lint-ignore-file"
-                }
+                },
+                "config/codegen-plugins/redis.plugin.js": {}
             }
         }
     },
