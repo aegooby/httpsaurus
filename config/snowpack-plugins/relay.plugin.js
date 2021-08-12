@@ -19,7 +19,7 @@ function relayPlugin(_snowpackConfig) {
                 filename: id,
                 ast: true,
                 plugins: [
-                    ["babel-plugin-relay", { eagerESModules: true, isHasteMode: true }],
+                    ["babel-plugin-relay", { eagerESModules: true }],
                     ["babel-plugin-transform-commonjs"],
                     ["@babel/plugin-proposal-class-properties"],
                     ["@babel/plugin-transform-runtime"]

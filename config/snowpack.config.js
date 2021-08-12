@@ -6,7 +6,6 @@ const config =
         "../public": "/",
         "../client": "/scripts",
         "../components": "/scripts",
-        "../graphql": "/scripts"
     },
     plugins: 
     [
@@ -14,7 +13,7 @@ const config =
         "../config/snowpack-plugins/relay.plugin.js",
     ],
     routes: [{ match: "routes", src: ".*", dest: "/index.html" }],
-    /** @todo Switch from webpack to esbuild once stable. */
+    /** @todo Add ESBuild optimizer once stable. */
     /* optimize:                */
     /* {                        */
     /*     entrypoints: "auto", */
