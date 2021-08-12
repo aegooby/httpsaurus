@@ -26,7 +26,7 @@ const config =
     /* },                       */
     packageOptions: 
     {
-        polyfillNode: true
+        polyfillNode: true,
         /** @todo Restore when react-router-dom is fixed. */
         /* "source": "remote",      */
         /* "cache": "../.cache/"    */
