@@ -1,5 +1,6 @@
 
 import * as React from "react";
+import * as ReactHelmet from "react-helmet";
 
 interface Props
 {
@@ -7,7 +8,16 @@ interface Props
     text: string;
 }
 
-export default function Error(props: Props)
+export function Helmet(props: Props)
+{
+    const element: React.ReactElement =
+        <ReactHelmet.Helmet>
+            <title>httpsaurus | {props.text}</title>
+        </ReactHelmet.Helmet>;
+    return element;
+}
+
+export function Page(props: Props)
 {
     const element: React.ReactElement =
         <div className="page">

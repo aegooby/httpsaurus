@@ -35,7 +35,7 @@ export default function Index(props: Props)
             <Suspense fallback={<h3>Not logged in</h3>}>
                 <LoginInfo {...props} />
             </Suspense>
-            <p className="copyinfo">© 0000 Company, Inc.</p>
+            <p className="copyinfo">© {new Date().getFullYear()}</p>
         </div>;
     return element;
 }

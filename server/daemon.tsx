@@ -1,5 +1,5 @@
 
-import { yargs } from "../deps.ts";
+import { React, yargs } from "../deps.ts";
 
 import { Resolvers } from "./resolvers.ts";
 import { Server, Console } from "./server.tsx";
@@ -30,7 +30,7 @@ if (import.meta.main)
             portTls: 3443,
             cert: args.tls,
 
-            headElements: [],
+            headElements: [<title>httpsaurus</title>],
 
             devtools: !!args.devtools,
             redis: true,
