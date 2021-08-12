@@ -12,15 +12,25 @@ interface Document
 }
 
 export declare const document: Document;
-export type SnowpackImportMeta = ImportMeta &
-{ hot: { accept: () => unknown; }; env: Record<string, string>; };
+
+interface SnowpackHMR
+{
+    accept: () => unknown;
+}
+type SnowpackEnv = Record<string, string>;
+interface SnowpackImportMetaExtensions
+{
+    hot: SnowpackHMR | undefined;
+    env: SnowpackEnv;
+}
+type SnowpackImportMeta = ImportMeta & SnowpackImportMetaExtensions;
 
 export class Client
 {
-    private static readonly graphql: string =
-        (import.meta as SnowpackImportMeta).env.SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT;
-    private static readonly refresh: string =
-        (import.meta as SnowpackImportMeta).env.SNOWPACK_PUBLIC_REFRESH_ENDPOINT;
+    public static hot: SnowpackHMR | undefined =
+        (import.meta as SnowpackImportMeta).hot;
+    public static readonly env: SnowpackEnv =
+        (import.meta as SnowpackImportMeta).env;
 
     private static relayEnvironmentConfig =
         {
@@ -46,8 +56,8 @@ export class Client
             method: "POST",
             credentials: "include"
         };
-        const response = await fetch(Client.refresh, options);
-
+        const response =
+            await fetch(Client.env.SNOWPACK_PUBLIC_REFRESH_ENDPOINT, options);
         if (response.ok)
             Client.token = (await response.json()).token;
     }
@@ -67,7 +77,9 @@ export class Client
             headers: headers,
             body: JSON.stringify(data)
         };
-        return await (await fetch(Client.graphql, fetchOptions)).json();
+        const response =
+            await fetch(Client.env.SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT, fetchOptions);
+        return await response.json();
     }
     public hydrate(element: React.ReactElement): void
     {

@@ -4,7 +4,6 @@ import * as ReactRouter from "react-router-dom";
 import Relay from "react-relay/hooks";
 
 import { Client, Console } from "./client.ts";
-import type { SnowpackImportMeta } from "./client.ts";
 
 import App from "../components/App.tsx";
 
@@ -13,7 +12,7 @@ try
 {
     const httpclient = Client.create();
 
-    switch ((import.meta as SnowpackImportMeta).env.MODE)
+    switch (Client.env.MODE)
     {
         case "development":
             {
@@ -24,8 +23,8 @@ try
                         </ReactRouter.BrowserRouter>
                     </Relay.RelayEnvironmentProvider>;
                 httpclient.render(element);
-                if ((import.meta as SnowpackImportMeta).hot)
-                    (import.meta as SnowpackImportMeta).hot.accept();
+                if (Client.hot)
+                    Client.hot.accept();
                 break;
             }
         case "production":

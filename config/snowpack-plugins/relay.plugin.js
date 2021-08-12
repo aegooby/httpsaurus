@@ -1,7 +1,7 @@
 
 const babel = require("@babel/core");
 
-function relayPlugin(_snowpackConfig) {
+function relayPlugin(_snowpackConfig, _pluginOptions) {
     return {
         name: "@snowpack/plugin-relay",
         async transform(options) {
