@@ -426,17 +426,12 @@ export class Server<UserJWT extends UserJWTBase = never>
     {
         if (this.devtools)
         {
-            this.scriptElements.push(<script src="http://localhost:8097"></script>);
-            this.scriptElements.push(<script src="http://localhost:9097"></script>);
+            this.scriptElements.push(<script src="http://localhost:8097" async></script>);
+            this.scriptElements.push(<script src="http://localhost:9097" async></script>);
         }
-        const folder = std.path.join(".", this.public, "scripts", "webpack", "*.js");
-        for await (const file of std.fs.expandGlob(folder))
-        {
-            const basename = std.path.basename(file.path);
-            const [name, id, _] = basename.split(".", 3);
-            if (name !== id)
-                this.scriptElements.push(<script src={`/scripts/webpack/${basename}`} defer></script>);
-        }
+        if (!await std.fs.exists(std.path.join(this.public, "/scripts/bundle.js")))
+            throw new Error("Main entrypoint \"/scripts/bundle.js\" not found");
+        this.scriptElements.push(<script src="/scripts/bundle.js" type="module" defer></script>);
     }
     /**
      * Starts server.

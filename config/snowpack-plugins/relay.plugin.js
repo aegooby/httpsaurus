@@ -1,41 +1,64 @@
 
-function relayPlugin(snowpackConfig)
-{
+const babel = require("@babel/core");
+
+function relayPlugin(_snowpackConfig) {
     return {
         name: "@snowpack/plugin-relay",
-        transform(options)
-        {
-            const 
-            {
-                id, 
-                srcPath, 
-                fileExt, 
-                contents, 
-                isDev, 
-                isHmrEnabled, 
-                isSSR, 
-                isPackage
+        async transform(options) {
+            const {
+                id, _srcPath, fileExt, contents, _isDev, _isHmrEnabled, 
+                _isSSR, isPackage
             } = options;
-            switch (fileExt)
-            {
+            switch (fileExt) {
                 case ".js": case ".mjs":
                     break;
                 default:
                     return;
             }
-            let fileContents = null;
-            switch (typeof contents)
-            {
-                case "string":
-                    fileContents = contents;
-                    break;
-                default:
-                    fileContents = contents.toString();
-                    break;
+            const transformOptions = {
+                filename: id,
+                ast: true,
+                plugins: [
+                    ["babel-plugin-relay", { eagerESModules: true, isHasteMode: true }],
+                    ["babel-plugin-transform-commonjs"],
+                    ["@babel/plugin-proposal-class-properties"],
+                    ["@babel/plugin-transform-runtime"]
+                ],
+            };
+            if (isPackage)
+                return;
+            const transformResult = 
+                await babel.transformAsync(contents, transformOptions);
+            const transformAstOptions = {
+                plugins: [
+                    function removeGraphQLTagImport() {
+                        return {
+                            visitor: {
+                                ImportDeclaration(path) {
+                                    const sources = [
+                                        "relay-runtime",
+                                        "react-relay",
+                                        "react-relay/hooks"
+                                    ]
+                                    if (sources.includes(path.node.source.value)) {
+                                        const filter = function (specifier) {
+                                            return !specifier.imported ||
+                                                specifier.imported.name !== "graphql";
+                                        }
+                                        path.node.specifiers = 
+                                            path.node.specifiers.filter(filter);
+                                        if (!(path.node.specifiers.length > 0))
+                                            path.remove();
+                                    }
+                                },
+                            },
+                        };
+                    },
+                ],
             }
-            const newContents = fileContents.replaceAll(/(require)\(('|")(.*)\.ts('|")\)/g, "require(\"$3.js\")");
-
-            return newContents;
+            const transformAstResult = 
+                await babel.transformFromAstAsync(transformResult.ast, undefined, transformAstOptions);
+            return transformAstResult.code;
         }
     };
 }

@@ -21,6 +21,7 @@
         "@types/snowpack-env": "^2.3.3",
         "babel-loader": "^8.2.2",
         "babel-plugin-relay": "^11.0.2",
+        "babel-plugin-transform-commonjs": "^1.1.6",
         "devcert-cli": "^1.0.0",
         "graphql": "^15.5.1",
         "history": "^5.0.0",

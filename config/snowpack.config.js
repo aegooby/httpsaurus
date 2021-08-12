@@ -11,39 +11,7 @@ const config =
     plugins: 
     [
         "@snowpack/plugin-react-refresh",
-        "./snowpack-plugins/relay.plugin.js",
-        [
-            "@snowpack/plugin-webpack",
-            {
-                sourceMap: true,
-                failOnWarnings: false,
-                outputPattern: { js: "scripts/webpack/[name].[id].js" },
-                extendConfig: function (config)
-                {
-                    const babel = 
-                    {
-                        test: /\.m?js$/,
-                        exclude: /(node_modules|\.cache)/,
-                        use:
-                        {
-                            loader: "babel-loader",
-                            options:
-                            {
-                                presets: ["@babel/preset-env"],
-                                plugins:
-                                [
-                                    "babel-plugin-relay",
-                                    "@babel/plugin-proposal-class-properties",
-                                    "@babel/plugin-transform-runtime"
-                                ]
-                            }
-                        }
-                    };
-                    config.module.rules.push(babel);
-                    return config;
-                }
-            }
-        ]
+        "../config/snowpack-plugins/relay.plugin.js",
     ],
     routes: [{ match: "routes", src: ".*", dest: "/index.html" }],
     /** @todo Switch from webpack to esbuild once stable. */
