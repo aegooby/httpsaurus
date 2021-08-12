@@ -87,7 +87,7 @@ export default function Register()
                     </div>
                 </form>
             </div>
-            <p className="copyinfo">© 0000 Company, Inc.</p>
+            <p className="copyinfo">© {new Date().getFullYear()}</p>
         </div>;
     return element;
 }

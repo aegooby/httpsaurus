@@ -85,7 +85,7 @@ export default function Login()
                     </div>
                 </form>
             </div>
-            <p className="copyinfo">© 0000 Company, Inc.</p>
+            <p className="copyinfo">© {new Date().getFullYear()}</p>
         </div>;
     return element;
 }
