@@ -31,7 +31,7 @@ function relayPlugin(_snowpackConfig) {
                 await babel.transformAsync(contents, transformOptions);
             const transformAstOptions = {
                 plugins: [
-                    function removeGraphQLTagImport() {
+                    function relayPluginTransformAst() {
                         return {
                             visitor: {
                                 ImportDeclaration(path) {
@@ -51,6 +51,14 @@ function relayPlugin(_snowpackConfig) {
                                             path.remove();
                                     }
                                 },
+                                ExportDefaultDeclaration(path) {
+                                    const declaration = path.node.declaration;
+                                    if (declaration.object && 
+                                        declaration.object.name === "module" &&
+                                        declaration.property &&
+                                        declaration.property.name === "exports")
+                                        path.remove();
+                                }
                             },
                         };
                     },
