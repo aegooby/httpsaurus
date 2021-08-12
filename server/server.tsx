@@ -429,7 +429,8 @@ export class Server<UserJWT extends UserJWTBase = never>
             this.scriptElements.push(<script src="http://localhost:8097" async></script>);
             this.scriptElements.push(<script src="http://localhost:9097" async></script>);
         }
-        if (!await std.fs.exists(std.path.join(this.public, "/scripts/bundle.js")))
+        const entrypoint = std.path.join(".", this.public, "/scripts/bundle.js");
+        if (!await std.fs.exists(entrypoint))
             throw new Error("Main entrypoint \"/scripts/bundle.js\" not found");
         this.scriptElements.push(<script src="/scripts/bundle.js" type="module" defer></script>);
     }
