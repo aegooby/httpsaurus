@@ -1,4 +1,6 @@
 
+declare const Deno: unknown;
+
 function throwOnClient() { Deno; }
 
 export enum Environment

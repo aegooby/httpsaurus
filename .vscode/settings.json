@@ -3,7 +3,7 @@
     "deno.unstable": true,
     "deno.lint": true,
     "deno.importMap": "import-map.json",
-    "deno.config": "tsconfig.json",
+    "deno.config": "config/deno.tsconfig.json",
     "typescript.validate.enable": false,
     "editor.formatOnSave": true,
 

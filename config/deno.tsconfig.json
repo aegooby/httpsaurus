@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "checkJs": true,
+        "downlevelIteration": true,
+        "emitDeclarationOnly": false,
+        "emitDecoratorMetadata": true,
+        "esModuleInterop": true,
+        "experimentalDecorators": true,
+        "importHelpers": true,
+        "importsNotUsedAsValues": "remove",
+        "jsx": "react",
+        "jsxFactory": "React.createElement",
+        "jsxFragmentFactory": "React.Fragment",
+        "module": "esnext",
+        "noImplicitAny": true,
+        "lib": [
+            "dom",
+            "dom.iterable",
+            "dom.asynciterable",
+            "deno.ns",
+            "deno.unstable",
+            "esnext"
+        ],
+        "target": "esnext",
+        "strict": true
+    }
+}

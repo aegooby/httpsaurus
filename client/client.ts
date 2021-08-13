@@ -6,13 +6,6 @@ import * as Relay from "relay-runtime";
 import { Console } from "./console.ts";
 export { Console } from "./console.ts";
 
-interface Document
-{
-    querySelector: (selectors: string) => DocumentFragment;
-}
-
-export declare const document: Document;
-
 interface SnowpackHMR
 {
     accept: () => unknown;

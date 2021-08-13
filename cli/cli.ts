@@ -63,10 +63,10 @@ export class CLI
         {
             if (args.help)
             {
-                Console.log(`usage: ${command} clean [--cache] [--dist] [--node]`);
+                Console.log(`usage: ${command} clean [--cache] [--dist] [--node] [--redis]`);
                 return;
             }
-            if (!args.cache && !args.dist && !args.node)
+            if (!args.cache && !args.dist && !args.node && !args.redis)
                 args.all = true;
 
             const directories: Array<string> = [];
@@ -76,6 +76,11 @@ export class CLI
                 directories.push("dist/");
             if (args.all || args.node)
                 directories.push("node_modules/");
+            if (args.all || args.redis)
+            {
+                directories.push("dump.rdb");
+                directories.push("appendonly.aof");
+            }
 
             for (const directory of directories)
                 if (await std.fs.exists(directory))
