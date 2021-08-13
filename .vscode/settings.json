@@ -2,8 +2,12 @@
     "deno.enable": true,
     "deno.unstable": true,
     "deno.lint": true,
+    "deno.suggest.completeFunctionCalls": true,
+    "deno.cache": ".cache/",
+    "deno.suggest.autoImports": true,
     "deno.importMap": "import-map.json",
     "deno.config": "config/deno.tsconfig.json",
+    
     "typescript.validate.enable": false,
     "editor.formatOnSave": true,
 
