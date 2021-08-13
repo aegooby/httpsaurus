@@ -20,6 +20,7 @@
             "dom.asynciterable",
             "deno.ns",
             "deno.unstable",
+            "deno.worker",
             "esnext"
         ],
         "target": "esnext",
