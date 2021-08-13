@@ -69,26 +69,28 @@ export class CLI
             if (!args.cache && !args.dist && !args.node && !args.redis)
                 args.all = true;
 
-            const directories: Array<string> = [];
+            const files: Array<{ path: string; directory: boolean; }> = [];
             if (args.all || args.cache)
-                directories.push(".cache/");
+                files.push({ path: ".cache/", directory: true });
             if (args.all || args.dist)
-                directories.push("dist/");
+                files.push({ path: "dist/", directory: true });
             if (args.all || args.node)
-                directories.push("node_modules/");
+                files.push({ path: "node_modules/", directory: true });
             if (args.all || args.redis)
             {
-                directories.push("dump.rdb");
-                directories.push("appendonly.aof");
+                files.push({ path: "dump.rdb", directory: false });
+                files.push({ path: "appendonly.aof", directory: false });
             }
 
-            for (const directory of directories)
-                if (await std.fs.exists(directory))
-                    await Deno.remove(directory, { recursive: true });
+            for (const file of files)
+            {
+                if (await std.fs.exists(file.path))
+                    await Deno.remove(file.path, { recursive: true });
+                if (file.directory)
+                    await std.fs.ensureDir(file.path);
+            }
 
-            for (const directory of directories)
-                await std.fs.ensureDir(directory);
-
+            Console.success("Done");
             return undefined;
         };
     }
@@ -101,15 +103,23 @@ export class CLI
                 Console.log(`usage: ${command} install`);
                 return;
             }
-            const npmProcess = Deno.run({ cmd: ["npm", "install", "--global", "yarn", "n"] });
+            const npmRunOptions: Deno.RunOptions =
+            {
+                cmd: ["npm", "install", "--global", "yarn", "n"],
+                stdout: "null"
+            };
+            Console.log("Installing Yarn");
+            const npmProcess = Deno.run(npmRunOptions);
             const npmStatus = await npmProcess.status();
             npmProcess.close();
             if (!npmStatus.success)
                 return npmStatus.code;
 
-            const nProcess = Deno.run({ cmd: ["n", "latest"] });
+            Console.log("Installing latest Node version");
+            const nProcess = Deno.run({ cmd: ["n", "latest"], stdout: "null" });
             const nStatus = await nProcess.status();
             nProcess.close();
+            Console.success("Done");
             return nStatus.code;
         };
     }
@@ -122,148 +132,12 @@ export class CLI
                 Console.log(`usage: ${command} upgrade`);
                 return;
             }
-            const process = Deno.run({ cmd: ["deno", "upgrade"] });
+            Console.log("Upgrading Deno");
+            const process = Deno.run({ cmd: ["deno", "upgrade"], stdout: "null" });
             const status = await process.status();
             process.close();
+            Console.success("Done");
             return status.code;
-        };
-    }
-    public static pkg(): Command
-    {
-        return (_args: Arguments) =>
-        {
-            Console.log(`commands:`);
-            Console.print(`  pkg:add --host <host> <packages...>\t${std.colors.italic(std.colors.black("(adds new packages)"))}`);
-            Console.print(`  pkg:remove <packages...>\t\t\t${std.colors.italic(std.colors.black("(removes existing packages)"))}`);
-            Console.print(`  pkg:update [packages...]\t\t\t${std.colors.italic(std.colors.black("(updates pacakges)"))}`);
-            return undefined;
-        };
-    }
-    public static pkgAdd(): Command
-    {
-        return async (args: Arguments) =>
-        {
-            if (args.help)
-            {
-                Console.log(`usage: ${command} pkg-add --host <host> <packages...>`);
-                return;
-            }
-            if (!args.host)
-            {
-                Console.error(`usage: ${command} pkg-add --host <host> <packages...>`);
-                return;
-            }
-            const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
-            for (const arg of args._.slice(1) as string[])
-            {
-                const errorStr = `Package "${arg}" not found, may need to be added manually`;
-                switch (args.host)
-                {
-                    case "std":
-                        {
-                            const url = `https://deno.land/std/${arg}/mod.ts`;
-                            if ((await fetch(url)).ok)
-                                importMap.imports[arg] = url;
-                            else
-                                Console.error(errorStr);
-                            break;
-                        }
-                    case "deno.land":
-                        {
-                            const url = `https://deno.land/x/${arg}/mod.ts`;
-                            if ((await fetch(url)).ok)
-                                importMap.imports[arg] = url;
-                            else
-                                Console.error(errorStr);
-                            break;
-                        }
-                    case "cdn.skypack.dev":
-                        {
-                            const url = `https://cdn.skypack.dev/${arg}?dts`;
-                            if ((await fetch(url)).ok)
-                                importMap.imports[arg] = url;
-                            else
-                                Console.error(errorStr);
-                            break;
-                        }
-                    case "esm.sh":
-                        {
-                            const url = `https://esm.sh/${arg}`;
-                            if ((await fetch(url)).ok)
-                                importMap.imports[arg] = url;
-                            else
-                                Console.error(errorStr);
-                            break;
-                        }
-                }
-            }
-            await Deno.writeTextFile("import-map.json", JSON.stringify(importMap, undefined, 4));
-            return undefined;
-        };
-    }
-    public static pkgRemove(): Command
-    {
-        return async (args: Arguments) =>
-        {
-            if (args.help)
-            {
-                Console.log(`usage: ${command} pkg-remove <packages...>`);
-                return;
-            }
-            const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
-            for (const arg of args._ as string[])
-            {
-                if (importMap.imports[arg])
-                    importMap.imports[arg] = undefined;
-            }
-            await Deno.writeTextFile("import-map.json", JSON.stringify(importMap, undefined, 4));
-            return undefined;
-        };
-    }
-    public static pkgUpdate(): Command
-    {
-        return async (args: Arguments) =>
-        {
-            if (args.help)
-            {
-                Console.log(`usage: ${command} pkg-update [packages...]`);
-                return;
-            }
-            const importMap = JSON.parse(await Deno.readTextFile("import-map.json"));
-            const keys = (args._.length > 1 ? args._ : Object.keys(importMap.imports)) as string[];
-            for (const key of keys)
-            {
-                if (!importMap.imports[key])
-                    continue;
-                try
-                {
-                    const url = new URL(importMap.imports[key]);
-                    switch (url.host)
-                    {
-                        case "deno.land":
-                            {
-                                const at = url.pathname.indexOf("@");
-                                if (at > 0)
-                                {
-                                    const slash = url.pathname.indexOf("/", at);
-                                    url.pathname = `${url.pathname.slice(0, at)}${url.pathname.slice(slash, undefined)}`;
-                                }
-                                const response = await fetch(url);
-                                if (response.headers.has("location"))
-                                    url.pathname = response.headers.get("location") as string;
-                                else
-                                    url.pathname = (new URL(response.url)).pathname;
-                                importMap.imports[key] = url.href;
-                                break;
-                            }
-                        default:
-                            break;
-                    }
-                }
-                catch { undefined; }
-            }
-            await Deno.writeTextFile("import-map.json", JSON.stringify(importMap, undefined, 4));
-            return undefined;
         };
     }
     public static cache(): Command
@@ -278,6 +152,7 @@ export class CLI
 
             if (args.remote)
             {
+                Console.log("Fetching remote cache");
                 const remoteCache = "https://dl.dropboxusercontent.com/s/gtjdehk8eqoqtl3/.cache.zip";
                 const response = await fetch(remoteCache);
                 if (!response.body)
@@ -289,8 +164,12 @@ export class CLI
                 const binary = new Uint8Array(body);
                 await Deno.writeFile(".cache.zip", binary);
 
+                Console.log("Unzipping remote cache");
                 const runOptions: Deno.RunOptions =
-                    { cmd: ["unzip", "-oq", ".cache"] };
+                {
+                    cmd: ["unzip", "-oq", ".cache"],
+                    stdout: "null"
+                };
                 const process = Deno.run(runOptions);
                 const status = await process.status();
                 process.close();
@@ -313,10 +192,16 @@ export class CLI
                         "deno", "cache", "--unstable", ...flags,
                         "--import-map", "import-map.json", "deps.ts"
                     ],
-                env: { DENO_DIR: ".cache/" }
+                env: { DENO_DIR: ".cache/" },
+                stdout: "null"
             };
-            const yarnRunOptions: Deno.RunOptions = { cmd: ["yarn", "install"] };
+            const yarnRunOptions: Deno.RunOptions =
+            {
+                cmd: ["yarn", "install"],
+                stdout: "null"
+            };
 
+            Console.log("Caching dependencies");
             const denoProcess = Deno.run(denoRunOptions);
             const yarnProcess = Deno.run(yarnRunOptions);
 
@@ -329,6 +214,7 @@ export class CLI
                 return denoStatus.code;
             if (!yarnStatus.success)
                 return yarnStatus.code;
+            Console.success("Done");
             return undefined;
         };
     }
@@ -373,12 +259,25 @@ export class CLI
             const relayRunOptions: Deno.RunOptions =
             {
                 cmd: ["yarn", "run", "relay-compiler", ...options],
+                stdout: "null"
             };
+            Console.log("Running Relay compiler");
             const relayProcess = Deno.run(relayRunOptions);
             const relayStatus = await relayProcess.status();
             relayProcess.close();
             if (!relayStatus.success)
                 return relayStatus.code;
+
+            const files =
+                std.fs.expandGlob("components/**/__generated__/**/*.ts");
+            Console.log("Adding Deno lint ignore directives");
+            for await (const file of files)
+            {
+                const text = await Deno.readTextFile(file.path);
+                const updated = "// deno-lint-ignore-file \n" + text;
+                await Deno.writeTextFile(file.path, updated);
+            }
+            Console.success("Done");
             return undefined;
         };
     }
@@ -407,14 +306,24 @@ export class CLI
                 {
                     SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT: new URL("/graphql", args.url).href,
                     SNOWPACK_PUBLIC_REFRESH_ENDPOINT: new URL("/jwt/refresh", args.url).href
-                }
+                },
+                stdout: "null",
+                stderr: "piped"
             };
+            Console.log("Running Snowpack build");
             if (!args.watch)
             {
                 const snowpackProcess = Deno.run(snowpackRunOptions);
-                await snowpackProcess.status();
+                const snowpackStatus = await snowpackProcess.status();
                 snowpackProcess.close();
-                return;
+                if (!snowpackStatus.success)
+                {
+                    const error =
+                        (new TextDecoder()).decode(await snowpackProcess.stderrOutput());
+                    Console.error(error);
+                }
+                Console.success("Done");
+                return undefined;
             }
             const watcher = Deno.watchFs(["components", "client", "public"], { recursive: true });
             let lastPaths: Set<string> = new Set();
@@ -424,6 +333,7 @@ export class CLI
                 await std.async.delay(5000);
                 lastPaths = new Set();
             };
+            Console.log("Watching for changes...");
             for await (const change of watcher)
             {
                 switch (change.kind)
@@ -439,11 +349,13 @@ export class CLI
 
                             if (newPath)
                             {
+                                Console.log("Change detected! Restarting...");
                                 const snowpackProcess = Deno.run(snowpackRunOptions);
                                 await snowpackProcess.status();
                                 snowpackProcess.close();
                                 newPath = false;
                                 resetLastPaths();
+                                Console.success("Done");
                             }
                             break;
                         }
@@ -469,10 +381,13 @@ export class CLI
                         "yarn", "run", "graphql-codegen", "--config",
                         "config/codegen.json", ...watchArgs
                     ],
+                stdout: "null"
             };
+            Console.log("Running GraphQL codegen");
             const process = Deno.run(runOptions);
             const status = await process.status();
             process.close();
+            Console.success("Done");
             return status.code;
         };
     }
@@ -501,13 +416,16 @@ export class CLI
                     [
                         "yarn", "run", "snowpack", "--config",
                         "config/snowpack.config.js", "dev", "--secure"
-                    ]
+                    ],
+                stdout: "null"
             };
+            Console.log("Running Snowpack dev server");
             const process = Deno.run(runOptions);
             const status = await process.status();
             process.close();
             if (!status.success)
                 return status.code;
+            Console.success("Done");
             return undefined;
         };
     }
@@ -548,14 +466,15 @@ export class CLI
             const promises = [];
             if (args.devtools)
             {
+                Console.log("Opening devtools");
                 const reactRunOptions: Deno.RunOptions =
-                    { cmd: ["yarn", "run", "react-devtools"], };
+                    { cmd: ["yarn", "run", "react-devtools"], stdout: "null" };
                 const reactProcess = Deno.run(reactRunOptions);
                 const reactStatus = reactProcess.status();
                 promises.push(reactStatus);
 
                 const relayRunOptions: Deno.RunOptions =
-                    { cmd: ["yarn", "run", "relay-devtools"], };
+                    { cmd: ["yarn", "run", "relay-devtools"], stdout: "null" };
                 const relayProcess = Deno.run(relayRunOptions);
                 const relayStatus = relayProcess.status();
                 promises.push(relayStatus);
@@ -571,10 +490,12 @@ export class CLI
                     ],
                 env: { DENO_DIR: ".cache/" }
             };
+            Console.log("Starting server");
             const serverProcess = Deno.run(serverRunOptions);
             const serverStatus = serverProcess.status();
             promises.push(serverStatus);
             await Promise.race(promises);
+            Console.success("Done");
             return undefined;
         };
     }
@@ -612,11 +533,13 @@ export class CLI
                     ],
                 env: { DENO_DIR: ".cache/" }
             };
+            Console.log("Starting server");
             const serverProcess = Deno.run(serverRunOptions);
             const serverStatus = await serverProcess.status();
             serverProcess.close();
             if (!serverStatus.success)
                 return serverStatus.code;
+            Console.success("Done");
             return undefined;
         };
     }
@@ -664,6 +587,7 @@ export class CLI
                 Console.log(`usage: ${command} prune`);
                 return;
             }
+            Console.log("Pruning Docker");
             const containerProcess =
                 Deno.run({ cmd: ["docker", "container", "prune", "--force"] });
             const containerStatus = await containerProcess.status();
@@ -677,6 +601,8 @@ export class CLI
             imageProcess.close();
             if (!imageStatus.success)
                 return imageStatus.code;
+
+            Console.success("Done");
             return undefined;
         };
     }
@@ -701,11 +627,13 @@ export class CLI
 
             const imageRunOptions: Deno.RunOptions =
                 { cmd: ["docker", "build", "--target", args.target, "--tag", args.tag, "."] };
+            Console.log("Building Docker image");
             const imageProcess = Deno.run(imageRunOptions);
             const imageStatus = await imageProcess.status();
             imageProcess.close();
             if (!imageStatus.success)
                 return imageStatus.code;
+            Console.success("Done");
             return undefined;
         };
     }
@@ -738,11 +666,14 @@ export class CLI
                         "8000:8000", `${args.tag}:latest`
                     ]
             };
+            Console.log("Running Docker container");
             const containerProcess = Deno.run(containerRunOptions);
             const containerStatus = await containerProcess.status();
             containerProcess.close();
             if (!containerStatus.success)
                 return containerStatus.code;
+
+            Console.success("Done");
             return undefined;
         };
     }
@@ -774,8 +705,10 @@ export class CLI
                     ],
                 env: { DENO_DIR: ".cache/" }
             };
+            Console.success("Running RSync");
             const process = Deno.run(runOptions);
             const status = await process.status();
+            Console.success("Done");
             return status.code;
         };
     }
@@ -812,11 +745,6 @@ if (import.meta.main)
         .command("clean", "", {}, CLIUtil.exit(CLI.clean()))
         .command("install", "", {}, CLIUtil.exit(CLI.install()))
         .command("upgrade", "", {}, CLIUtil.exit(CLI.upgrade()))
-        .command("pkg", "", {}, CLIUtil.exit(CLI.pkg()))
-        .command("pkg:help", "", {}, CLIUtil.exit(CLI.pkg()))
-        .command("pkg:add", "", {}, CLIUtil.exit(CLI.pkgAdd()))
-        .command("pkg:remove", "", {}, CLIUtil.exit(CLI.pkgRemove()))
-        .command("pkg:update", "", {}, CLIUtil.exit(CLI.pkgUpdate()))
         .command("cache", "", {}, CLIUtil.exit(CLI.cache()))
         .command("bundle", "", {}, CLIUtil.exit(CLI.bundle()))
         .command("bundle:relay", "", {}, CLIUtil.exit(CLI.bundleRelay()))
