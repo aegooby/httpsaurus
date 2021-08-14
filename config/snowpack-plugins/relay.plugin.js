@@ -36,6 +36,9 @@ const relayPlugin = function (_snowpackConfig, _pluginOptions) {
                 default:
                     return;
             }
+            if (options.isPackage)
+                return;
+
             const transformOptions = {
                 filename: options.id,
                 ast: true,
@@ -46,8 +49,6 @@ const relayPlugin = function (_snowpackConfig, _pluginOptions) {
                     ["@babel/plugin-transform-runtime"]
                 ],
             };
-            if (options.isPackage)
-                return;
             const transformResult = 
                 await babel.transformAsync(options.contents, transformOptions);
             const transformAstOptions = {
