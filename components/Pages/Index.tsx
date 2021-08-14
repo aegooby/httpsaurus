@@ -20,7 +20,7 @@ export function Helmet()
 {
     const element: React.ReactElement =
         <ReactHelmet.Helmet>
-            <title>httpsaurus | home</title>
+            <title>turtle | home</title>
         </ReactHelmet.Helmet>;
     return element;
 }

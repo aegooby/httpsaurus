@@ -8,7 +8,7 @@ export function Helmet()
 {
     const element: React.ReactElement =
         <ReactHelmet.Helmet>
-            <title>httpsaurus | register</title>
+            <title>turtle | register</title>
         </ReactHelmet.Helmet>;
     return element;
 }

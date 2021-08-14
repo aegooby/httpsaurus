@@ -30,7 +30,7 @@ if (import.meta.main)
             portTls: 3443,
             cert: args.tls,
 
-            headElements: [<title>httpsaurus</title>],
+            headElements: [<title>turtle</title>],
 
             devtools: !!args.devtools,
             redis: true,

@@ -12,7 +12,7 @@ export function Helmet(props: Props)
 {
     const element: React.ReactElement =
         <ReactHelmet.Helmet>
-            <title>httpsaurus | {props.text}</title>
+            <title>turtle | {props.text}</title>
         </ReactHelmet.Helmet>;
     return element;
 }

@@ -1,21 +1,17 @@
 
-const config =
-{
-    mount: 
-    {
+const config = {
+    mount: {
         "../public": "/",
         "../client": "/scripts",
         "../components": "/scripts",
     },
-    plugins: 
-    [
+    plugins: [
         "@snowpack/plugin-react-refresh",
         "../config/snowpack-plugins/relay.plugin.js",
     ],
     routes: [{ match: "routes", src: ".*", dest: "/index.html" }],
     /** @todo Add ESBuild optimizer once stable. */
-    /* optimize:                */
-    /* {                        */
+    /* optimize: {              */
     /*     entrypoints: "auto", */
     /*     bundle: true,        */
     /*     sourcemap: true,     */
@@ -24,21 +20,18 @@ const config =
     /*     minify: true,        */
     /*     target: "es2020"     */
     /* },                       */
-    packageOptions: 
-    {
+    packageOptions: {
         polyfillNode: true,
         /** @todo Restore when react-router-dom is fixed. */
         /* "source": "remote",      */
         /* "cache": "../.cache/"    */
     },
-    devOptions: 
-    {
+    devOptions: {
         output: "dashboard",
         hmrErrorOverlay: true,
         port: 3443
     },
-    buildOptions: 
-    {
+    buildOptions: {
         out: "../dist/",
         sourcemap: true
     }

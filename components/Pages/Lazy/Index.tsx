@@ -30,7 +30,7 @@ export default function Index(props: Props)
             <p>
                 <img src="/logo.webp" height={304} width={256} alt="logo" />
             </p>
-            <h1><strong>https</strong>aurus</h1>
+            <h1><strong>turtle</strong></h1>
             <h2>React v{React.version}</h2>
             <Suspense fallback={<h3>Not logged in</h3>}>
                 <LoginInfo {...props} />
