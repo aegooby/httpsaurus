@@ -379,7 +379,7 @@ export class CLI
                 cmd:
                     [
                         "yarn", "run", "graphql-codegen", "--config",
-                        "config/codegen.json", ...watchArgs
+                        "config/codegen.config.js", ...watchArgs
                     ],
                 stdout: "null"
             };
