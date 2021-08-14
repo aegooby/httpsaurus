@@ -2,6 +2,19 @@
 const babel = require("@babel/core");
 
 /**
+ * @typedef TransformOptions
+ * @type {object}
+ * @property {string} id
+ * @property {string} srcPath
+ * @property {string} fileExt
+ * @property {string | unknown} contents
+ * @property {boolean} isDev
+ * @property {boolean} isHmrEnabled
+ * @property {boolean} isSSR
+ * @property {boolean} isPackage
+ */
+
+/**
  * Transforms input files for Relay.
  * 
  * @param {unknown} _snowpackConfig 
@@ -13,31 +26,18 @@ const relayPlugin = function (_snowpackConfig, _pluginOptions) {
         name: "@snowpack/plugin-relay",
         /**
          * 
-         * @param {{
-         *      id: string, 
-         *      _srcPath: string, 
-         *      fileExt: string, 
-         *      contents: string, 
-         *      _isDev: boolean,
-         *      _isHmrEnabled: boolean,
-         *      _isSSR: boolean,
-         *      isPackage: boolean
-         * }} options 
+         * @param {TransformOptions} options 
          * @returns {Promise<number | undefined>}
          */
         async transform(options) {
-            const {
-                id, _srcPath, fileExt, contents, _isDev, _isHmrEnabled, 
-                _isSSR, isPackage
-            } = options;
-            switch (fileExt) {
+            switch (options.fileExt) {
                 case ".js": case ".mjs":
                     break;
                 default:
                     return;
             }
             const transformOptions = {
-                filename: id,
+                filename: options.id,
                 ast: true,
                 plugins: [
                     ["babel-plugin-relay", { eagerESModules: true }],
@@ -46,10 +46,10 @@ const relayPlugin = function (_snowpackConfig, _pluginOptions) {
                     ["@babel/plugin-transform-runtime"]
                 ],
             };
-            if (isPackage)
+            if (options.isPackage)
                 return;
             const transformResult = 
-                await babel.transformAsync(contents, transformOptions);
+                await babel.transformAsync(options.contents, transformOptions);
             const transformAstOptions = {
                 plugins: [
                     function relayPluginTransformAst() {

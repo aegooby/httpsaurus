@@ -1,17 +1,32 @@
 // deno-lint-ignore-file
 import __performance_now$ from "https://esm.sh/performance-now";
 var __global$ = window;
+/**
+ * 
+ * @param {*} n 
+ * @returns 
+ */
 var u = n => 
 {
-    if (typeof require != "undefined")
-        return require(n);
-    throw new Error('Dynamic require of "' + n + '" is not supported');
+    return require(n);
 };
-var y = (n, e) =>
-    () => (e || n((e = { exports: {} }).exports, e), e.exports);
-var g = y((A, h) =>
+/**
+ * @param {*} n 
+ * @param {*} e
+ * @return {Function}
+ */
+function y (n, e) {
+    return () => (e || n((e = { exports: {} }).exports, e), e.exports);
+}
+/**
+ * 
+ * @param {*} _A 
+ * @param {*} h 
+ */
+const pq = (_A, h) =>
 {
     var x = __performance_now$, 
+        /** @type {*} */
         l = typeof window == "undefined" ? __global$ : window, 
         i = ["moz", "webkit"], 
         a = "AnimationFrame", 
@@ -22,7 +37,7 @@ var g = y((A, h) =>
         o = l[i[t] + "Cancel" + a] || l[i[t] + "CancelRequest" + a];
     var t;
     (!c || !o) && (p = 0, m = 0, r = [], v = 1e3 / 60,
-        c = function (n)
+        c = function (/** @type {any} */ n)
         {
             if (r.length === 0) 
             {
@@ -39,16 +54,18 @@ var g = y((A, h) =>
             }
             return r.push({ handle: ++m, callback: n, cancelled: !1 }), m;
         },
-        o = function (n)
+        o = function (/** @type {any} */ n)
         {
             for (var e = 0; e < r.length; e++)
                 r[e].handle === n && (r[e].cancelled = !0);
         });
-    var p, m, r, v;
-    h.exports = function (n) { return c.call(l, n); };
+    
+    var /** @type {*} */ p, /** @type {*} */ m, /** @type {*} */ r, /** @type {*} */ v;
+    h.exports = function (/** @type {any} */ n) { return c.call(l, n); };
     h.exports.cancel = function () { o.apply(l, arguments); };
-    h.exports.polyfill = function (n)
+    h.exports.polyfill = function (/** @type {Window & typeof globalThis} */ n)
     { n || (n = l), n.requestAnimationFrame = c, n.cancelAnimationFrame = o; };
-});
+};
+const g = y(pq, undefined);
 
 g().polyfill();
