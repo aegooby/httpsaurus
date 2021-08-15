@@ -10,11 +10,6 @@ interface RedisModuleAttributes
 
 abstract class RedisModule
 {
-    // protected redisMain: redis.Redis = {} as redis.Redis;
-    // constructor(attributes: RedisModuleAttributes)
-    // {
-    //     this.redisMain = attributes.redisMain;
-    // }
     async sendCommand(command: string, args: redis.RedisValue[])
     {
         return (await Redis.main.executor.exec(command, ...args)).value();
@@ -30,7 +25,7 @@ abstract class RedisModule
             return this.handleResponse(response[0]);
         else if (Array.isArray(response) && response.length > 1 && this.isOnlyTwoDimensionalArray(response))
             return this.handleResponse(this.reduceArrayDimension(response));
-        //If is an array/obj we will build it
+
         const array = response as unknown[];
         for (let i = 0; i < array.length; i += 2)
         {
