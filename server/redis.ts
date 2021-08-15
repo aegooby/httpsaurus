@@ -10,14 +10,14 @@ interface RedisModuleAttributes
 
 abstract class RedisModule
 {
-    protected redisMain: redis.Redis = {} as redis.Redis;
-    constructor(attributes: RedisModuleAttributes)
-    {
-        this.redisMain = attributes.redisMain;
-    }
+    // protected redisMain: redis.Redis = {} as redis.Redis;
+    // constructor(attributes: RedisModuleAttributes)
+    // {
+    //     this.redisMain = attributes.redisMain;
+    // }
     async sendCommand(command: string, args: redis.RedisValue[])
     {
-        return (await this.redisMain.executor.exec(command, ...args)).value();
+        return (await Redis.main.executor.exec(command, ...args)).value();
     }
     handleResponse(response: unknown): unknown
     {
@@ -71,14 +71,11 @@ export interface JSONGetParameters
 }
 class RedisJSON extends RedisModule
 {
-    private constructor(attributes: RedisModuleAttributes)
+    private constructor() { super(); }
+    public static create(): RedisJSON
     {
-        super(attributes);
-    }
-    public static async create(attributes: RedisModuleAttributes): Promise<RedisJSON>
-    {
-        const instance = new RedisJSON(attributes);
-        return await Promise.resolve(instance);
+        const instance = new RedisJSON();
+        return instance;
     }
 
     async del(key: string, path?: string): Promise<number>
@@ -539,14 +536,11 @@ export interface FTInfo
 
 class RedisSearch extends RedisModule
 {
-    private constructor(attributes: RedisModuleAttributes)
+    private constructor() { super(); }
+    public static create(): RedisSearch
     {
-        super(attributes);
-    }
-    public static async create(attributes: RedisModuleAttributes): Promise<RedisSearch>
-    {
-        const instance = new RedisSearch(attributes);
-        return await Promise.resolve(instance);
+        const instance = new RedisSearch();
+        return instance;
     }
 
     async create(index: string, indexType: FTIndexType, schemaFields: FTSchemaField[], parameters?: FTCreateParameters): Promise<"OK" | string>
@@ -968,35 +962,29 @@ class RedisSearch extends RedisModule
     }
 }
 
-export interface RedisAttributes
+export interface RedisConnectAttributes
 {
     url?: string;
 }
 
 export class Redis
 {
-    public json: RedisJSON = {} as RedisJSON;
-    public search: RedisSearch = {} as RedisSearch;
-    public main: redis.Redis = {} as redis.Redis;
+    public static json: RedisJSON = RedisJSON.create();
+    public static search: RedisSearch = RedisSearch.create();
+    public static main: redis.Redis = {} as redis.Redis;
 
     private static readonly default: string = "redis://0.0.0.0:6379/" as const;
 
     private constructor() { }
-    public static async create(attributes: RedisAttributes): Promise<Redis>
+    public static async connect(attributes: RedisConnectAttributes): Promise<void>
     {
         if (!attributes.url && !Deno.env.get("REDIS_URL"))
             Console.warn("No URL provided, and REDIS_URL is not set, using default");
         const url = attributes.url ?? Deno.env.get("REDIS_URL") ?? Redis.default;
         const options: redis.RedisConnectOptions = redis.parseURL(url);
-        const instance = new Redis();
 
-        instance.main = await redis.connect(options);
-        if (!instance.main.isConnected)
+        Redis.main = await redis.connect(options);
+        if (!Redis.main.isConnected)
             throw new Error("Failed to connect to Redis");
-
-        instance.json = await RedisJSON.create({ redisMain: instance.main });
-        instance.search = await RedisSearch.create({ redisMain: instance.main });
-
-        return instance;
     }
 }

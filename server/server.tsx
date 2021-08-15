@@ -68,9 +68,6 @@ interface OakServer
  */
 export class Server<UserJWT extends UserJWTBase = never>
 {
-    /** Redis database connection. */
-    public static redis: Redis = {} as Redis;
-
     private secure: boolean = {} as boolean;
     private domain: string = {} as string;
     private routes: Map<string, string> = new Map<string, string>();
@@ -121,7 +118,7 @@ export class Server<UserJWT extends UserJWTBase = never>
     public static async create<UserJWT extends UserJWTBase = never>(attributes: ServerAttributes): Promise<Server<UserJWT>>
     {
         if (attributes.redis)
-            Server.redis = await Redis.create({});
+            await Redis.connect({});
 
         const instance = new Server<UserJWT>();
 
@@ -174,7 +171,7 @@ export class Server<UserJWT extends UserJWTBase = never>
         instance.oak = { app: new Oak.Application(), router: new Oak.Router() };
 
         instance.graphql = await GraphQL.create(attributes);
-        instance.auth = await Auth.create<UserJWT>({ redis: Server.redis });
+        instance.auth = await Auth.create<UserJWT>();
 
         instance.devtools = attributes.devtools;
 

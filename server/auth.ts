@@ -89,22 +89,15 @@ class RefreshToken extends Token
     }
 }
 
-export interface AuthAttributes
-{
-    redis: Redis;
-}
 export class Auth<UserJWT extends UserJWTBase = never>
 {
     public static access = AccessToken.create({ path: "/jwt/access", lifetime: "15m" });
     public static refresh = RefreshToken.create({ path: "/jwt/refresh", lifetime: "7d" });
-    private static redis: Redis = {} as Redis;
 
     private constructor() { }
 
-    public static async create<UserJWT extends UserJWTBase = never>(attributes: AuthAttributes): Promise<Auth<UserJWT>>
+    public static async create<UserJWT extends UserJWTBase = never>(): Promise<Auth<UserJWT>>
     {
-        Auth.redis = attributes.redis;
-
         const instance = new Auth<UserJWT>();
         return await Promise.resolve(instance);
     }
@@ -146,7 +139,7 @@ export class Auth<UserJWT extends UserJWTBase = never>
             descriptor.value = async (parent: unknown, args: unknown, context: Oak.Context) =>
             {
                 const key = `rate-limit:${context.request.ip}`;
-                const count = await Auth.redis.main.incr(key);
+                const count = await Redis.main.incr(key);
                 const limit = options?.limit ?? 50;
                 const expiry = options?.expiry ?? 60 * 60;
                 if (count > limit)
@@ -156,7 +149,7 @@ export class Auth<UserJWT extends UserJWTBase = never>
                     throw new Error(error);
                 }
                 else if (1 >= count)
-                    await Auth.redis.main.expire(key, expiry);
+                    await Redis.main.expire(key, expiry);
                 return await method(parent, args, context);
             };
         };
@@ -171,7 +164,7 @@ export class Auth<UserJWT extends UserJWTBase = never>
                 if (!refresh)
                     throw new Error(`Refresh cookie not found`);
                 const jwtPayload = Auth.refresh.verify<UserJWT>(refresh);
-                const result = JSON.parse(await Auth.redis.json.get(`${jwtPayload.id}`, "$"));
+                const result = JSON.parse(await Redis.json.get(`${jwtPayload.id}`, "$"));
                 if (!result)
                     throw new Error(`No JSON data returned for user with id ${jwtPayload.id}`);
                 const user: UserJWT | undefined =

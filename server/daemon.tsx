@@ -2,7 +2,7 @@
 import { React, yargs } from "../deps.ts";
 
 import { Resolvers } from "./resolvers.ts";
-import { Server, Console } from "./server.tsx";
+import { Server, Console, Redis } from "./server.tsx";
 import type { ServerAttributes } from "./server.tsx";
 import type { UserJwt } from "../graphql/types.ts";
 import { redisIndex } from "../graphql/types.ts";
@@ -42,7 +42,7 @@ if (import.meta.main)
 
         for (const index of Object.values(redisIndex))
         {
-            try { await Server.redis.search.create(index.name, "JSON", index.schemaFields, index.parameters); }
+            try { await Redis.search.create(index.name, "JSON", index.schemaFields, index.parameters); }
             catch { undefined; }
         }
 

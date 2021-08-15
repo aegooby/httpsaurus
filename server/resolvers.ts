@@ -1,7 +1,7 @@
 
 import { Oak, scrypt, graphql } from "../deps.ts";
 
-import { Auth, Server, Util } from "./server.tsx";
+import { Auth, Server, Util, Redis } from "./server.tsx";
 import type { Resolvers as GraphQLResolvers, QueryResolvers, MutationResolvers } from "../graphql/types.ts";
 import type { Node } from "../graphql/types.ts";
 import type { User, UserJwt } from "../graphql/types.ts";
@@ -25,7 +25,7 @@ class Query implements QueryResolvers<Context>
     }
     async node(_parent: unknown, args: { id: string; }, _context: Oak.Context, _info: graphql.GraphQLResolveInfo)
     {
-        const result = JSON.parse(await Server.redis.json.get(`${args.id}`, "$"));
+        const result = JSON.parse(await Redis.json.get(`${args.id}`, "$"));
         if (!result)
             throw new Error(`No JSON data returned for node with id ${args.id}`);
 
@@ -49,7 +49,7 @@ class Query implements QueryResolvers<Context>
     async readUser(_parent: unknown, args: { email: string; }, _context: Oak.Context, _info: graphql.GraphQLResolveInfo)
     {
         const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
-        const search = await Server.redis.search.search("users", `@email:{${escapedEmail}}`);
+        const search = await Redis.search.search("users", `@email:{${escapedEmail}}`);
         switch (typeof search)
         {
             case "number":
@@ -67,7 +67,7 @@ class Query implements QueryResolvers<Context>
     async readCurrentUser(_parent: unknown, _args: unknown, context: Oak.Context, _info: graphql.GraphQLResolveInfo)
     {
         const jwtPayload = context.state.payload;
-        const result = JSON.parse(await Server.redis.json.get(`${jwtPayload.id}`, "$"));
+        const result = JSON.parse(await Redis.json.get(`${jwtPayload.id}`, "$"));
         if (!result)
             throw new Error(`No JSON data returned for user with id ${jwtPayload.id}`);
         const user: RedisPayload["User"] | undefined =
@@ -99,7 +99,7 @@ class Mutation implements MutationResolvers<Context>
         const id = `${redisPrefix["User"]}${uuid}`;
 
         const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
-        const search = await Server.redis.search.search("users", `@email:{${escapedEmail}}`);
+        const search = await Redis.search.search("users", `@email:{${escapedEmail}}`);
 
         switch (typeof search)
         {
@@ -116,14 +116,14 @@ class Mutation implements MutationResolvers<Context>
             password: password,
             receipt: null
         };
-        await Server.redis.json.set(id, "$", JSON.stringify(payload));
+        await Redis.json.set(id, "$", JSON.stringify(payload));
         const user: User = { ...payload };
         return user;
     }
     async loginUser(_parent: unknown, args: { email: string; password: string; }, context: Oak.Context, _info: graphql.GraphQLResolveInfo)
     {
         const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
-        const search = await Server.redis.search.search("users", `@email:{${escapedEmail}}`);
+        const search = await Redis.search.search("users", `@email:{${escapedEmail}}`);
         switch (typeof search)
         {
             case "number":
@@ -152,7 +152,7 @@ class Mutation implements MutationResolvers<Context>
     async revokeUser(_parent: unknown, args: { id: string; }, _context: Oak.Context, _info: graphql.GraphQLResolveInfo)
     {
         const receipt = await Util.uuid();
-        await Server.redis.json.set(args.id, "$.receipt", `"${receipt}"`);
+        await Redis.json.set(args.id, "$.receipt", `"${receipt}"`);
         return true;
     }
 }
