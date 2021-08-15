@@ -19,7 +19,7 @@ interface UserJWT
 }
 type User implements Node & UserJWT 
 @secret(name: "password", type: "string")
-@index(name: "users", prefix: "nodes:users:")
+@index(name: "users", prefix: "nodes:users:*:")
 {
     id: ID!
     email: String! @tag
