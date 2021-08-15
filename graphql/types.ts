@@ -272,7 +272,7 @@ export type IDirectiveResolvers<ContextType = any> = DirectiveResolvers<ContextT
 interface UserRedisPayload extends User { password: string; }
 
 export const redisPrefix = {
-  Node: "nodes:*:",
+  Node: "nodes:",
   User: "nodes:users:*:",
 };
 
@@ -286,7 +286,7 @@ export const redisIndex = {
     schemaFields: [
       { name: "$.id", type: "TAG", as: "id" }
     ],
-    parameters: { prefix: [{ count: 1, name: "nodes:*:" }] },
+    parameters: { prefix: [{ count: 1, name: "nodes:" }] },
   },
   User: {
     name: "users",
