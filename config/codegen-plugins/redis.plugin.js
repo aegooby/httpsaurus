@@ -40,7 +40,7 @@ const redisPlugin = {
                     if (!prefix)
                         throw new Error("\"@index\" directive must have argument \"prefix\"");
                     const prefixName = prefix.value.value;
-                    redisPrefixes.push(`  ${typeName}: "${prefixName}",`);
+                    redisPrefixes.push(`  ${typeName}: "${prefixName}*:",`);
                     const name = index.arguments.find((/** @type {{ name: { value: string; }; }} */ argument) => argument.name.value === "name");
                     if (!name)
                         throw new Error("\"@index\" directive must have argument \"name\"");
