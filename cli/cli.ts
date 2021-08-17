@@ -335,11 +335,11 @@ export class CLI
                     ],
                 env:
                 {
-                    SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT: new URL("/graphql", args.url).href,
-                    SNOWPACK_PUBLIC_REFRESH_ENDPOINT: new URL("/jwt/refresh", args.url).href
-                },
-                // stdout: args.watch ? undefined : "null",
-                // stderr: args.watch ? undefined : "piped"
+                    SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT:
+                        new URL("/graphql", args.url).href,
+                    SNOWPACK_PUBLIC_REFRESH_ENDPOINT:
+                        new URL("/jwt/refresh", args.url).href
+                }
             };
             if (!args.watch)
                 Console.log("Running Snowpack build");
