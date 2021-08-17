@@ -295,72 +295,35 @@ export class CLI
                 Console.error(`usage: ${command} bundle:snowpack --url <endpoint> [--watch]`);
                 return;
             }
+            const watch = args.watch ? ["--watch"] : [];
             const snowpackRunOptions: Deno.RunOptions =
             {
                 cmd:
                     [
                         "yarn", "run", "snowpack", "--config",
-                        "config/snowpack.config.js", "build"
+                        "config/snowpack.config.js", "build", ...watch
                     ],
                 env:
                 {
                     SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT: new URL("/graphql", args.url).href,
                     SNOWPACK_PUBLIC_REFRESH_ENDPOINT: new URL("/jwt/refresh", args.url).href
                 },
-                stdout: "null",
-                stderr: "piped"
+                stdout: args.watch ? undefined : "null",
+                stderr: args.watch ? undefined : "piped"
             };
-            Console.log("Running Snowpack build");
             if (!args.watch)
+                Console.log("Running Snowpack build");
+            const snowpackProcess = Deno.run(snowpackRunOptions);
+            const snowpackStatus = await snowpackProcess.status();
+            snowpackProcess.close();
+            if (!snowpackStatus.success && !args.watch)
             {
-                const snowpackProcess = Deno.run(snowpackRunOptions);
-                const snowpackStatus = await snowpackProcess.status();
-                snowpackProcess.close();
-                if (!snowpackStatus.success)
-                {
-                    const error =
-                        (new TextDecoder()).decode(await snowpackProcess.stderrOutput());
-                    Console.error(error);
-                }
+                const error =
+                    (new TextDecoder()).decode(await snowpackProcess.stderrOutput());
+                Console.error(error);
+            }
+            if (!args.watch)
                 Console.success("Done");
-                return undefined;
-            }
-            const watcher = Deno.watchFs(["components", "client", "public"], { recursive: true });
-            let lastPaths: Set<string> = new Set();
-            let newPath: boolean = false as const;
-            const resetLastPaths = async function ()
-            {
-                await std.async.delay(5000);
-                lastPaths = new Set();
-            };
-            Console.log("Watching for changes...");
-            for await (const change of watcher)
-            {
-                switch (change.kind)
-                {
-                    case "access":
-                        break;
-                    default:
-                        {
-                            for (const path of change.paths)
-                                if (!lastPaths.has(path))
-                                    newPath = true;
-                            lastPaths = new Set(change.paths);
-
-                            if (newPath)
-                            {
-                                Console.log("Change detected! Restarting...");
-                                const snowpackProcess = Deno.run(snowpackRunOptions);
-                                await snowpackProcess.status();
-                                snowpackProcess.close();
-                                newPath = false;
-                                resetLastPaths();
-                                Console.success("Done");
-                            }
-                            break;
-                        }
-                }
-            }
             return undefined;
         };
     }
