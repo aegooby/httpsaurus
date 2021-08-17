@@ -6,6 +6,12 @@ import { Console } from "../server/server.tsx";
 Deno.env.set("DENO_DIR", ".cache/");
 const [args, command] = [Deno.args, "turtle"];
 
+enum Result
+{
+    SUCCESS = 0,
+    FAILURE = 1,
+}
+
 /** Command handler type for CLI tools. */
 export type Command = (args: Arguments) => undefined | number | Promise<undefined | number>;
 
@@ -316,7 +322,7 @@ export class CLI
             {
                 Console.error("Type check failed");
                 console.error(Deno.formatDiagnostics(diagnostics));
-                return 1;
+                return Result.FAILURE;
             }
             Console.success("Type check succeeded");
 
