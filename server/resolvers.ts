@@ -11,13 +11,7 @@ type Context = Oak.Context;
 
 class Query implements QueryResolvers<Context>
 {
-    private constructor() 
-    {
-        this.node = this.node.bind(this);
-
-        this.readUser = this.readUser.bind(this);
-        this.readCurrentUser = this.readCurrentUser.bind(this);
-    }
+    private constructor() { Util.bind(this); }
     public static create(): Query
     {
         const instance = new Query();
@@ -80,13 +74,7 @@ class Query implements QueryResolvers<Context>
 
 class Mutation implements MutationResolvers<Context>
 {
-    private constructor()
-    {
-        this.createUser = this.createUser.bind(this);
-        this.loginUser = this.loginUser.bind(this);
-        this.logoutUser = this.logoutUser.bind(this);
-        this.revokeUser = this.revokeUser.bind(this);
-    }
+    private constructor() { Util.bind(this); }
     public static create(): MutationResolvers<Context>
     {
         const instance = new Mutation();

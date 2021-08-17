@@ -5,13 +5,14 @@ import { GraphQL } from "./graphql.ts";
 import { Listener } from "./listener.ts";
 import type { ListenOptions, ListenBaseOptions, ListenTlsOptions } from "./listener.ts";
 import { Auth } from "./auth.ts";
-import { Redis } from "./redis.ts";
-import type { UserJWTBase } from "./auth.ts";
 import { Console } from "./console.ts";
+import { Redis } from "./redis.ts";
+import { Util } from "./util.ts";
+import type { UserJWTBase } from "./auth.ts";
 
+export { Auth } from "./auth.ts";
 export { Console } from "./console.ts";
 export { Redis } from "./redis.ts";
-export { Auth } from "./auth.ts";
 export { Util } from "./util.ts";
 
 enum StatusCode
@@ -91,25 +92,7 @@ export class Server<UserJWT extends UserJWTBase = never>
 
     private headElements: Array<React.ReactElement> = [];
 
-    private constructor()
-    {
-        this.www = this.www.bind(this);
-
-        this.static = this.static.bind(this);
-        this.react = this.react.bind(this);
-
-        this.get = this.get.bind(this);
-        this.head = this.head.bind(this);
-
-        this.handle = this.handle.bind(this);
-        this.accept = this.accept.bind(this);
-
-        this.compress = this.compress.bind(this);
-        this.scripts = this.scripts.bind(this);
-
-        this.serve = this.serve.bind(this);
-        this.close = this.close.bind(this);
-    }
+    private constructor() { Util.bind(this); }
     /**
      * Creates a new HTTP/S server.
      * 

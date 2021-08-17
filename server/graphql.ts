@@ -2,6 +2,7 @@
 import { Oak, Apollo, graphql, Relay as _Relay, playground, std } from "../deps.ts";
 
 import { Console } from "./console.ts";
+import { Util } from "./util.ts";
 
 
 interface GraphQLQuery
@@ -34,17 +35,7 @@ export class GraphQL
     private port: number = {} as number;
     private portTls: number | undefined = undefined;
 
-    private constructor()
-    {
-        this.buildSchema = this.buildSchema.bind(this);
-        this.urlPlayground = this.urlPlayground.bind(this);
-        this.renderPlayground = this.renderPlayground.bind(this);
-        this.build = this.build.bind(this);
-
-        this.post = this.post.bind(this);
-        this.get = this.get.bind(this);
-        this.head = this.head.bind(this);
-    }
+    private constructor() { Util.bind(this); }
     public static async create(attributes: GraphQLAttributes): Promise<GraphQL>
     {
         const instance = new GraphQL();

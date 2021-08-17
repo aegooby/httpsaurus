@@ -3,11 +3,6 @@ import { redis } from "../deps.ts";
 
 import { Console } from "./console.ts";
 
-interface RedisModuleAttributes
-{
-    redisMain: redis.Redis;
-}
-
 abstract class RedisModule
 {
     async sendCommand(command: string, args: redis.RedisValue[])

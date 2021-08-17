@@ -2,6 +2,7 @@
 import { jwt, keypair, Oak } from "../deps.ts";
 
 import { Redis } from "./redis.ts";
+import { Util } from "./util.ts";
 
 interface TokenAttributes
 {
@@ -18,10 +19,7 @@ abstract class Token
     public readonly keypair: keypair.KeypairResults = keypair.default();
     public path: string = {} as string;
     protected lifetime: string = {} as string;
-    protected constructor()
-    {
-        this.verify = this.verify.bind(this);
-    }
+    protected constructor() { Util.bind(this); }
     public verify<UserJWT extends UserJWTBase = never>(token: string): UserJWT
     {
         const verified = jwt.verify(token, this.keypair.private, { complete: true });
@@ -35,7 +33,7 @@ class AccessToken extends Token
     private constructor()
     {
         super();
-        this.create = this.create.bind(this);
+        Util.bind(this);
     }
     public static create(attributes: TokenAttributes): AccessToken
     {
@@ -57,7 +55,7 @@ class RefreshToken extends Token
     private constructor()
     {
         super();
-        this.create = this.create.bind(this);
+        Util.bind(this);
     }
     public static create(attributes: TokenAttributes): RefreshToken
     {
@@ -94,16 +92,17 @@ export class Auth<UserJWT extends UserJWTBase = never>
     public static access = AccessToken.create({ path: "/jwt/access", lifetime: "15m" });
     public static refresh = RefreshToken.create({ path: "/jwt/refresh", lifetime: "7d" });
 
-    private constructor() { }
+    private constructor() { Util.bind(this); }
 
     public static async create<UserJWT extends UserJWTBase = never>(): Promise<Auth<UserJWT>>
     {
         const instance = new Auth<UserJWT>();
         return await Promise.resolve(instance);
     }
-    public static authenticated<UserJWT extends UserJWTBase = never, Args = unknown>(condition?: (payload: UserJWT, args: Args) => boolean)
+    public static authenticated<UserJWT extends UserJWTBase = never,
+        Args = unknown>(condition?: (payload: UserJWT, args: Args) => boolean): MethodDecorator
     {
-        return (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
+        return (_target, _propertyKey, descriptor: PropertyDescriptor) =>
         {
             const method = descriptor.value;
 
@@ -130,9 +129,9 @@ export class Auth<UserJWT extends UserJWTBase = never>
             };
         };
     }
-    public static rateLimit(options?: { limit?: number; expiry?: number; })
+    public static rateLimit(options?: { limit?: number; expiry?: number; }): MethodDecorator
     {
-        return (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) =>
+        return (_target, _propertyKey, descriptor: PropertyDescriptor) =>
         {
             const method = descriptor.value;
 
