@@ -296,6 +296,28 @@ export class CLI
                 return;
             }
             const watch = args.watch ? ["--watch"] : [];
+
+            const tsconfig = JSON.parse(await Deno.readTextFile("config/deno.tsconfig.json"));
+            const emitOptions: Deno.EmitOptions =
+            {
+                check: true,
+                compilerOptions: tsconfig.compilerOptions,
+                importMapPath: std.path.resolve("import-map.json"),
+            };
+            const emitResult = await Deno.emit("client/bundle.tsx", emitOptions);
+
+            const diagnosticsFilter = function (diagnostic: Deno.Diagnostic) 
+            {
+                return diagnostic.fileName?.startsWith("file://");
+            };
+            const diagnostics = emitResult.diagnostics.filter(diagnosticsFilter);
+            if (diagnostics.length > 0)
+            {
+                Console.error("Type check failed");
+                console.error(Deno.formatDiagnostics(diagnostics));
+                return undefined;
+            }
+
             const snowpackRunOptions: Deno.RunOptions =
             {
                 cmd:
@@ -308,8 +330,8 @@ export class CLI
                     SNOWPACK_PUBLIC_GRAPHQL_ENDPOINT: new URL("/graphql", args.url).href,
                     SNOWPACK_PUBLIC_REFRESH_ENDPOINT: new URL("/jwt/refresh", args.url).href
                 },
-                stdout: args.watch ? undefined : "null",
-                stderr: args.watch ? undefined : "piped"
+                // stdout: args.watch ? undefined : "null",
+                // stderr: args.watch ? undefined : "piped"
             };
             if (!args.watch)
                 Console.log("Running Snowpack build");

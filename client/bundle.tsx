@@ -7,7 +7,6 @@ import { Client, Console } from "./client.ts";
 
 import App from "../components/App.tsx";
 
-
 try 
 {
     const httpclient = Client.create();
