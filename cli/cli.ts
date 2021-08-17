@@ -297,6 +297,7 @@ export class CLI
             }
             const watch = args.watch ? ["--watch"] : [];
 
+            Console.log("Running type checker");
             const tsconfig = JSON.parse(await Deno.readTextFile("config/deno.tsconfig.json"));
             const emitOptions: Deno.EmitOptions =
             {
@@ -315,8 +316,9 @@ export class CLI
             {
                 Console.error("Type check failed");
                 console.error(Deno.formatDiagnostics(diagnostics));
-                return undefined;
+                return 1;
             }
+            Console.success("Type check succeeded");
 
             const snowpackRunOptions: Deno.RunOptions =
             {
@@ -424,7 +426,9 @@ export class CLI
                 return;
             }
             const bundle = CLI.bundleSnowpack();
-            await bundle({ _: [], url: "https://localhost:3443/" });
+            const result = await bundle({ _: [], url: "https://localhost:3443/" });
+            if (result)
+                return;
 
             const ready = async function (): Promise<void>
             {
