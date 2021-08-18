@@ -1,7 +1,6 @@
 
 import "./raf.polyfill.js";
 export { default as React } from "https://esm.sh/react";
-export * as ReactDOM from "https://esm.sh/react-dom";
 export * as ReactDOMServer from "https://esm.sh/react-dom/server";
 export * as Apollo from "https://esm.sh/apollo-graphql";
 export * as graphql from "https://esm.sh/graphql";
