@@ -16,26 +16,6 @@ enum Result
 export type Command = (args: Arguments) => undefined | number | Promise<undefined | number>;
 
 /**
- * Utility class for manipulating CLI command handlers.
- */
-export class CLIUtil
-{
-    /**
-     * Wraps a CLI command handler to ensure Deno exits after the command.
-     * 
-     * @param command Command handler to be wrapped.
-     * @return Wrapped command handler.
-     */
-    public static exit(command: Command): Command
-    {
-        return async (args: Arguments) =>
-        {
-            Deno.exit(await command(args));
-        };
-    }
-}
-
-/**
  * Class containing CLI functions.
  */
 export class CLI
@@ -736,29 +716,29 @@ if (import.meta.main)
 {
     yargs.default(args)
         .help(false)
-        .command("*", "", {}, CLIUtil.exit(CLI.all()))
-        .command("clean", "", {}, CLIUtil.exit(CLI.clean()))
-        .command("install", "", {}, CLIUtil.exit(CLI.install()))
-        .command("upgrade", "", {}, CLIUtil.exit(CLI.upgrade()))
-        .command("cache", "", {}, CLIUtil.exit(CLI.cache()))
-        .command("bundle", "", {}, CLIUtil.exit(CLI.bundle()))
-        .command("bundle:relay", "", {}, CLIUtil.exit(CLI.bundleRelay()))
-        .command("bundle:snowpack", "", {}, CLIUtil.exit(CLI.bundleSnowpack()))
-        .command("codegen", "", {}, CLIUtil.exit(CLI.codegen()))
-        .command("localhost", "", {}, CLIUtil.exit(CLI.localhost()))
-        .command("localhost:help", "", {}, CLIUtil.exit(CLI.localhost()))
-        .command("localhost:snowpack", "", {}, CLIUtil.exit(CLI.localhostSnowpack()))
-        .command("localhost:deno", "", {}, CLIUtil.exit(CLI.localhostDeno()))
-        .command("deploy", "", {}, CLIUtil.exit(CLI.deploy()))
-        .command("deploy:help", "", {}, CLIUtil.exit(CLI.deploy()))
-        .command("deploy:server", "", {}, CLIUtil.exit(CLI.deployServer()))
-        .command("test", "", {}, CLIUtil.exit(CLI.test()))
-        .command("docker", "", {}, CLIUtil.exit(CLI.docker()))
-        .command("docker:help", "", {}, CLIUtil.exit(CLI.docker()))
-        .command("docker:prune", "", {}, CLIUtil.exit(CLI.dockerPrune()))
-        .command("docker:image", "", {}, CLIUtil.exit(CLI.dockerImage()))
-        .command("docker:container", "", {}, CLIUtil.exit(CLI.dockerContainer()))
-        .command("sync", "", {}, CLIUtil.exit(CLI.sync()))
-        .command("help", "", {}, CLIUtil.exit(CLI.help()))
+        .command("*", "", {}, CLI.all())
+        .command("clean", "", {}, CLI.clean())
+        .command("install", "", {}, CLI.install())
+        .command("upgrade", "", {}, CLI.upgrade())
+        .command("cache", "", {}, CLI.cache())
+        .command("bundle", "", {}, CLI.bundle())
+        .command("bundle:relay", "", {}, CLI.bundleRelay())
+        .command("bundle:snowpack", "", {}, CLI.bundleSnowpack())
+        .command("codegen", "", {}, CLI.codegen())
+        .command("localhost", "", {}, CLI.localhost())
+        .command("localhost:help", "", {}, CLI.localhost())
+        .command("localhost:snowpack", "", {}, CLI.localhostSnowpack())
+        .command("localhost:deno", "", {}, CLI.localhostDeno())
+        .command("deploy", "", {}, CLI.deploy())
+        .command("deploy:help", "", {}, CLI.deploy())
+        .command("deploy:server", "", {}, CLI.deployServer())
+        .command("test", "", {}, CLI.test())
+        .command("docker", "", {}, CLI.docker())
+        .command("docker:help", "", {}, CLI.docker())
+        .command("docker:prune", "", {}, CLI.dockerPrune())
+        .command("docker:image", "", {}, CLI.dockerImage())
+        .command("docker:container", "", {}, CLI.dockerContainer())
+        .command("sync", "", {}, CLI.sync())
+        .command("help", "", {}, CLI.help())
         .parse();
 }

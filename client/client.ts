@@ -6,10 +6,7 @@ import * as Relay from "relay-runtime";
 import { Console } from "./console.ts";
 export { Console } from "./console.ts";
 
-interface SnowpackHMR
-{
-    accept: () => unknown;
-}
+type SnowpackHMR = { accept: () => unknown; };
 type SnowpackEnv = Record<string, string>;
 interface SnowpackImportMetaExtensions
 {
