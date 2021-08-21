@@ -138,11 +138,9 @@ export class Server<UserJWT extends UserJWTBase = never>
             listenOptionsTls:
             {
                 hostname: attributes.hostname,
-                port: attributes.portTls as number,
-                certFile: std.path.join(attributes.cert as string,
-                    "fullchain.pem"),
-                keyFile: std.path.join(attributes.cert as string,
-                    "privkey.pem"),
+                port: attributes.portTls ?? 0,
+                certFile: std.path.join(attributes.cert ?? "", "fullchain.pem"),
+                keyFile: std.path.join(attributes.cert ?? "", "privkey.pem"),
                 alpnProtocols: ["http/1.1", "h2"],
                 transport: "tcp",
                 signal: instance.abortController.signal,
