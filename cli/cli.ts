@@ -243,8 +243,7 @@ export class CLI
 
             const relayRunOptions: Deno.RunOptions =
             {
-                cmd: ["yarn", "run", "relay-compiler", ...options],
-                stdout: "null"
+                cmd: ["yarn", "run", "relay-compiler", ...options]
             };
             Console.log("Running Relay compiler");
             const relayProcess = Deno.run(relayRunOptions);
@@ -352,8 +351,7 @@ export class CLI
                     [
                         "yarn", "run", "graphql-codegen", "--config",
                         "config/codegen.config.js", ...watchArgs
-                    ],
-                stdout: "null"
+                    ]
             };
             Console.log("Running GraphQL codegen");
             const process = Deno.run(runOptions);

@@ -48,7 +48,8 @@ class Query implements QueryResolvers<Context>
         context: Oak.Context,
         _info: graphql.GraphQLResolveInfo)
     {
-        if (!Util.equal(context.state.payload?.email, args.email))
+        const jwtPayload = context.state.payload as UserJwt | undefined;
+        if (!jwtPayload || !Util.equal(jwtPayload.email, args.email))
         {
             context.response.status = Oak.Status.Forbidden;
             throw new Error(context.state.error);
@@ -78,12 +79,12 @@ class Query implements QueryResolvers<Context>
         context: Oak.Context,
         _info: graphql.GraphQLResolveInfo)
     {
-        if (!context.state.payload)
+        const jwtPayload = context.state.payload as UserJwt | undefined;
+        if (!jwtPayload)
         {
             context.response.status = Oak.Status.Forbidden;
             throw new Error(context.state.error);
         }
-        const jwtPayload = context.state.payload;
         const result =
             JSON.parse(await Redis.json.get(`${jwtPayload.id}`, "$"));
         if (!result)
