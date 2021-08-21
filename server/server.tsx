@@ -176,7 +176,7 @@ export class Server<UserJWT extends UserJWTBase = never>
      */
     public get url(): string
     {
-        const port = this.portTls ?? this.port;
+        const port = this.secure ? this.portTls as number : this.port;
         if (this.proxy)
             return `${this.protocol}://${this.domain}`;
         else
