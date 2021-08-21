@@ -31,6 +31,7 @@ if (import.meta.main)
             portTls: 3443,
             cert: args.tls,
 
+            public: "/dist",
             headElements: [<title>turtle</title>],
 
             devtools: !!args.devtools,

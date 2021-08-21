@@ -35,6 +35,8 @@ export interface ServerAttributes
     /** Path to folder containing TLS certificates. */
     cert: string | undefined;
 
+    /** Path to public resources folder. */
+    public: string;
     /** React elements included in document head on SSR. */
     headElements: Array<React.ReactElement>;
 
@@ -73,12 +75,12 @@ export class Server<UserJWT extends UserJWTBase = never>
 
     private portTls: number | undefined;
 
+    private public: string = {} as string;
     private headElements: Array<React.ReactElement> = [];
 
     private devtools: boolean = {} as boolean;
 
 
-    private readonly public: string = "/dist" as const;
     private scriptElements: Array<React.ReactElement> = [];
 
     private abortController: AbortController = {} as AbortController;
@@ -104,6 +106,7 @@ export class Server<UserJWT extends UserJWTBase = never>
         instance.proxy = attributes.proxy;
         instance.portTls = instance.secure ? attributes.portTls : undefined;
 
+        instance.public = attributes.public;
         instance.headElements = attributes.headElements;
 
         for (const key in attributes.routes)

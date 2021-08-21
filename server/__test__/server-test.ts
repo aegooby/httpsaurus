@@ -1,5 +1,7 @@
 
-import { Console } from "../server.tsx";
+import { std } from "../../deps.ts";
+import { Server, ServerAttributes } from "../server.tsx";
+import { Console } from "../console.ts";
 
 try
 {
