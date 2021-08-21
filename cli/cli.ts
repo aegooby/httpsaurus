@@ -435,17 +435,14 @@ export class CLI
                         await std.async.delay(750);
                         const init = { headers: { "x-http-only": "" } };
                         await fetch("http://localhost:3080/", init);
-                        return;
+                        break;
                     }
                     catch { undefined; }
                 }
-            };
-            const onReady = async function () 
-            {
                 await opener.open("https://localhost:3443/");
                 await bundle({ _: [], url: "https://localhost:3443/", watch: true });
             };
-            ready().then(onReady);
+            ready();
 
             const devtools = args.devtools ? ["--devtools"] : [];
             const promises = [];
