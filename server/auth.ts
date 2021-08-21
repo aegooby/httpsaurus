@@ -90,6 +90,19 @@ class RefreshToken extends Token
     }
 }
 
+export class AuthError extends Error
+{
+    constructor(message: string | undefined)
+    {
+        super(message);
+
+        if (Error.captureStackTrace)
+            Error.captureStackTrace(this, AuthError);
+
+        this.name = "AuthError";
+    }
+}
+
 export class Auth<UserJWT extends UserJWTBase = never>
 {
     public static access =
@@ -105,29 +118,21 @@ export class Auth<UserJWT extends UserJWTBase = never>
         const instance = new Auth<UserJWT>();
         return await Promise.resolve(instance);
     }
-    public static authenticated
-        <UserJWT extends UserJWTBase = never, Args = unknown>(
-            precondition?: (args: Args) => boolean,
-            postcondition?: (payload: UserJWT, args: Args) => boolean
-        ): MethodDecorator
+    public static authenticate<UserJWT extends UserJWTBase = never>()
+        : MethodDecorator
     {
         return (_target, _propertyKey, descriptor: PropertyDescriptor) =>
         {
             const method = descriptor.value;
 
             descriptor.value = async (parent: unknown,
-                args: Args,
+                args: unknown,
                 context: Oak.Context) =>
             {
                 try
                 {
-                    /* If the precondition exists and is not met,   */
-                    /* then we do not authenticate.                 */
-                    if (precondition && !precondition(args))
-                        return await method(parent, args, context);
-
                     if (!context.request.headers.has("authorization"))
-                        throw new Error("\"Authorization\" header not present");
+                        throw new AuthError("\"Authorization\" header not present");
                     const authorization =
                         context.request.headers.get("authorization") as string;
 
@@ -136,18 +141,14 @@ export class Auth<UserJWT extends UserJWTBase = never>
                         .replaceAll("bearer ", "");
                     const payload = Auth.access.verify<UserJWT>(token);
                     context.state.payload = payload;
-
-                    /* If the postcondition exists and is not met,  */
-                    /* then we throw an error.                      */
-                    if (postcondition && !postcondition(payload, args))
-                        throw new Error("Authentication condition not met");
-
                     return await method(parent, args, context);
                 }
                 catch (error)
                 {
-                    throw new Error(`Authentication failed with error: ${error}`);
+                    context.state.error =
+                        `Authentication failed with error: ${error}`;
                 }
+                finally { await method(parent, args, context); }
             };
         };
     }

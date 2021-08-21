@@ -42,14 +42,18 @@ class Query implements QueryResolvers<Context>
         }
     }
 
-    @Auth.authenticated(undefined,
-        function (payload: UserJwt, args: { email: string; })
-        { return Util.equal(payload.email, args.email); })
+    @Auth.authenticate<UserJwt>()
     async readUser(_parent: unknown,
         args: { email: string; },
-        _context: Oak.Context,
+        context: Oak.Context,
         _info: graphql.GraphQLResolveInfo)
     {
+        if (!Util.equal(context.state.payload?.email, args.email))
+        {
+            context.response.status = Oak.Status.Forbidden;
+            throw new Error(context.state.error);
+        }
+
         const escapedEmail =
             args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
         const search =
@@ -68,12 +72,17 @@ class Query implements QueryResolvers<Context>
             JSON.parse((parsedSearch.at(2) as ["$", string]).at(1) as string);
         return user;
     }
-    @Auth.authenticated<UserJwt>()
+    @Auth.authenticate<UserJwt>()
     async readCurrentUser(_parent: unknown,
         _args: unknown,
         context: Oak.Context,
         _info: graphql.GraphQLResolveInfo)
     {
+        if (!context.state.payload)
+        {
+            context.response.status = Oak.Status.Forbidden;
+            throw new Error(context.state.error);
+        }
         const jwtPayload = context.state.payload;
         const result =
             JSON.parse(await Redis.json.get(`${jwtPayload.id}`, "$"));
