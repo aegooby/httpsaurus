@@ -1,5 +1,5 @@
 
-import { Console } from "../server/server.tsx";
+import { Console } from "../server.tsx";
 
 try
 {

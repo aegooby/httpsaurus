@@ -11,6 +11,10 @@ export class Util
         const data = encoder.encode(crypto.randomUUID());
         return await std.uuid.v5.generate(namespace, data);
     }
+    public static equal<Type>(left: Type, right: Type): boolean
+    {
+        return left === right;
+    }
     // deno-lint-ignore ban-types
     public static bind(target: object, exclude?: Set<string>): void
     {
@@ -28,8 +32,9 @@ export class Util
                 case "function":
                     if (excluded.has(key))
                         break;
-                    // deno-lint-ignore ban-types
-                    targetRecrod[key] = (prototypeRecord[key] as Function).bind(target);
+                    targetRecrod[key] =
+                        // deno-lint-ignore ban-types
+                        (prototypeRecord[key] as Function).bind(target);
                     break;
                 default:
                     break;

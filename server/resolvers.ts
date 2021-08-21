@@ -17,7 +17,10 @@ class Query implements QueryResolvers<Context>
         const instance = new Query();
         return instance;
     }
-    async node(_parent: unknown, args: { id: string; }, _context: Oak.Context, _info: graphql.GraphQLResolveInfo)
+    async node(_parent: unknown,
+        args: { id: string; },
+        _context: Oak.Context,
+        _info: graphql.GraphQLResolveInfo)
     {
         const result = JSON.parse(await Redis.json.get(`${args.id}`, "$"));
         if (!result)
@@ -28,8 +31,8 @@ class Query implements QueryResolvers<Context>
         {
             case redisPrefix["User"]:
                 {
-                    const user: RedisPayload["User"] | undefined =
-                        (result as unknown[]).pop() as (RedisPayload["User"] | undefined);
+                    const user = (result as unknown[]).pop() as
+                        RedisPayload["User"] | undefined;
                     if (!user)
                         throw new Error(`No user with id ${args.id}`);
                     return user as User;
@@ -39,11 +42,18 @@ class Query implements QueryResolvers<Context>
         }
     }
 
-    @Auth.authenticated<UserJwt, { email: string; }>(function (payload, args) { return payload.email === args.email; })
-    async readUser(_parent: unknown, args: { email: string; }, _context: Oak.Context, _info: graphql.GraphQLResolveInfo)
+    @Auth.authenticated(undefined,
+        function (payload: UserJwt, args: { email: string; })
+        { return Util.equal(payload.email, args.email); })
+    async readUser(_parent: unknown,
+        args: { email: string; },
+        _context: Oak.Context,
+        _info: graphql.GraphQLResolveInfo)
     {
-        const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
-        const search = await Redis.search.search("users", `@email:{${escapedEmail}}`);
+        const escapedEmail =
+            args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
+        const search =
+            await Redis.search.search("users", `@email:{${escapedEmail}}`);
         switch (typeof search)
         {
             case "number":
@@ -54,18 +64,23 @@ class Query implements QueryResolvers<Context>
         if (search.at(0) as number > 1 || search.length > 3)
             throw new Error(`More than one user found with email ${args.email}`);
         const parsedSearch = search as [1, string, ["$", string]];
-        const user: User = JSON.parse((parsedSearch.at(2) as ["$", string]).at(1) as string);
+        const user: User =
+            JSON.parse((parsedSearch.at(2) as ["$", string]).at(1) as string);
         return user;
     }
     @Auth.authenticated<UserJwt>()
-    async readCurrentUser(_parent: unknown, _args: unknown, context: Oak.Context, _info: graphql.GraphQLResolveInfo)
+    async readCurrentUser(_parent: unknown,
+        _args: unknown,
+        context: Oak.Context,
+        _info: graphql.GraphQLResolveInfo)
     {
         const jwtPayload = context.state.payload;
-        const result = JSON.parse(await Redis.json.get(`${jwtPayload.id}`, "$"));
+        const result =
+            JSON.parse(await Redis.json.get(`${jwtPayload.id}`, "$"));
         if (!result)
             throw new Error(`No JSON data returned for user with id ${jwtPayload.id}`);
-        const user: RedisPayload["User"] | undefined =
-            (result as unknown[]).pop() as (RedisPayload["User"] | undefined);
+        const user =
+            (result as unknown[]).pop() as RedisPayload["User"] | undefined;
         if (!user)
             throw new Error(`No user found with id ${jwtPayload.id}`);
         return user;
@@ -80,14 +95,19 @@ class Mutation implements MutationResolvers<Context>
         const instance = new Mutation();
         return instance;
     }
-    @Auth.rateLimit()
-    async createUser(_parent: unknown, args: { email: string; password: string; }, _context: Oak.Context, _info: graphql.GraphQLResolveInfo)
+    @Auth.rateLimit({ limit: 10, expiry: 60 * 60 })
+    async createUser(_parent: unknown,
+        args: { email: string; password: string; },
+        _context: Oak.Context,
+        _info: graphql.GraphQLResolveInfo)
     {
         const uuid = await Util.uuid();
         const id = `${redisPrefix["User"]}${uuid}`;
 
-        const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
-        const search = await Redis.search.search("users", `@email:{${escapedEmail}}`);
+        const escapedEmail =
+            args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
+        const search =
+            await Redis.search.search("users", `@email:{${escapedEmail}}`);
 
         switch (typeof search)
         {
@@ -108,10 +128,15 @@ class Mutation implements MutationResolvers<Context>
         const user: User = { ...payload };
         return user;
     }
-    async loginUser(_parent: unknown, args: { email: string; password: string; }, context: Oak.Context, _info: graphql.GraphQLResolveInfo)
+    async loginUser(_parent: unknown,
+        args: { email: string; password: string; },
+        context: Oak.Context,
+        _info: graphql.GraphQLResolveInfo)
     {
-        const escapedEmail = args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
-        const search = await Redis.search.search("users", `@email:{${escapedEmail}}`);
+        const escapedEmail =
+            args.email.replaceAll("@", "\\@").replaceAll(".", "\\.");
+        const search =
+            await Redis.search.search("users", `@email:{${escapedEmail}}`);
         switch (typeof search)
         {
             case "number":
@@ -122,7 +147,8 @@ class Mutation implements MutationResolvers<Context>
         if (search.at(0) as number > 1 || search.length > 3)
             throw new Error(`More than one user found with email ${args.email}`);
         const parsedSearch = search as [1, string, ["$", string]];
-        const userInfo: RedisPayload["User"] = JSON.parse((parsedSearch.at(2) as ["$", string]).at(1) as string);
+        const userInfo: RedisPayload["User"] =
+            JSON.parse((parsedSearch.at(2) as ["$", string]).at(1) as string);
         if (!await scrypt.verify(args.password, userInfo.password))
             throw new Error(`Incorrect password for user with email ${args.email}`);
 
@@ -132,12 +158,19 @@ class Mutation implements MutationResolvers<Context>
 
         return Auth.access.create<UserJwt>(user);
     }
-    logoutUser(_parent: unknown, _args: unknown, context: Oak.Context, _info: graphql.GraphQLResolveInfo)
+    logoutUser(_parent: unknown,
+        _args: unknown,
+        context: Oak.Context,
+        _info: graphql.GraphQLResolveInfo)
     {
         Auth.refresh.reset(context);
         return true;
     }
-    async revokeUser(_parent: unknown, args: { id: string; }, _context: Oak.Context, _info: graphql.GraphQLResolveInfo)
+    async revokeUser(_parent: unknown,
+
+        args: { id: string; },
+        _context: Oak.Context,
+        _info: graphql.GraphQLResolveInfo)
     {
         const receipt = await Util.uuid();
         await Redis.json.set(args.id, "$.receipt", `"${receipt}"`);
@@ -156,7 +189,9 @@ export class Resolvers
             Mutation: Mutation.create(),
             Node:
             {
-                __resolveType(parent: Node, _context: Context, _info: graphql.GraphQLResolveInfo)
+                __resolveType(parent: Node,
+                    _context: Context,
+                    _info: graphql.GraphQLResolveInfo)
                 {
                     const prefix = parent.id.replaceAll(/(.*:\*:)(.*)/g, "$1");
                     switch (prefix)

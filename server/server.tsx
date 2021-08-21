@@ -2,11 +2,8 @@
 import { std, React, ReactDOMServer, Oak, denoflate } from "../deps.ts";
 
 import { GraphQL } from "./graphql.ts";
-import { Listener } from "./listener.ts";
-import type { ListenOptions, ListenBaseOptions, ListenTlsOptions } from "./listener.ts";
 import { Auth } from "./auth.ts";
 import { Console } from "./console.ts";
-import { Redis } from "./redis.ts";
 import { Util } from "./util.ts";
 import type { UserJWTBase } from "./auth.ts";
 
@@ -14,12 +11,6 @@ export { Auth } from "./auth.ts";
 export { Console } from "./console.ts";
 export { Redis } from "./redis.ts";
 export { Util } from "./util.ts";
-
-enum StatusCode
-{
-    success = 0,
-    failure = 1,
-}
 
 /**
  * Parameters passed ot the server at creation time.
@@ -29,11 +20,13 @@ export interface ServerAttributes
     /** Whether the server runs on HTTPS or HTTP. */
     secure: boolean;
     /** Outside-facing domain the server listens from. */
-    domain: string | undefined;
+    domain: string;
     /** Local IP address the server listens on. */
     hostname: string;
     /** Port the server listens on for HTTP connections. */
     port: number;
+    /** Whether the server is running through a port proxy. */
+    proxy: boolean;
     /** Pre-mapped REST routes. */
     routes: Record<string, string>;
 
@@ -47,8 +40,6 @@ export interface ServerAttributes
 
     /** Enable React and Relay devtools (Electron). */
     devtools: boolean;
-    /** Enable Redis database. */
-    redis: boolean;
 
     /** Path to GraphQL schema. */
     schema: string;
@@ -60,6 +51,10 @@ interface OakServer
 {
     /** Oak application. */
     app: Oak.Application;
+    /** Oak listen options for HTTP. */
+    listenOptionsBase: Oak.ListenOptionsBase;
+    /** Oak listen options for HTTPS. */
+    listenOptionsTls: Oak.ListenOptionsTls;
     /** Oak router. */
     router: Oak.Router;
 }
@@ -71,26 +66,26 @@ export class Server<UserJWT extends UserJWTBase = never>
 {
     private secure: boolean = {} as boolean;
     private domain: string = {} as string;
+    private hostname: string = {} as string;
+    private port: number = {} as number;
+    private proxy: boolean = {} as boolean;
     private routes: Map<string, string> = new Map<string, string>();
+
+    private portTls: number | undefined;
+
+    private headElements: Array<React.ReactElement> = [];
+
+    private devtools: boolean = {} as boolean;
+
 
     private readonly public: string = "/dist" as const;
     private scriptElements: Array<React.ReactElement> = [];
 
+    private abortController: AbortController = {} as AbortController;
+
     private oak: OakServer = {} as OakServer;
-
-    private listener: Listener = {} as Listener;
-    private hostname: string = {} as string;
-    private port: number = {} as number;
-    private portTls: number | undefined;
-
-    private closed: std.async.Deferred<StatusCode> = std.async.deferred();
-
     private graphql: GraphQL = {} as GraphQL;
     private auth: Auth<UserJWT> = {} as Auth<UserJWT>;
-
-    private devtools: boolean = {} as boolean;
-
-    private headElements: Array<React.ReactElement> = [];
 
     private constructor() { Util.bind(this); }
     /**
@@ -98,14 +93,16 @@ export class Server<UserJWT extends UserJWTBase = never>
      * 
      * @param attributes Options passed to server at creation time.
      */
-    public static async create<UserJWT extends UserJWTBase = never>(attributes: ServerAttributes): Promise<Server<UserJWT>>
+    public static async create<UserJWT extends UserJWTBase = never>(attributes:
+        ServerAttributes): Promise<Server<UserJWT>>
     {
-        if (attributes.redis)
-            await Redis.connect({});
-
         const instance = new Server<UserJWT>();
 
         instance.secure = attributes.secure;
+        instance.hostname = attributes.hostname;
+        instance.port = attributes.port;
+        instance.proxy = attributes.proxy;
+        instance.portTls = instance.secure ? attributes.portTls : undefined;
 
         instance.headElements = attributes.headElements;
 
@@ -122,74 +119,98 @@ export class Server<UserJWT extends UserJWTBase = never>
             }
         }
 
-        instance.hostname = attributes.hostname;
-        instance.port = attributes.port;
-        instance.portTls = instance.secure ? attributes.portTls : undefined;
-
-        const options: Array<ListenOptions> = [];
-        const listenOptions: ListenBaseOptions =
+        instance.abortController = new AbortController();
+        const applicationOptions =
         {
-            hostname: attributes.hostname,
-            port: attributes.port as number,
-            secure: false
+            proxy: true,
+            serverConstructor: Oak.HttpServerNative
         };
-        options.push(listenOptions);
-
-        if (instance.secure)
+        instance.oak =
         {
-            const listenTlsOptions: ListenTlsOptions =
+            app: new Oak.Application(applicationOptions),
+            listenOptionsBase:
+            {
+                hostname: attributes.hostname,
+                port: attributes.port,
+                signal: instance.abortController.signal,
+                secure: false
+            },
+            listenOptionsTls:
             {
                 hostname: attributes.hostname,
                 port: attributes.portTls as number,
-                certFile: std.path.join(attributes.cert ?? "", "fullchain.pem"),
-                keyFile: std.path.join(attributes.cert ?? "", "privkey.pem"),
+                certFile: std.path.join(attributes.cert as string,
+                    "fullchain.pem"),
+                keyFile: std.path.join(attributes.cert as string,
+                    "privkey.pem"),
                 alpnProtocols: ["http/1.1", "h2"],
                 transport: "tcp",
-                secure: true,
-            };
-            options.push(listenTlsOptions);
-        }
-        instance.listener = new Listener(options);
-
-        instance.oak = { app: new Oak.Application(), router: new Oak.Router() };
+                signal: instance.abortController.signal,
+                secure: true
+            },
+            router: new Oak.Router()
+        };
 
         instance.graphql = await GraphQL.create(attributes);
         instance.auth = await Auth.create<UserJWT>();
 
         instance.devtools = attributes.devtools;
 
-        if (attributes.domain)
-        {
-            if (!attributes.domain.startsWith("www."))
-                instance.domain = `https://www.${attributes.domain}`;
-            else
-                instance.domain = `https://${attributes.domain}`;
-        }
+        if (!attributes.domain.startsWith("www.") &&
+            !Util.equal(attributes.domain, "localhost"))
+        { instance.domain = `www.${attributes.domain}`; }
         else
-            instance.domain = `https://${instance.hostname}:${instance.port}`;
+            instance.domain = attributes.domain;
 
         return await Promise.resolve(instance);
     }
     /** 
-     * Whether the server is running on HTTP or HTTPS.
+     * Protocol that the server is running is on.
      */
-    public get protocol(): "http" | "https"
+    public get protocol(): string
     {
         return this.secure ? "https" : "http";
     }
     /** 
-     * URL with port.
+     * Public-facing URL of the server.
      */
     public get url(): string
     {
-        return `${this.protocol}://${this.hostname}:${this.portTls ?? this.port}`;
+        const port = this.portTls ?? this.port;
+        if (this.proxy)
+            return `${this.protocol}://${this.domain}`;
+        else
+            return `${this.protocol}://${this.hostname}:${port}`;
     }
-    /** 
-     * URL without port.
-     */
-    public get urlSimple(): string
+    private tls(): Oak.Middleware
     {
-        return `${this.protocol}://${this.hostname}`;
+        return async (context: Oak.Context, next: () => Promise<unknown>) =>
+        {
+            /* Redirect HTTP to HTTPS if it's available. */
+            if (this.secure && !context.request.secure)
+            {
+                if (context.request.headers.has("x-http-only"))
+                {
+                    context.response.status = Oak.Status.OK;
+                    context.response.body = "";
+                    await next();
+                    return;
+                }
+                if (!context.request.headers.has("host"))
+                {
+                    context.response.status = Oak.Status.BadRequest;
+                    await next();
+                    return;
+                }
+                const urlRequest = context.request.url;
+                const host = context.request.headers.get("host") as string;
+                const redirect = new URL(urlRequest.pathname, `https://${host}`);
+                if (!this.proxy)
+                    redirect.port = (this.portTls as number).toString();
+                return context.response.redirect(redirect);
+            }
+            await next();
+        };
     }
     /** 
      * Generates middleware function for ensuring WWW URLs as canonical.
@@ -199,12 +220,19 @@ export class Server<UserJWT extends UserJWTBase = never>
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
+            if (!context.request.headers.has("host"))
+            {
+                context.response.status = Oak.Status.BadRequest;
+                await next();
+                return;
+            }
             const host = context.request.headers.get("host") as string;
             if (!host.startsWith("www.") && !host.startsWith("localhost"))
             {
                 const wwwhost = `www.${host}`;
                 const protocol = context.request.secure ? "https" : "http";
-                const redirect = `${protocol}://${wwwhost}${context.request.url.pathname}`;
+                const redirect =
+                    `${protocol}://${wwwhost}${context.request.url.pathname}`;
                 context.response.redirect(redirect);
             }
             await next();
@@ -230,7 +258,8 @@ export class Server<UserJWT extends UserJWTBase = never>
         const filename = std.path.basename(filepath);
         if (filename.startsWith("google") && filename.endsWith(".html"))
         {
-            const textfile = std.path.join(".", this.public, `${filepath}.txt`);
+            const textfile =
+                std.path.join(".", this.public, `${filepath}.txt`);
             const body = await Deno.readTextFile(textfile);
             context.response.body = body;
             context.response.type = "text/plain";
@@ -253,7 +282,10 @@ export class Server<UserJWT extends UserJWTBase = never>
         const element: React.ReactElement =
             <html lang="en">
                 <head>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                    <meta
+                        name="viewport"
+                        content="width=device-width, initial-scale=1.0"
+                    />
                     <meta httpEquiv="Content-Security-Policy" />
                     <meta charSet="UTF-8" />
                     {this.scriptElements}
@@ -276,7 +308,8 @@ export class Server<UserJWT extends UserJWTBase = never>
             return;
         }
 
-        context.response.status = staticContext.statusCode as Oak.Status ?? Oak.Status.OK;
+        context.response.status =
+            staticContext.statusCode as Oak.Status ?? Oak.Status.OK;
         context.response.body = body;
     }
     /**
@@ -288,20 +321,6 @@ export class Server<UserJWT extends UserJWTBase = never>
     {
         return async (context: Oak.Context, next: () => Promise<unknown>) =>
         {
-            /* Redirect HTTP to HTTPS if it's available. */
-            if (!context.request.secure && this.secure)
-            {
-                if (context.request.headers.has("x-http-only"))
-                {
-                    context.response.status = Oak.Status.OK;
-                    context.response.body = "";
-                    return;
-                }
-                const urlRequest = context.request.url;
-                const host = context.request.headers.get("host");
-                return context.response.redirect(`https://${host}${urlRequest.pathname}`);
-            }
-
             /* Check reroutes */
             if (this.routes.has(context.request.url.pathname))
             {
@@ -311,11 +330,13 @@ export class Server<UserJWT extends UserJWTBase = never>
             }
 
             /* Convert URL to filepath. */
-            const filepath = std.path.join(".", this.public, context.request.url.pathname);
+            const filepath =
+                std.path.join(".", this.public, context.request.url.pathname);
 
             /* File path not found or is not a file -> not static. */
-            if (!await std.fs.exists(filepath) || !(await Deno.stat(filepath)).isFile)
-                return await this.react(context);
+            if (!await std.fs.exists(filepath) ||
+                !(await Deno.stat(filepath)).isFile)
+            { return await this.react(context); }
 
             await this.static(context);
             await next();
@@ -339,50 +360,6 @@ export class Server<UserJWT extends UserJWTBase = never>
         };
     }
     /**
-     * Handles a single Deno connection.
-     * 
-     * @param connection Incoming connection.
-     * @param secure Whether the connection is encrpted or not.
-     */
-    private async handle(connection: Deno.Conn, secure: boolean): Promise<void>
-    {
-        try
-        {
-            const httpConnection = Deno.serveHttp(connection);
-            for await (const event of httpConnection)
-            {
-                try
-                {
-                    const request = event.request;
-                    const response = await this.oak.app.handle(request, connection, secure);
-                    if (response) await event.respondWith(response);
-                }
-                catch { undefined; }
-            }
-            try { httpConnection.close(); }
-            catch { undefined; }
-            try { connection.close(); }
-            catch { undefined; }
-        }
-        catch { undefined; }
-    }
-    /**
-     * Handles connection stream for one listener RID.
-     * 
-     * @param connection Listener RID.
-     * @return Whether handling the connection stream succeded or failed.
-     */
-    private async accept(key: number): Promise<StatusCode>
-    {
-        const secure = this.listener.secure(key);
-        for await (const connection of this.listener.connections(key))
-        {
-            try { this.handle(connection, secure); }
-            catch { undefined; }
-        }
-        return StatusCode.failure;
-    }
-    /**
      * Compresses static content using GZip.
      */
     public async compress(): Promise<void>
@@ -391,7 +368,8 @@ export class Server<UserJWT extends UserJWTBase = never>
         const folder = std.path.join(".", this.public, "**", "*");
         for await (const file of std.fs.expandGlob(folder))
         {
-            if ((await Deno.stat(file.path)).isFile && ext.includes(std.path.extname(file.path)))
+            if ((await Deno.stat(file.path)).isFile &&
+                ext.includes(std.path.extname(file.path)))
             {
                 const gunzipped = await Deno.readFile(file.path);
                 const gzipped = denoflate.gzip(gunzipped, undefined);
@@ -400,37 +378,45 @@ export class Server<UserJWT extends UserJWTBase = never>
         }
     }
     /**
-     * Loads Webpack scripts into React SSR.
+     * Loads scripts into React SSR.
      */
     private async scripts(): Promise<void>
     {
         if (this.devtools)
         {
-            this.scriptElements.push(<script src="http://localhost:8097" async></script>);
-            this.scriptElements.push(<script src="http://localhost:9097" async></script>);
+            const reactDevtools =
+                <script src="http://localhost:8097" async></script>;
+            const relayDevtools =
+                <script src="http://localhost:9097" async></script>;
+            this.scriptElements.push(reactDevtools);
+            this.scriptElements.push(relayDevtools);
         }
-        const entrypoint = std.path.join(".", this.public, "/scripts/bundle.js");
-        if (!await std.fs.exists(entrypoint))
+        const entrypointPath =
+            std.path.join(".", this.public, "/scripts/bundle.js");
+        if (!await std.fs.exists(entrypointPath))
             throw new Error("Main entrypoint \"/scripts/bundle.js\" not found");
-        this.scriptElements.push(<script src="/scripts/bundle.js" type="module" defer></script>);
+
+        const entrypoint =
+            <script src="/scripts/bundle.js" type="module" defer></script>;
+        this.scriptElements.push(entrypoint);
     }
     /**
      * Starts server.
      */
-    public async serve(): Promise<never>
+    public async serve(): Promise<void>
     {
         Console.log(`${std.colors.bold("https")}${std.colors.reset("aurus")}`);
-        Console.log(`Building GraphQL...`);
-        await this.graphql.build({ url: this.domain });
-        Console.success(`GraphQL built`, { clear: true });
+        Console.log("Building GraphQL...");
+        await this.graphql.build({ url: this.url });
+        Console.success("GraphQL built");
 
-        Console.log(`Compressing static files...`, { clear: true });
+        Console.log("Compressing static files...");
         await this.compress();
-        Console.success(`Static files compressed`, { clear: true });
+        Console.success("Static files compressed");
 
-        Console.log(`Collecting scripts...`, { clear: true });
+        Console.log("Collecting scripts...");
         await this.scripts();
-        Console.success(`Scripts collected`, { clear: true });
+        Console.success("Scripts collected");
 
         this.oak.router.head("/graphql", this.graphql.head());
         this.oak.router.get("/graphql", this.graphql.get());
@@ -442,44 +428,33 @@ export class Server<UserJWT extends UserJWTBase = never>
         this.oak.router.get("/((?!graphql|jwt).*)", this.get());
 
         this.oak.app.proxy = true;
+        this.oak.app.use(this.tls());
         this.oak.app.use(this.www());
         this.oak.app.use(this.oak.router.routes());
         this.oak.app.use(this.oak.router.allowedMethods());
         this.oak.app.use(Oak.etag.factory());
 
-        const linkString = function (link: string)
-        {
-            return std.colors.underline(std.colors.magenta(link));
-        };
+        const url = std.colors.underline(std.colors.magenta(this.url));
+        Console.log(`Server is running on ${url}`);
 
-        while (true)
+        const logOakErrors = function (event: Event)
         {
-            try
-            {
-                this.listener.listen();
-                const keys = this.listener.keys();
-                const promises = keys.map(this.accept);
-                promises.push(this.closed);
-                Console.log(`Server is running on ${linkString(this.url)}`, { clear: true });
-                const status = await Promise.race(promises);
-                Console.warn(`Restarting (status: ${status})`, { time: true, clear: true });
-                this.close();
-                this.closed = std.async.deferred();
-            }
-            catch (error)
-            {
-                Console.warn(`Restarting due to error ${Deno.inspect(error)}`, { time: true });
-                this.close();
-                this.closed = std.async.deferred();
-            }
-        }
+            Console.error((event as unknown as Record<string, unknown>).error);
+        };
+        this.oak.app.addEventListener("error", logOakErrors);
+
+        const promises = [] as Promise<void>[];
+        promises.push(this.oak.app.listen(this.oak.listenOptionsBase));
+        if (this.secure)
+            promises.push(this.oak.app.listen(this.oak.listenOptionsTls));
+
+        await Promise.all(promises);
     }
     /**
      * Stops server.
      */
     public close(): void
     {
-        this.listener.close();
-        this.closed.resolve(StatusCode.success);
+        this.abortController.abort();
     }
 }

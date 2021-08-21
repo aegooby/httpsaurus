@@ -30,7 +30,6 @@ export class CLI
             Console.print(`  clean\t\t${std.colors.italic(std.colors.black("(cleans temporary directories)"))}`);
             Console.print(`  install\t\t${std.colors.italic(std.colors.black("(installs Yarn)"))}`);
             Console.print(`  upgrade\t\t${std.colors.italic(std.colors.black("(upgrades Deno)"))}`);
-            Console.print(`  pkg\t\t${std.colors.italic(std.colors.black("(manages packages)"))}`);
             Console.print(`  cache\t\t${std.colors.italic(std.colors.black("(caches packages)"))}`);
             Console.print(`  bundle\t\t${std.colors.italic(std.colors.black("(bundles JavaScript)"))}`);
             Console.print(`  codegen\t\t${std.colors.italic(std.colors.black("(generates GraphQL types)"))}`);
@@ -360,6 +359,17 @@ export class CLI
             const process = Deno.run(runOptions);
             const status = await process.status();
             process.close();
+            Console.log("Replacing \"graphql\" import");
+            const text = await Deno.readTextFile("graphql/types.ts");
+            const regex =
+                /import\s*{\s*GraphQLResolveInfo\s*}\s*from\s*('|")graphql('|");/g;
+            const replacement =
+                [
+                    "import { graphql } from \"../deps.ts\";",
+                    "type GraphQLResolveInfo = graphql.GraphQLResolveInfo;"
+                ].join("\n");
+            await Deno.writeTextFile("graphql/types.ts",
+                text.replaceAll(regex, replacement));
             Console.success("Done");
             return status.code;
         };
@@ -460,8 +470,8 @@ export class CLI
                     [
                         "deno", "run", "--unstable", "--watch", "--allow-all",
                         "--import-map", "import-map.json", "server/daemon.tsx",
-                        "--hostname", "localhost", "--tls", "cert/localhost/",
-                        ...devtools
+                        "--hostname", "localhost", "--domain", "localhost",
+                        "--tls", "cert/localhost/", ...devtools
                     ],
                 env: { DENO_DIR: ".cache/" }
             };
@@ -502,9 +512,9 @@ export class CLI
                 cmd:
                     [
                         "deno", "run", "--unstable", "--allow-all",
-                        "--import-map", "import-map.json",
-                        "server/daemon.tsx", "--hostname", "0.0.0.0",
-                        "--domain", args.domain
+                        "--import-map", "import-map.json", "server/daemon.tsx",
+                        "--hostname", "0.0.0.0", "--domain", args.domain,
+                        "--proxy"
                     ],
                 env: { DENO_DIR: ".cache/" }
             };
@@ -527,12 +537,18 @@ export class CLI
                 Console.log(`usage: ${command} test`);
                 return;
             }
+            const testFiles = [] as string[];
+            for await (const file of std.fs.expandGlob("**/__test__/**/*.ts"))
+                testFiles.push(file.path);
+            for await (const file of std.fs.expandGlob("**/__test__/**/*.tsx"))
+                testFiles.push(file.path);
+
             const runOptions: Deno.RunOptions =
             {
                 cmd:
                     [
                         "deno", "test", "--unstable", "--allow-all",
-                        "--import-map", "import-map.json", "tests/"
+                        "--import-map", "import-map.json", ...testFiles
                     ],
                 env: { DENO_DIR: ".cache/" }
             };
@@ -697,7 +713,6 @@ export class CLI
             Console.print(`  clean\t\t${std.colors.italic(std.colors.black("(cleans temporary directories)"))}`);
             Console.print(`  install\t\t${std.colors.italic(std.colors.black("(installs Yarn)"))}`);
             Console.print(`  upgrade\t\t${std.colors.italic(std.colors.black("(upgrades Deno)"))}`);
-            Console.print(`  pkg\t\t${std.colors.italic(std.colors.black("(manages packages)"))}`);
             Console.print(`  cache\t\t${std.colors.italic(std.colors.black("(caches packages)"))}`);
             Console.print(`  bundle\t\t${std.colors.italic(std.colors.black("(bundles JavaScript)"))}`);
             Console.print(`  codegen\t\t${std.colors.italic(std.colors.black("(generates GraphQL types)"))}`);

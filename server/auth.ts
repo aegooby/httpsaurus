@@ -22,7 +22,8 @@ abstract class Token
     protected constructor() { Util.bind(this); }
     public verify<UserJWT extends UserJWTBase = never>(token: string): UserJWT
     {
-        const verified = jwt.verify(token, this.keypair.private, { complete: true });
+        const verified =
+            jwt.verify(token, this.keypair.private, { complete: true });
         const result = (verified as jwt.Jwt).payload as UserJWT;
         return result;
     }
@@ -64,7 +65,8 @@ class RefreshToken extends Token
         instance.lifetime = attributes.lifetime;
         return instance;
     }
-    public create<UserJWT extends UserJWTBase = never>(payload: UserJWT, context: Oak.Context): string
+    public create<UserJWT extends UserJWTBase = never>(payload: UserJWT,
+        context: Oak.Context): string
     {
         const signOptions = { expiresIn: this.lifetime };
         const result = jwt.sign(payload, this.keypair.private, signOptions);
@@ -75,8 +77,9 @@ class RefreshToken extends Token
             secure: true,
             sameSite: "strict"
         };
-        /** @todo Check if this works with NGINX. */
-        context.cookies = new Oak.Cookies(context.request, context.response, cookieOptions);
+
+        context.cookies =
+            new Oak.Cookies(context.request, context.response, cookieOptions);
         context.cookies.set("refresh", result, cookieOptions);
         return result;
     }
@@ -89,35 +92,54 @@ class RefreshToken extends Token
 
 export class Auth<UserJWT extends UserJWTBase = never>
 {
-    public static access = AccessToken.create({ path: "/jwt/access", lifetime: "15m" });
-    public static refresh = RefreshToken.create({ path: "/jwt/refresh", lifetime: "7d" });
+    public static access =
+        AccessToken.create({ path: "/jwt/access", lifetime: "15m" });
+    public static refresh =
+        RefreshToken.create({ path: "/jwt/refresh", lifetime: "7d" });
 
     private constructor() { Util.bind(this); }
 
-    public static async create<UserJWT extends UserJWTBase = never>(): Promise<Auth<UserJWT>>
+    public static async create<UserJWT extends UserJWTBase = never>()
+        : Promise<Auth<UserJWT>>
     {
         const instance = new Auth<UserJWT>();
         return await Promise.resolve(instance);
     }
-    public static authenticated<UserJWT extends UserJWTBase = never,
-        Args = unknown>(condition?: (payload: UserJWT, args: Args) => boolean): MethodDecorator
+    public static authenticated
+        <UserJWT extends UserJWTBase = never, Args = unknown>(
+            precondition?: (args: Args) => boolean,
+            postcondition?: (payload: UserJWT, args: Args) => boolean
+        ): MethodDecorator
     {
         return (_target, _propertyKey, descriptor: PropertyDescriptor) =>
         {
             const method = descriptor.value;
 
-            descriptor.value = async (parent: unknown, args: Args, context: Oak.Context) =>
+            descriptor.value = async (parent: unknown,
+                args: Args,
+                context: Oak.Context) =>
             {
-                if (!context.request.headers.has("authorization"))
-                    throw new Error("\"Authorization\" header not present");
-                const authorization = context.request.headers.get("authorization") as string;
-
                 try
                 {
-                    const token = authorization.replaceAll("Bearer ", "").replaceAll("bearer ", "");
-                    const payload: UserJWT = Auth.access.verify<UserJWT>(token);
+                    /* If the precondition exists and is not met,   */
+                    /* then we do not authenticate.                 */
+                    if (precondition && !precondition(args))
+                        return await method(parent, args, context);
+
+                    if (!context.request.headers.has("authorization"))
+                        throw new Error("\"Authorization\" header not present");
+                    const authorization =
+                        context.request.headers.get("authorization") as string;
+
+                    const token = authorization
+                        .replaceAll("Bearer ", "")
+                        .replaceAll("bearer ", "");
+                    const payload = Auth.access.verify<UserJWT>(token);
                     context.state.payload = payload;
-                    if (condition && !condition(payload, args))
+
+                    /* If the postcondition exists and is not met,  */
+                    /* then we throw an error.                      */
+                    if (postcondition && !postcondition(payload, args))
                         throw new Error("Authentication condition not met");
 
                     return await method(parent, args, context);
@@ -129,26 +151,30 @@ export class Auth<UserJWT extends UserJWTBase = never>
             };
         };
     }
-    public static rateLimit(options?: { limit?: number; expiry?: number; }): MethodDecorator
+    public static rateLimit(options: { limit: number; expiry: number; })
+        : MethodDecorator
     {
         return (_target, _propertyKey, descriptor: PropertyDescriptor) =>
         {
             const method = descriptor.value;
 
-            descriptor.value = async (parent: unknown, args: unknown, context: Oak.Context) =>
+            descriptor.value = async (parent: unknown,
+                args: unknown,
+                context: Oak.Context) =>
             {
                 const key = `rate-limit:${context.request.ip}`;
                 const count = await Redis.main.incr(key);
-                const limit = options?.limit ?? 50;
-                const expiry = options?.expiry ?? 60 * 60;
-                if (count > limit)
+
+                if (count > options.limit)
                 {
                     context.response.status = Oak.Status.TooManyRequests;
-                    const error = `${Oak.Status.TooManyRequests}: ${Oak.STATUS_TEXT.get(Oak.Status.TooManyRequests)}`;
+                    const text =
+                        Oak.STATUS_TEXT.get(Oak.Status.TooManyRequests);
+                    const error = `${Oak.Status.TooManyRequests}: ${text}`;
                     throw new Error(error);
                 }
                 else if (1 >= count)
-                    await Redis.main.expire(key, expiry);
+                    await Redis.main.expire(key, options.expiry);
                 return await method(parent, args, context);
             };
         };
@@ -163,11 +189,11 @@ export class Auth<UserJWT extends UserJWTBase = never>
                 if (!refresh)
                     throw new Error(`Refresh cookie not found`);
                 const jwtPayload = Auth.refresh.verify<UserJWT>(refresh);
-                const result = JSON.parse(await Redis.json.get(`${jwtPayload.id}`, "$"));
+                const result =
+                    JSON.parse(await Redis.json.get(`${jwtPayload.id}`, "$"));
                 if (!result)
                     throw new Error(`No JSON data returned for user with id ${jwtPayload.id}`);
-                const user: UserJWT | undefined =
-                    (result as unknown[]).pop() as (UserJWT | undefined);
+                const user = (result as unknown[]).pop() as UserJWT | undefined;
                 if (!user)
                     throw new Error(`No user found with id ${jwtPayload.id}`);
                 user.id = jwtPayload.id;
