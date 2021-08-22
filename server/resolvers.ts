@@ -2,9 +2,11 @@
 import { Oak, scrypt, graphql } from "../deps.ts";
 
 import { Auth, Util, Redis } from "./server.tsx";
-import type { Resolvers as GraphQLResolvers, QueryResolvers, MutationResolvers } from "../graphql/types.ts";
-import type { Node } from "../graphql/types.ts";
-import type { User, UserJwt } from "../graphql/types.ts";
+import type {
+    Resolvers as GraphQLResolvers, QueryResolvers, MutationResolvers,
+    Node,
+    User, UserJwt,
+} from "../graphql/types.ts";
 import { RedisPayload, redisPrefix } from "../graphql/types.ts";
 
 type Context = Oak.Context;

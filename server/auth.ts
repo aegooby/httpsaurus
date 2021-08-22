@@ -141,14 +141,13 @@ export class Auth<UserJWT extends UserJWTBase = never>
                         .replaceAll("bearer ", "");
                     const payload = Auth.access.verify<UserJWT>(token);
                     context.state.payload = payload;
-                    return await method(parent, args, context);
                 }
                 catch (error)
                 {
                     context.state.error =
                         `Authentication failed with error: ${error}`;
                 }
-                finally { await method(parent, args, context); }
+                return await method(parent, args, context);
             };
         };
     }
