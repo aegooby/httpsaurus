@@ -126,6 +126,7 @@ export class Server<UserJWT extends UserJWTBase = never>
         const applicationOptions =
         {
             proxy: true,
+            logErrors: false,
             serverConstructor: Oak.HttpServerNative
         };
         instance.oak =
@@ -440,7 +441,9 @@ export class Server<UserJWT extends UserJWTBase = never>
 
         const logOakErrors = function (event: Event)
         {
-            Console.error((event as unknown as Record<string, unknown>).error);
+            const error = (event as unknown as Record<string, unknown>).error;
+            if (!(error instanceof Deno.errors.Http))
+                Console.error(error, { time: true });
         };
         this.oak.app.addEventListener("error", logOakErrors);
 
