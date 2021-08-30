@@ -74,4 +74,10 @@
 
     "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": true,
     "javascript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": true,
+
+    "rust-analyzer.assist.allowMergingIntoGlobImports": false,
+    "rust-analyzer.assist.importPrefix": "crate",
+    "rust-analyzer.cargo.allFeatures": true,
+    "rust-analyzer.debug.engine": "vadimcn.vscode-lldb",
+    "rust-analyzer.lens.enable": false,
 }
