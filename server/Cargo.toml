@@ -1,0 +1,38 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "turtle"
+path = "lib.rs"
+test = true
+doctest = true
+bench = true
+doc = true
+plugin = false
+proc-macro = false
+harness = true
+edition = "2018"
+crate-type = ["lib"]
+required-features = []
+
+[[bin]]
+name = "turtle"
+path = "daemon.rs"
+test = true
+doctest = true
+bench = true
+doc = true
+plugin = false
+proc-macro = false
+harness = true
+edition = "2018"
+required-features = []
+
+[dependencies]
+hyper = { version = "0.14.12", features = ["full"] }
+tokio = { version = "1.10.1", features = ["full"] }
+cookie = "0.15.1"
