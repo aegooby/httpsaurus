@@ -33,6 +33,18 @@ edition = "2018"
 required-features = []
 
 [dependencies]
-hyper = { version = "0.14.12", features = ["full"] }
+# Util
 tokio = { version = "1.10.1", features = ["full"] }
+
+# HTTP
+hyper = { version = "0.14.12", features = ["full"] }
 cookie = "0.15.1"
+
+# Auth
+jsonwebtoken = "7.2.0"
+rsa = "0.5.0"
+
+# GraphQL
+
+# Redis
+redis = "0.21.1"
