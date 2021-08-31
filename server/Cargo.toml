@@ -33,18 +33,28 @@ edition = "2018"
 required-features = []
 
 [dependencies]
-# Util
-tokio = { version = "1.10.1", features = ["full"] }
 
-# HTTP
-hyper = { version = "0.14.12", features = ["full"] }
-cookie = "0.15.1"
+[dependencies.hyper]
+version = "0.14.12" 
+features = ["full"]
 
-# Auth
-jsonwebtoken = "7.2.0"
-rsa = "0.5.0"
+[dependencies.cookie]
+version = "0.15.1"
 
-# GraphQL
+[dependencies.jsonwebtoken]
+version = "7.2.0"
+[dependencies.rsa]
+version = "0.5.0"
 
-# Redis
-redis = "0.21.1"
+[dependencies.juniper]
+version = "0.15.7"
+[dependencies.juniper_hyper]
+version = "0.8.0"
+
+[dependencies.redis]
+version = "0.21.1"
+features = ["tokio-comp", "tokio-native-tls-comp", "cluster"]
+
+[dependencies.tokio]
+version = "1.10.1"
+features = ["full"]

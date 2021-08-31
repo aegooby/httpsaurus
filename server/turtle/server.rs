@@ -20,9 +20,12 @@ impl Server {
         }
     }
     async fn abort_signal(&mut self) {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("Failed to install Ctrl + C signal handler")
+        match tokio::signal::ctrl_c().await {
+            Ok(()) => (),
+            Err(error) => {
+                eprintln!("Failed to listen for CTRL-C: {}", error)
+            }
+        }
     }
     pub async fn serve(&mut self) {
         /* Prevent the server from serving twice. */
