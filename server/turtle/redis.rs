@@ -91,12 +91,12 @@ impl JSON {
 }
 
 #[derive(Clone, Debug)]
-struct FTCreateParametersPrefix {
+pub struct FTCreateParametersPrefix {
     count: i32,
     name: String,
 }
 #[derive(Clone, Debug)]
-struct FTCreateParametersStopwords {
+pub struct FTCreateParametersStopwords {
     num: i32,
     stopword: String,
 }
@@ -655,13 +655,13 @@ impl FTSchemaField {
     }
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersFilter {
+pub struct FTSearchParametersFilter {
     field: String,
     min: i32,
     max: i32,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersGeoFilter {
+pub struct FTSearchParametersGeoFilter {
     field: String,
     lon: i32,
     lat: i32,
@@ -669,59 +669,59 @@ struct FTSearchParametersGeoFilter {
     measurement: String,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersInKeys {
+pub struct FTSearchParametersInKeys {
     num: i32,
     field: String,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersInFields {
+pub struct FTSearchParametersInFields {
     num: i32,
     field: String,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersReturnParamFields {
+pub struct FTSearchParametersReturnParamFields {
     name: String,
     as_type: String,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersReturnParam {
+pub struct FTSearchParametersReturnParam {
     num: i32,
     fields: Option<Vec<FTSearchParametersReturnParamFields>>,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersSummarizeFields {
+pub struct FTSearchParametersSummarizeFields {
     num: i32,
     field: String,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersSummarize {
+pub struct FTSearchParametersSummarize {
     fields: Option<Vec<FTSearchParametersSummarizeFields>>,
     frags: i32,
     len: i32,
     seperator: String,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersHighlightFields {
+pub struct FTSearchParametersHighlightFields {
     num: i32,
     field: String,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersHighlightTags {
+pub struct FTSearchParametersHighlightTags {
     open: String,
     close: String,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersHighlight {
+pub struct FTSearchParametersHighlight {
     fields: Option<Vec<FTSearchParametersHighlightFields>>,
     tags: Option<Vec<FTSearchParametersHighlightTags>>,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersSortBy {
+pub struct FTSearchParametersSortBy {
     field: String,
     sort: String,
 }
 #[derive(Clone, Debug)]
-struct FTSearchParametersLimit {
+pub struct FTSearchParametersLimit {
     first: i32,
     num: i32,
 }

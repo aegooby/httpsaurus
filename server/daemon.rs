@@ -1,4 +1,3 @@
-pub use redis::AsyncCommands;
 mod turtle;
 
 #[tokio::main]
