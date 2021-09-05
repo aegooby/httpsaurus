@@ -35,7 +35,7 @@ pub async fn main() {
         }
         Err(error) => println!("{}", error),
     }
-    // let context = turtle::server::Context::new();
-    // let mut server = turtle::server::Server::new(context);
-    // server.serve().await;
+    let context = turtle::server::Context::new();
+    let mut server = turtle::server::Server::new(context);
+    server.serve().await;
 }

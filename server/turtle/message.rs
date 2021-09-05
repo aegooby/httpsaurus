@@ -1,8 +1,8 @@
 pub struct Message {
-    request: hyper::Request<hyper::Body>,
-    response: hyper::Response<hyper::Body>,
-    cookies: cookie::CookieJar,
-    address: std::net::SocketAddr,
+    pub request: hyper::Request<hyper::Body>,
+    pub response: hyper::Response<hyper::Body>,
+    pub cookies: cookie::CookieJar,
+    pub address: std::net::SocketAddr,
 }
 impl Message {
     pub fn new(
@@ -33,7 +33,7 @@ impl Message {
             address,
         }
     }
-    pub fn done(&mut self) {
+    pub fn done(mut self) -> hyper::Response<hyper::Body> {
         for delta in self.cookies.delta() {
             let delta_string = delta.to_string();
             if let Ok(value) =
@@ -44,5 +44,6 @@ impl Message {
                     .append(hyper::header::SET_COOKIE, value);
             }
         }
+        self.response
     }
 }
