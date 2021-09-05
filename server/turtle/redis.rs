@@ -1,5 +1,95 @@
 pub use redis::AsyncCommands;
 
+pub struct JSONGetParameters {
+    indent: Option<String>,
+    newline: Option<String>,
+    space: Option<String>,
+    noescape: Option<bool>,
+    paths: Option<Vec<String>>,
+}
+pub struct JSON {
+    connection: redis::aio::MultiplexedConnection,
+}
+impl JSON {
+    fn new(connection: redis::aio::MultiplexedConnection) -> JSON {
+        JSON { connection }
+    }
+    pub async fn del(
+        &mut self,
+        key: String,
+        path: Option<String>,
+    ) -> Result<i32, redis::RedisError> {
+        let mut cmd = redis::cmd("JSON.DEL");
+        cmd.arg(key);
+        if let Some(path) = path {
+            cmd.arg(path);
+        }
+        cmd.query_async(&mut self.connection).await
+    }
+    pub async fn set(
+        &mut self,
+        key: String,
+        path: String,
+        json: String,
+        condition: Option<String>,
+    ) -> Result<String, redis::RedisError> {
+        let mut cmd = redis::cmd("JSON.SET");
+        cmd.arg(key).arg(path).arg(json);
+        if let Some(condition) = condition {
+            cmd.arg(condition);
+        }
+        cmd.query_async(&mut self.connection).await
+    }
+    pub async fn get(
+        &mut self,
+        key: String,
+        path: Option<String>,
+        parameters: Option<JSONGetParameters>,
+    ) -> Result<String, redis::RedisError> {
+        let mut cmd = redis::cmd("JSON.GET");
+        cmd.arg(key);
+        if let Some(parameters) = parameters {
+            if let Some(indent) = parameters.indent {
+                cmd.arg("INDENT").arg(indent);
+            }
+            if let Some(newline) = parameters.newline {
+                cmd.arg("NEWLINE").arg(newline);
+            }
+            if let Some(space) = parameters.space {
+                cmd.arg("SPACE").arg(space);
+            }
+            if let Some(noescape) = parameters.noescape {
+                if noescape {
+                    cmd.arg("NOESCAPE");
+                }
+            }
+            if let Some(paths) = parameters.paths {
+                for path in paths {
+                    cmd.arg(path);
+                }
+            }
+        }
+        if let Some(path) = path {
+            cmd.arg(path);
+        }
+        cmd.query_async(&mut self.connection).await
+    }
+    pub async fn mget(
+        &mut self,
+        keys: Vec<String>,
+        path: Option<String>,
+    ) -> Result<Vec<String>, redis::RedisError> {
+        let mut cmd = redis::cmd("JSON.MGET");
+        for key in keys {
+            cmd.arg(key);
+        }
+        if let Some(path) = path {
+            cmd.arg(path);
+        }
+        cmd.query_async(&mut self.connection).await
+    }
+}
+
 #[derive(Clone, Debug)]
 struct FTCreateParametersPrefix {
     count: i32,
@@ -1749,11 +1839,9 @@ impl Redis {
         Ok(self.client.get_multiplexed_tokio_connection().await?)
     }
     pub async fn search(&mut self) -> Result<Search, redis::RedisError> {
-        Ok(Search::new(
-            self.main()
-                .await
-                .expect("Failed use Redis conenction")
-                .clone(),
-        ))
+        Ok(Search::new(self.main().await?.clone()))
+    }
+    pub async fn json(&mut self) -> Result<JSON, redis::RedisError> {
+        Ok(JSON::new(self.main().await?.clone()))
     }
 }
