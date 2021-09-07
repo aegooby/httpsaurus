@@ -1835,14 +1835,14 @@ impl RedisContext {
         Self { client }
     }
     pub async fn main(
-        &mut self,
+        &self,
     ) -> Result<redis::aio::MultiplexedConnection, redis::RedisError> {
         Ok(self.client.get_multiplexed_tokio_connection().await?)
     }
-    pub async fn search(&mut self) -> Result<Search, redis::RedisError> {
+    pub async fn search(&self) -> Result<Search, redis::RedisError> {
         Ok(Search::new(self.main().await?.clone()))
     }
-    pub async fn json(&mut self) -> Result<JSON, redis::RedisError> {
+    pub async fn json(&self) -> Result<JSON, redis::RedisError> {
         Ok(JSON::new(self.main().await?.clone()))
     }
 }

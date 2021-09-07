@@ -8,7 +8,7 @@ mod auth {
     use super::Token;
     pub async fn handle(
         message: &mut message::Message,
-        context: &mut server::Context,
+        context: server::Context,
     ) {
         if let Some(refresh) = message.cookies.get("refresh") {
             if let Ok(claims) = context.auth.refresh.verify(refresh.to_string())
@@ -26,7 +26,7 @@ mod auth {
 pub async fn handle(
     request: hyper::Request<hyper::Body>,
     address: std::net::SocketAddr,
-    context: &mut server::Context,
+    context: server::Context,
 ) -> Result<hyper::Response<hyper::Body>, std::convert::Infallible> {
     let response = hyper::Response::new(hyper::Body::default());
     let message = message::Message::new(request, response, address);

@@ -47,8 +47,7 @@ impl Server {
             let context = context.clone();
             let address = conn.remote_addr();
             let service_fn = move |request| {
-                let mut context = context.clone();
-                handler::handle(request, address, &mut context)
+                handler::handle(request, address, context.clone())
             };
             let service = hyper::service::service_fn(service_fn);
 
