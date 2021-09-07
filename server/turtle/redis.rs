@@ -1815,11 +1815,12 @@ impl Search {
     }
 }
 
-pub struct Redis {
+#[derive(Clone, Debug)]
+pub struct RedisContext {
     client: redis::Client,
 }
-impl Redis {
-    pub fn new(port: Option<i16>) -> Redis {
+impl RedisContext {
+    pub fn new(port: Option<i16>) -> Self {
         let port = match port {
             Some(value) => value,
             None => 6379,
@@ -1831,7 +1832,7 @@ impl Redis {
         url.push_str("/");
         let client =
             redis::Client::open(url).expect("Failed to connect to Redis");
-        Redis { client }
+        Self { client }
     }
     pub async fn main(
         &mut self,

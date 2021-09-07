@@ -2,7 +2,7 @@ mod turtle;
 
 #[tokio::main]
 pub async fn main() {
-    let mut redis = turtle::redis::Redis::new(None);
+    let mut redis = turtle::redis::RedisContext::new(None);
     let schema_field = turtle::redis::FTSchemaField::build()
         .name("$.email".to_string())
         .field_type("TAG".to_string())

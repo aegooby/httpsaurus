@@ -1,10 +1,18 @@
+use super::auth;
 use super::handler;
+use super::redis;
 
-#[derive(Clone, Copy, Debug)]
-pub struct Context {}
+#[derive(Clone, Debug)]
+pub struct Context {
+    pub auth: auth::AuthContext,
+    pub redis: redis::RedisContext,
+}
 impl Context {
     pub fn new() -> Context {
-        Context {}
+        Context {
+            auth: auth::AuthContext::new(),
+            redis: redis::RedisContext::new(None),
+        }
     }
 }
 
@@ -39,7 +47,8 @@ impl Server {
             let context = context.clone();
             let address = conn.remote_addr();
             let service_fn = move |request| {
-                handler::handle(request, address, context.clone())
+                let mut context = context.clone();
+                handler::handle(request, address, &mut context)
             };
             let service = hyper::service::service_fn(service_fn);
 

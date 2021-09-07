@@ -1,0 +1,175 @@
+use super::message;
+use rsa::{pkcs8::ToPrivateKey, pkcs8::ToPublicKey};
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct Claims {
+    pub sub: String,
+    pub exp: usize,
+    pub ajd: String, /* Additional JSON Data claim. */
+    pub jti: String, /* JWT receipt. */
+}
+pub trait Token {
+    fn new(lifetime: usize, path: String) -> Self;
+    fn expiry(lifetime: usize) -> usize {
+        let now =
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
+        (now.unwrap().as_secs() + lifetime as u64) as usize
+    }
+    fn private(&self) -> String;
+    fn public(&self) -> String;
+    fn create(
+        &self,
+        payload: Claims,
+        message: &mut message::Message,
+    ) -> Result<String, jsonwebtoken::errors::Error>;
+    fn verify(
+        &self,
+        token: String,
+    ) -> Result<Claims, jsonwebtoken::errors::Error> {
+        let algorithm = jsonwebtoken::Algorithm::RS256;
+        let validation = jsonwebtoken::Validation::new(algorithm);
+        let public_key = self.public();
+        match jsonwebtoken::DecodingKey::from_rsa_pem(public_key.as_bytes()) {
+            Ok(key) => {
+                let claims = jsonwebtoken::decode::<Claims>(
+                    token.as_str(),
+                    &key,
+                    &validation,
+                )?
+                .claims;
+                Ok(claims)
+            }
+            Err(error) => Err(error),
+        }
+    }
+}
+#[derive(Clone, Debug)]
+pub struct Keypair {
+    private: String,
+    public: String,
+}
+impl Keypair {
+    fn new() -> Self {
+        let private_rsa = rsa::RsaPrivateKey::new(&mut rand::rngs::OsRng, 2048)
+            .expect("Failed to create private key");
+        let private = private_rsa
+            .to_pkcs8_pem()
+            .expect("Failed to create private key PEM")
+            .to_string();
+
+        let public_rsa = rsa::RsaPublicKey::from(&private_rsa);
+        let public = public_rsa
+            .to_public_key_pem()
+            .expect("Failed to create public key PEM");
+
+        Self { private, public }
+    }
+}
+#[derive(Clone, Debug)]
+pub struct AccessToken {
+    keypair: Keypair,
+    lifetime: usize,
+}
+impl Token for AccessToken {
+    fn new(lifetime: usize, _path: String) -> Self {
+        AccessToken {
+            keypair: Keypair::new(),
+            lifetime,
+        }
+    }
+    fn private(&self) -> String {
+        self.keypair.private.clone()
+    }
+    fn public(&self) -> String {
+        self.keypair.public.clone()
+    }
+    fn create(
+        &self,
+        claims: Claims,
+        _message: &mut message::Message,
+    ) -> Result<String, jsonwebtoken::errors::Error> {
+        let algorithm = jsonwebtoken::Algorithm::RS256;
+        let header = jsonwebtoken::Header::new(algorithm);
+        let private_key = self.private();
+        let mut claims = claims.clone();
+        claims.exp = AccessToken::expiry(self.lifetime);
+        match jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes()) {
+            Ok(key) => jsonwebtoken::encode(&header, &claims, &key),
+            Err(error) => Err(error),
+        }
+    }
+}
+#[derive(Clone, Debug)]
+pub struct RefreshToken {
+    keypair: Keypair,
+    lifetime: usize,
+    path: String,
+}
+impl Token for RefreshToken {
+    fn new(lifetime: usize, path: String) -> Self {
+        RefreshToken {
+            keypair: Keypair::new(),
+            lifetime,
+            path,
+        }
+    }
+    fn private(&self) -> String {
+        self.keypair.private.clone()
+    }
+    fn public(&self) -> String {
+        self.keypair.public.clone()
+    }
+    fn create(
+        &self,
+        claims: Claims,
+        message: &mut message::Message,
+    ) -> Result<String, jsonwebtoken::errors::Error> {
+        let algorithm = jsonwebtoken::Algorithm::RS256;
+        let header = jsonwebtoken::Header::new(algorithm);
+        let private_key = self.private();
+        let mut claims = claims.clone();
+        claims.exp = AccessToken::expiry(self.lifetime);
+
+        match jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes()) {
+            Ok(key) => {
+                let token = jsonwebtoken::encode(&header, &claims, &key)?;
+                let cookie = cookie::Cookie::build("refresh", token.clone())
+                    .http_only(true)
+                    .path(self.path.clone())
+                    .secure(true)
+                    .same_site(cookie::SameSite::Strict)
+                    .finish();
+                message.cookies.add(cookie);
+                Ok(token)
+            }
+            Err(error) => Err(error),
+        }
+    }
+}
+impl RefreshToken {
+    fn reset(&self, message: &mut message::Message) {
+        let cookie = cookie::Cookie::build("refresh", "")
+            .http_only(true)
+            .path(self.path.clone())
+            .secure(true)
+            .same_site(cookie::SameSite::Strict)
+            .finish();
+        message.cookies.remove(cookie);
+    }
+}
+#[derive(Clone, Debug)]
+pub struct AuthContext {
+    pub access: AccessToken,
+    pub refresh: RefreshToken,
+}
+impl AuthContext {
+    pub fn new() -> Self {
+        let access_lifetime = 60 * 15;
+        let access =
+            AccessToken::new(access_lifetime, "/jwt/access".to_string());
+        let refresh_lifetime = 60 * 60 * 24 * 7;
+        let refresh =
+            RefreshToken::new(refresh_lifetime, "/jwt/refresh".to_string());
+        AuthContext { access, refresh }
+    }
+}
