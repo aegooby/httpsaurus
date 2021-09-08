@@ -9,8 +9,8 @@ pub struct Context {
     pub graphql: graphql::GraphQLContext,
 }
 impl Context {
-    pub fn new() -> Context {
-        Context {
+    pub fn new() -> Self {
+        Self {
             auth: auth::AuthContext::new(),
             redis: redis::RedisContext::new(),
             graphql: graphql::GraphQLContext::new(),
