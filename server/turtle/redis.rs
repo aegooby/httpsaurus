@@ -11,8 +11,8 @@ pub struct JSON {
     connection: redis::aio::MultiplexedConnection,
 }
 impl JSON {
-    fn new(connection: redis::aio::MultiplexedConnection) -> JSON {
-        JSON { connection }
+    fn new(connection: redis::aio::MultiplexedConnection) -> Self {
+        Self { connection }
     }
     pub async fn del(
         &mut self,
@@ -1516,8 +1516,8 @@ pub struct Search {
     connection: redis::aio::MultiplexedConnection,
 }
 impl Search {
-    fn new(connection: redis::aio::MultiplexedConnection) -> Search {
-        Search { connection }
+    fn new(connection: redis::aio::MultiplexedConnection) -> Self {
+        Self { connection }
     }
     pub async fn create(
         &mut self,
@@ -1820,16 +1820,13 @@ pub struct RedisContext {
     client: redis::Client,
 }
 impl RedisContext {
-    pub fn new(port: Option<i16>) -> Self {
-        let port = match port {
-            Some(value) => value,
-            None => 6379,
-        }
-        .to_string();
-        let mut url = "".to_string();
-        url.push_str("redis://0.0.0.0:");
-        url.push_str(port.as_str());
-        url.push_str("/");
+    pub fn new() -> Self {
+        crate::console_log!("Creating Redis context...");
+
+        let url = match std::env::var("REDIS_URL") {
+            Ok(url) => url,
+            Err(_error) => "redis://0.0.0.0:6379".to_string(),
+        };
         let client =
             redis::Client::open(url).expect("Failed to connect to Redis");
         Self { client }

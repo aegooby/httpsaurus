@@ -1,28 +1,13 @@
-use super::auth;
+use super::context;
 use super::handler;
-use super::redis;
-
-#[derive(Clone, Debug)]
-pub struct Context {
-    pub auth: auth::AuthContext,
-    pub redis: redis::RedisContext,
-}
-impl Context {
-    pub fn new() -> Context {
-        Context {
-            auth: auth::AuthContext::new(),
-            redis: redis::RedisContext::new(None),
-        }
-    }
-}
 
 pub struct Server {
-    context: Context,
+    context: context::Context,
     active: bool,
 }
 impl Server {
-    pub fn new(context: Context) -> Server {
-        Server {
+    pub fn new(context: context::Context) -> Self {
+        Self {
             context,
             active: false,
         }
@@ -59,8 +44,12 @@ impl Server {
         let future = hyper::Server::bind(&addr)
             .serve(make_service)
             .with_graceful_shutdown(self.abort_signal());
+        crate::console_log!(
+            "Server is running on {}",
+            "http://localhost:3080".magenta().underline()
+        );
         if let Err(error) = future.await {
-            eprintln!("Failed to start server: {}", error);
+            crate::console_error!("Failed to start server: {}", error);
         }
 
         /* Server is done serving. */

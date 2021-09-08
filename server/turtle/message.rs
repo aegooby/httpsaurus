@@ -9,7 +9,7 @@ impl Message {
         request: hyper::Request<hyper::Body>,
         response: hyper::Response<hyper::Body>,
         address: std::net::SocketAddr,
-    ) -> Message {
+    ) -> Self {
         let mut cookies = cookie::CookieJar::new();
         for header in request.headers().get_all(hyper::header::COOKIE) {
             if let Ok(cookie_set) = header.to_str() {
@@ -26,7 +26,7 @@ impl Message {
                 }
             }
         }
-        Message {
+        Self {
             request,
             response,
             cookies,

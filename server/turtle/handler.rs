@@ -1,8 +1,6 @@
-use tokio::runtime::Handle;
-
-use super::auth::Token;
+use super::auth;
+use super::context;
 use super::message;
-use super::server;
 
 #[derive(Debug)]
 pub struct HandleError {}
@@ -23,39 +21,132 @@ impl From<redis::RedisError> for HandleError {
         Self {}
     }
 }
-impl From<json::JsonError> for HandleError {
-    fn from(_: json::JsonError) -> Self {
+impl From<serde_json::Error> for HandleError {
+    fn from(_: serde_json::Error) -> Self {
+        Self {}
+    }
+}
+impl From<regex::Error> for HandleError {
+    fn from(_: regex::Error) -> Self {
         Self {}
     }
 }
 
-mod auth {
-    use super::HandleError;
-
-    use super::message;
-    use super::server;
-    use super::Token;
-    pub async fn handle(
+mod jwt {
+    use super::*;
+    use auth::Token;
+    async fn post(
         message: &mut message::Message,
-        context: server::Context,
+        context: context::Context,
     ) -> Result<(), HandleError> {
         if let Some(refresh) = message.cookies.get("refresh") {
+            /* Extract claims found in the cookie. */
             let claims = context.auth.refresh.verify(refresh.to_string())?;
+
+            /* Extract claims from Redis */
             let mut json = context.redis.json().await?;
             let path = Some("$".to_string());
-            let result = json.get(claims.sub, path, None).await?;
-            let claims_json = json::parse(result.as_str())?;
+            let result = json.get(claims.sub.clone(), path, None).await?;
+            let user = serde_json::from_str::<auth::Claims>(result.as_str())?;
+
+            /* If the refresh token is valid, then create an access token. */
+            if user.jti == claims.jti {
+                context.auth.refresh.create(user.clone(), message)?;
+                *message.response.status_mut() = hyper::StatusCode::OK;
+                let access_token = context.auth.access.create(user, message)?;
+                *message.response.body_mut() = hyper::Body::from(access_token);
+            }
         }
         Ok(())
     }
+    pub async fn handle(
+        message: &mut message::Message,
+        context: context::Context,
+    ) -> Result<(), HandleError> {
+        match *message.request.method() {
+            hyper::Method::POST => post(message, context).await,
+            _ => {
+                *message.response.status_mut() =
+                    hyper::StatusCode::METHOD_NOT_ALLOWED;
+                *message.response.body_mut() = hyper::Body::empty();
+                Ok(())
+            }
+        }
+    }
+}
+
+mod graphql {
+    use super::*;
+    async fn get(
+        message: &mut message::Message,
+        _context: context::Context,
+    ) -> Result<(), HandleError> {
+        let response = juniper_hyper::graphiql("/graphql", None).await;
+        message.response = response;
+        Ok(())
+    }
+    async fn post(
+        message: &mut message::Message,
+        _context: context::Context,
+    ) -> Result<(), HandleError> {
+        // let response =
+        //     juniper_hyper::graphql(root_node, context, message.request);
+        Ok(())
+    }
+    pub async fn handle(
+        message: &mut message::Message,
+        context: context::Context,
+    ) -> Result<(), HandleError> {
+        match *message.request.method() {
+            hyper::Method::GET => get(message, context).await,
+            hyper::Method::POST => post(message, context).await,
+            _ => {
+                *message.response.status_mut() =
+                    hyper::StatusCode::METHOD_NOT_ALLOWED;
+                *message.response.body_mut() = hyper::Body::empty();
+                Ok(())
+            }
+        }
+    }
+}
+
+async fn handle_message(
+    message: &mut message::Message,
+    context: context::Context,
+) -> Result<(), HandleError> {
+    let jwt_regex = regex::Regex::new("/jwt/refresh/?$")?;
+    if jwt_regex.is_match(message.request.uri().path()) {
+        jwt::handle(message, context).await?;
+        return Ok(());
+    }
+
+    let graphql_regex = regex::Regex::new("/graphql/?$")?;
+    if graphql_regex.is_match(message.request.uri().path()) {
+        graphql::handle(message, context).await?;
+        return Ok(());
+    }
+
+    Ok(())
 }
 
 pub async fn handle(
     request: hyper::Request<hyper::Body>,
     address: std::net::SocketAddr,
-    context: server::Context,
+    context: context::Context,
 ) -> Result<hyper::Response<hyper::Body>, std::convert::Infallible> {
-    let response = hyper::Response::new(hyper::Body::default());
-    let message = message::Message::new(request, response, address);
+    /* Construct message */
+    let response = hyper::Response::new(hyper::Body::empty());
+    let mut message = message::Message::new(request, response, address);
+
+    match handle_message(&mut message, context).await {
+        Ok(()) => (),
+        Err(_error) => {
+            *message.response.status_mut() =
+                hyper::StatusCode::INTERNAL_SERVER_ERROR;
+            *message.response.body_mut() = hyper::Body::empty();
+        }
+    }
+
+    /* Respond */
     Ok(message.done())
 }

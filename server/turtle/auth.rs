@@ -5,15 +5,16 @@ use rsa::{pkcs8::ToPrivateKey, pkcs8::ToPublicKey};
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
-    pub ajd: String, /* Additional JSON Data claim. */
-    pub jti: String, /* JWT receipt. */
+    pub ajd: String,         /* Additional JSON Data claim. */
+    pub jti: Option<String>, /* JWT receipt. */
 }
 pub trait Token {
     fn new(lifetime: usize, path: String) -> Self;
     fn expiry(lifetime: usize) -> usize {
         let now =
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
-        (now.unwrap().as_secs() + lifetime as u64) as usize
+        (now.expect("Failed to get system time").as_secs() + lifetime as u64)
+            as usize
     }
     fn private(&self) -> String;
     fn public(&self) -> String;
@@ -72,7 +73,7 @@ pub struct AccessToken {
 }
 impl Token for AccessToken {
     fn new(lifetime: usize, _path: String) -> Self {
-        AccessToken {
+        Self {
             keypair: Keypair::new(),
             lifetime,
         }
@@ -107,7 +108,7 @@ pub struct RefreshToken {
 }
 impl Token for RefreshToken {
     fn new(lifetime: usize, path: String) -> Self {
-        RefreshToken {
+        Self {
             keypair: Keypair::new(),
             lifetime,
             path,
@@ -164,12 +165,14 @@ pub struct AuthContext {
 }
 impl AuthContext {
     pub fn new() -> Self {
+        crate::console_log!("Creating authentication context...");
+
         let access_lifetime = 60 * 15;
         let access =
             AccessToken::new(access_lifetime, "/jwt/access".to_string());
         let refresh_lifetime = 60 * 60 * 24 * 7;
         let refresh =
             RefreshToken::new(refresh_lifetime, "/jwt/refresh".to_string());
-        AuthContext { access, refresh }
+        Self { access, refresh }
     }
 }
