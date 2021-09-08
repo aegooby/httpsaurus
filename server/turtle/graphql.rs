@@ -1,6 +1,3 @@
-// #[derive(juniper::GraphQLObject)]
-// struct Query {}
-
 pub struct GraphQLContextRef {
     pub root_node: juniper::RootNode<
         'static,
