@@ -1,37 +1,8 @@
 use super::auth;
 use super::context;
+use super::error;
 use super::graphql;
 use super::message;
-
-#[derive(Debug)]
-pub struct HandleError {}
-
-impl std::error::Error for HandleError {}
-impl std::fmt::Display for HandleError {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "Error handling request")
-    }
-}
-impl From<jsonwebtoken::errors::Error> for HandleError {
-    fn from(_: jsonwebtoken::errors::Error) -> Self {
-        Self {}
-    }
-}
-impl From<redis::RedisError> for HandleError {
-    fn from(_: redis::RedisError) -> Self {
-        Self {}
-    }
-}
-impl From<serde_json::Error> for HandleError {
-    fn from(_: serde_json::Error) -> Self {
-        Self {}
-    }
-}
-impl From<regex::Error> for HandleError {
-    fn from(_: regex::Error) -> Self {
-        Self {}
-    }
-}
 
 mod jwt {
     use super::*;
@@ -39,7 +10,7 @@ mod jwt {
     async fn post(
         message: &mut message::Message,
         context: context::Context,
-    ) -> Result<(), HandleError> {
+    ) -> Result<(), error::Error> {
         if let Some(refresh) = message.cookies.get("refresh") {
             /* Extract claims found in the cookie. */
             let claims = context.auth.refresh.verify(refresh.to_string())?;
@@ -63,7 +34,7 @@ mod jwt {
     pub async fn handle(
         message: &mut message::Message,
         context: context::Context,
-    ) -> Result<(), HandleError> {
+    ) -> Result<(), error::Error> {
         match *message.request.method() {
             hyper::Method::POST => post(message, context).await,
             _ => {
@@ -81,7 +52,7 @@ mod gql {
     async fn get(
         message: &mut message::Message,
         _context: context::Context,
-    ) -> Result<(), HandleError> {
+    ) -> Result<(), error::Error> {
         let response = juniper_hyper::graphiql("/graphql", None).await;
         message.response = response;
         Ok(())
@@ -89,22 +60,25 @@ mod gql {
     async fn post(
         message: &mut message::Message,
         context: context::Context,
-    ) -> Result<(), HandleError> {
-        let juniper_context = std::sync::Arc::new(
-            graphql::JuniperContext::new(message.clone(), context.clone()),
-        );
+    ) -> Result<(), error::Error> {
+        let juniper_context =
+            std::sync::Arc::new(graphql::JuniperContext::new(
+                message.clone().await,
+                context.clone(),
+            ));
         let response = juniper_hyper::graphql(
             context.graphql.root_node,
             juniper_context,
-            message.clone().request,
+            message.clone().await.request,
         )
         .await;
+        message.response = response;
         Ok(())
     }
     pub async fn handle(
         message: &mut message::Message,
         context: context::Context,
-    ) -> Result<(), HandleError> {
+    ) -> Result<(), error::Error> {
         match *message.request.method() {
             hyper::Method::GET => get(message, context).await,
             hyper::Method::POST => post(message, context).await,
@@ -121,7 +95,7 @@ mod gql {
 async fn handle_message(
     message: &mut message::Message,
     context: context::Context,
-) -> Result<(), HandleError> {
+) -> Result<(), error::Error> {
     let jwt_regex = regex::Regex::new("/jwt/refresh/?$")?;
     if jwt_regex.is_match(message.request.uri().path()) {
         jwt::handle(message, context).await?;

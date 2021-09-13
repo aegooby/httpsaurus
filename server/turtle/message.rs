@@ -1,12 +1,56 @@
+use super::error;
 #[derive(Debug)]
 pub struct Message {
-    pub request: std::sync::Arc<hyper::Request<hyper::Body>>,
-    pub response: std::sync::Arc<hyper::Response<hyper::Body>>,
+    pub request: hyper::Request<hyper::Body>,
+    pub response: hyper::Response<hyper::Body>,
     pub cookies: cookie::CookieJar,
     pub address: std::net::SocketAddr,
 }
 
 impl Message {
+    pub async fn clone(&mut self) -> Self {
+        async fn clone_hyper(
+            message: &mut Message,
+        ) -> Result<
+            (hyper::Request<hyper::Body>, hyper::Response<hyper::Body>),
+            error::Error,
+        > {
+            let request_body =
+                hyper::body::to_bytes(message.request.body_mut()).await?;
+            let mut request = hyper::Request::builder()
+                .version(message.request.version())
+                .method(message.request.method())
+                .uri(message.request.uri())
+                .body(hyper::Body::from(request_body))?;
+            for (key, value) in message.request.headers() {
+                request.headers_mut().append(key, value.clone());
+            }
+
+            let response_body =
+                hyper::body::to_bytes(message.response.body_mut()).await?;
+            let mut response = hyper::Response::builder()
+                .version(message.response.version())
+                .status(message.response.status())
+                .body(hyper::Body::from(response_body))?;
+            for (key, value) in message.response.headers() {
+                response.headers_mut().append(key, value.clone());
+            }
+
+            Ok((request, response))
+        }
+        let (request, response) = match clone_hyper(self).await {
+            Ok((request, response)) => (request, response),
+            Err(_error) => {
+                (hyper::Request::default(), hyper::Response::default())
+            }
+        };
+        Self {
+            request,
+            response,
+            cookies: self.cookies.clone(),
+            address: self.address.clone(),
+        }
+    }
     pub fn new(
         request: hyper::Request<hyper::Body>,
         response: hyper::Response<hyper::Body>,

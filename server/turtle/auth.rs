@@ -1,3 +1,4 @@
+use super::error;
 use super::message;
 use rsa::{pkcs8::ToPrivateKey, pkcs8::ToPublicKey};
 
@@ -22,26 +23,17 @@ pub trait Token {
         &self,
         payload: Claims,
         message: &mut message::Message,
-    ) -> Result<String, jsonwebtoken::errors::Error>;
-    fn verify(
-        &self,
-        token: String,
-    ) -> Result<Claims, jsonwebtoken::errors::Error> {
+    ) -> Result<String, error::Error>;
+    fn verify(&self, token: String) -> Result<Claims, error::Error> {
         let algorithm = jsonwebtoken::Algorithm::RS256;
         let validation = jsonwebtoken::Validation::new(algorithm);
         let public_key = self.public();
-        match jsonwebtoken::DecodingKey::from_rsa_pem(public_key.as_bytes()) {
-            Ok(key) => {
-                let claims = jsonwebtoken::decode::<Claims>(
-                    token.as_str(),
-                    &key,
-                    &validation,
-                )?
+        let key =
+            jsonwebtoken::DecodingKey::from_rsa_pem(public_key.as_bytes())?;
+        let claims =
+            jsonwebtoken::decode::<Claims>(token.as_str(), &key, &validation)?
                 .claims;
-                Ok(claims)
-            }
-            Err(error) => Err(error),
-        }
+        Ok(claims)
     }
 }
 #[derive(Clone, Debug)]
@@ -88,16 +80,15 @@ impl Token for AccessToken {
         &self,
         claims: Claims,
         _message: &mut message::Message,
-    ) -> Result<String, jsonwebtoken::errors::Error> {
+    ) -> Result<String, error::Error> {
         let algorithm = jsonwebtoken::Algorithm::RS256;
         let header = jsonwebtoken::Header::new(algorithm);
         let private_key = self.private();
         let mut claims = claims.clone();
         claims.exp = AccessToken::expiry(self.lifetime);
-        match jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes()) {
-            Ok(key) => jsonwebtoken::encode(&header, &claims, &key),
-            Err(error) => Err(error),
-        }
+        let key =
+            jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes())?;
+        Ok(jsonwebtoken::encode(&header, &claims, &key)?)
     }
 }
 #[derive(Clone, Debug)]
@@ -124,7 +115,7 @@ impl Token for RefreshToken {
         &self,
         claims: Claims,
         message: &mut message::Message,
-    ) -> Result<String, jsonwebtoken::errors::Error> {
+    ) -> Result<String, error::Error> {
         let algorithm = jsonwebtoken::Algorithm::RS256;
         let header = jsonwebtoken::Header::new(algorithm);
         let private_key = self.private();
@@ -143,7 +134,7 @@ impl Token for RefreshToken {
                 message.cookies.add(cookie);
                 Ok(token)
             }
-            Err(error) => Err(error),
+            Err(error) => Err(error.into()),
         }
     }
 }
