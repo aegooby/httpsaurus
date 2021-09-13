@@ -1,5 +1,6 @@
 use super::auth;
 use super::context;
+use super::graphql;
 use super::message;
 
 #[derive(Debug)]
@@ -75,7 +76,7 @@ mod jwt {
     }
 }
 
-mod graphql {
+mod gql {
     use super::*;
     async fn get(
         message: &mut message::Message,
@@ -87,10 +88,17 @@ mod graphql {
     }
     async fn post(
         message: &mut message::Message,
-        _context: context::Context,
+        context: context::Context,
     ) -> Result<(), HandleError> {
-        // let response =
-        //     juniper_hyper::graphql(root_node, context, message.request);
+        let juniper_context = std::sync::Arc::new(
+            graphql::JuniperContext::new(message.clone(), context.clone()),
+        );
+        let response = juniper_hyper::graphql(
+            context.graphql.root_node,
+            juniper_context,
+            message.clone().request,
+        )
+        .await;
         Ok(())
     }
     pub async fn handle(
@@ -122,7 +130,7 @@ async fn handle_message(
 
     let graphql_regex = regex::Regex::new("/graphql/?$")?;
     if graphql_regex.is_match(message.request.uri().path()) {
-        graphql::handle(message, context).await?;
+        gql::handle(message, context).await?;
         return Ok(());
     }
 

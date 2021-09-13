@@ -1,9 +1,11 @@
+#[derive(Debug)]
 pub struct Message {
-    pub request: hyper::Request<hyper::Body>,
-    pub response: hyper::Response<hyper::Body>,
+    pub request: std::sync::Arc<hyper::Request<hyper::Body>>,
+    pub response: std::sync::Arc<hyper::Response<hyper::Body>>,
     pub cookies: cookie::CookieJar,
     pub address: std::net::SocketAddr,
 }
+
 impl Message {
     pub fn new(
         request: hyper::Request<hyper::Body>,

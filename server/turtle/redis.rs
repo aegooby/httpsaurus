@@ -10,6 +10,7 @@ pub struct JSONGetParameters {
 pub struct JSON {
     connection: redis::aio::MultiplexedConnection,
 }
+#[allow(dead_code)]
 impl JSON {
     fn new(connection: redis::aio::MultiplexedConnection) -> Self {
         Self { connection }
@@ -118,6 +119,7 @@ pub struct FTCreateParameters {
     score_field: Option<String>,
     stopwords: Option<FTCreateParametersStopwords>,
 }
+#[allow(dead_code)]
 impl FTCreateParameters {
     pub fn build() -> FTCreateParameters {
         FTCreateParameters {
@@ -439,6 +441,7 @@ pub struct FTFieldOptions {
     weight: Option<i32>,
     separator: Option<String>,
 }
+#[allow(dead_code)]
 impl FTFieldOptions {
     pub fn build() -> FTFieldOptions {
         FTFieldOptions {
@@ -511,6 +514,7 @@ impl FTFieldOptions {
         }
     }
 }
+#[allow(dead_code)]
 pub struct FTSchemaField {
     sortable: Option<bool>,
     noindex: Option<bool>,
@@ -522,6 +526,7 @@ pub struct FTSchemaField {
     field_type: String,
     field_as: Option<String>,
 }
+#[allow(dead_code)]
 impl FTSchemaField {
     pub fn build() -> FTSchemaField {
         FTSchemaField {
@@ -750,6 +755,7 @@ pub struct FTSearchParameters {
     sort_by: Option<FTSearchParametersSortBy>,
     limit: Option<FTSearchParametersLimit>,
 }
+#[allow(dead_code)]
 impl FTSearchParameters {
     pub fn build() -> FTSearchParameters {
         FTSearchParameters {
@@ -1515,6 +1521,7 @@ impl redis::FromRedisValue for FTSearchResult {
 pub struct Search {
     connection: redis::aio::MultiplexedConnection,
 }
+#[allow(dead_code)]
 impl Search {
     fn new(connection: redis::aio::MultiplexedConnection) -> Self {
         Self { connection }
@@ -1577,7 +1584,7 @@ impl Search {
                     .arg(stopwords.stopword);
             }
             if let Some(skip_initial_scan) = parameters.skip_initial_scan {
-                if (skip_initial_scan) {
+                if skip_initial_scan {
                     cmd.arg("SKIPINITIALSCAN");
                 }
             }
@@ -1819,6 +1826,7 @@ impl Search {
 pub struct RedisContext {
     client: redis::Client,
 }
+#[allow(dead_code)]
 impl RedisContext {
     pub fn new() -> Self {
         crate::console_log!("Creating Redis context...");
