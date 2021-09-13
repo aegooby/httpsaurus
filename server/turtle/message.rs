@@ -17,21 +17,25 @@ impl Message {
         > {
             let request_body =
                 hyper::body::to_bytes(message.request.body_mut()).await?;
+            *message.request.body_mut() =
+                hyper::Body::from(request_body.clone());
             let mut request = hyper::Request::builder()
                 .version(message.request.version())
                 .method(message.request.method())
                 .uri(message.request.uri())
-                .body(hyper::Body::from(request_body))?;
+                .body(hyper::Body::from(request_body.clone()))?;
             for (key, value) in message.request.headers() {
                 request.headers_mut().append(key, value.clone());
             }
 
             let response_body =
                 hyper::body::to_bytes(message.response.body_mut()).await?;
+            *message.response.body_mut() =
+                hyper::Body::from(response_body.clone());
             let mut response = hyper::Response::builder()
                 .version(message.response.version())
                 .status(message.response.status())
-                .body(hyper::Body::from(response_body))?;
+                .body(hyper::Body::from(response_body.clone()))?;
             for (key, value) in message.response.headers() {
                 response.headers_mut().append(key, value.clone());
             }
