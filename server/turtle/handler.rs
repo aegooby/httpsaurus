@@ -11,23 +11,30 @@ mod jwt {
         message: &mut message::Message,
         context: context::Context,
     ) -> Result<(), error::Error> {
-        if let Some(refresh) = message.cookies.get("refresh") {
-            /* Extract claims found in the cookie. */
-            let claims = context.auth.refresh.verify(refresh.to_string())?;
+        match message.cookies.get("refresh") {
+            Some(refresh) => {
+                /* Extract claims found in the cookie. */
+                let claims = context.auth.refresh.verify(refresh.to_string())?;
 
-            /* Extract claims from Redis */
-            let mut json = context.redis.json().await?;
-            let path = Some("$".to_string());
-            let result = json.get(claims.sub.clone(), path, None).await?;
-            let user = serde_json::from_str::<auth::Claims>(result.as_str())?;
+                /* Extract claims from Redis */
+                let mut json = context.redis.json().await?;
+                let path = Some("$".to_string());
+                let result = json.get(claims.sub.clone(), path, None).await?;
+                let user = serde_json::from_str::<auth::Claims>(result.as_str())?;
 
-            /* If the refresh token is valid, then create an access token. */
-            if user.jti == claims.jti {
-                context.auth.refresh.create(user.clone(), message)?;
-                *message.response.status_mut() = hyper::StatusCode::OK;
-                let access_token = context.auth.access.create(user, message)?;
+                /* If the refresh token is valid, then create an access token. */
+                let access_token = if user.jti == claims.jti {
+                    context.auth.refresh.create(user.clone(), message)?;
+                    *message.response.status_mut() = hyper::StatusCode::OK;
+                    context.auth.access.create(user, message)?
+                } else {
+                    "".to_string()
+                };
                 let json = serde_json::json!({ "token": access_token });
                 *message.response.body_mut() = hyper::Body::from(json.to_string());
+            }
+            None => {
+                *message.response.status_mut() = hyper::StatusCode::UNAUTHORIZED;
             }
         }
         Ok(())
