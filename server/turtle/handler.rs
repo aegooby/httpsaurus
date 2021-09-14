@@ -92,6 +92,53 @@ mod gql {
     }
 }
 
+mod web {
+    use crate::console_log;
+
+    use super::*;
+    async fn get(
+        message: &mut message::Message,
+        context: context::Context,
+    ) -> Result<(), error::Error> {
+        let uri_path = message.request.uri().path();
+        let pathname = match uri_path.strip_prefix("/") {
+            Some(stripped) => stripped,
+            None => uri_path,
+        };
+        let dist_root = std::path::Path::new(".").join("dist");
+        let path = match std::fs::metadata(dist_root.join(pathname)) {
+            Ok(metadata) => {
+                if metadata.is_file() {
+                    /* @todo: add content-type */
+                    dist_root.join(pathname)
+                } else {
+                    dist_root.join("index.html")
+                }
+            }
+            Err(_error) => dist_root.join("index.html"),
+        };
+        let file = tokio::fs::File::open(path).await?;
+        let stream = tokio_util::io::ReaderStream::new(file);
+        *message.response.body_mut() = hyper::Body::wrap_stream(stream);
+        *message.response.status_mut() = hyper::StatusCode::OK;
+        Ok(())
+    }
+    pub async fn handle(
+        message: &mut message::Message,
+        context: context::Context,
+    ) -> Result<(), error::Error> {
+        match *message.request.method() {
+            hyper::Method::GET => get(message, context).await,
+            _ => {
+                *message.response.status_mut() =
+                    hyper::StatusCode::METHOD_NOT_ALLOWED;
+                *message.response.body_mut() = hyper::Body::empty();
+                Ok(())
+            }
+        }
+    }
+}
+
 async fn handle_message(
     message: &mut message::Message,
     context: context::Context,
@@ -108,6 +155,7 @@ async fn handle_message(
         return Ok(());
     }
 
+    web::handle(message, context).await?;
     Ok(())
 }
 

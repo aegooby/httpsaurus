@@ -44,3 +44,13 @@ impl From<regex::Error> for Error {
         Self::new(format!("Regex error: {}", error))
     }
 }
+impl From<html_parser::Error> for Error {
+    fn from(error: html_parser::Error) -> Self {
+        Self::new(format!("HTML parser error: {}", error))
+    }
+}
+impl From<std::io::Error> for Error {
+    fn from(error: std::io::Error) -> Self {
+        Self::new(format!("IO error: {}", error))
+    }
+}

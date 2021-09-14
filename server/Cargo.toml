@@ -43,6 +43,9 @@ features = ["full"]
 [dependencies.http]
 version = "0.2.4"
 
+[dependencies.html_parser]
+version = "0.6.2"
+
 [dependencies.cookie]
 version = "0.15.1"
 
@@ -70,6 +73,8 @@ features = ["tokio-comp", "tokio-native-tls-comp", "cluster"]
 [dependencies.tokio]
 version = "1.10.1"
 features = ["full"]
+[dependencies.tokio-util]
+version = "0.6.8"
 
 [dependencies.colored]
 version = "2.0.0"

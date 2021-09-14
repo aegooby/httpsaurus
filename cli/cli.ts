@@ -1,7 +1,7 @@
 import { std, opener, yargs } from "../deps.ts";
 import type { Arguments } from "../deps.ts";
 
-import { Console } from "../server/server.tsx";
+import { Console } from "./console.ts";
 
 Deno.env.set("DENO_DIR", ".cache/");
 const [args, command] = [Deno.args, "turtle"];
@@ -271,38 +271,41 @@ export class CLI
         {
             if (args.help)
             {
-                Console.log(`usage: ${command} bundle:snowpack --url <endpoint> [--watch]`);
+                Console.log(`usage: ${command} bundle:snowpack --url <endpoint> [--watch] [--nocheck]`);
                 return;
             }
             if (!args.url)
             {
-                Console.error(`usage: ${command} bundle:snowpack --url <endpoint> [--watch]`);
+                Console.error(`usage: ${command} bundle:snowpack --url <endpoint> [--watch] [--nocheck]`);
                 return;
             }
             const watch = args.watch ? ["--watch"] : [];
 
-            Console.log("Running type checker");
-            const tsconfig = JSON.parse(await Deno.readTextFile("config/deno.tsconfig.json"));
-            const emitOptions: Deno.EmitOptions =
+            if (!args.nocheck)
             {
-                check: true,
-                compilerOptions: tsconfig.compilerOptions,
-                importMapPath: std.path.resolve("import-map.json"),
-            };
-            const emitResult = await Deno.emit("client/bundle.tsx", emitOptions);
+                Console.log("Running type checker");
+                const tsconfig = JSON.parse(await Deno.readTextFile("config/deno.tsconfig.json"));
+                const emitOptions: Deno.EmitOptions =
+                {
+                    check: true,
+                    compilerOptions: tsconfig.compilerOptions,
+                    importMapPath: std.path.resolve("import-map.json"),
+                };
+                const emitResult = await Deno.emit("client/bundle.tsx", emitOptions);
 
-            const diagnosticsFilter = function (diagnostic: Deno.Diagnostic) 
-            {
-                return diagnostic.fileName?.startsWith("file://");
-            };
-            const diagnostics = emitResult.diagnostics.filter(diagnosticsFilter);
-            if (diagnostics.length > 0)
-            {
-                Console.error("Type check failed");
-                console.error(Deno.formatDiagnostics(diagnostics));
-                return Result.FAILURE;
+                const diagnosticsFilter = function (diagnostic: Deno.Diagnostic) 
+                {
+                    return diagnostic.fileName?.startsWith("file://");
+                };
+                const diagnostics = emitResult.diagnostics.filter(diagnosticsFilter);
+                if (diagnostics.length > 0)
+                {
+                    Console.error("Type check failed");
+                    console.error(Deno.formatDiagnostics(diagnostics));
+                    return Result.FAILURE;
+                }
+                Console.success("Type check succeeded");
             }
-            Console.success("Type check succeeded");
 
             const snowpackRunOptions: Deno.RunOptions =
             {
