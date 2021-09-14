@@ -91,12 +91,10 @@ mod gql {
 }
 
 mod web {
-    use crate::console_log;
-
     use super::*;
     async fn get(
         message: &mut message::Message,
-        context: context::Context,
+        _context: context::Context,
     ) -> Result<(), error::Error> {
         let uri_path = message.request.uri().path();
         let pathname = match uri_path.strip_prefix("/") {
