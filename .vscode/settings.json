@@ -89,6 +89,12 @@
     "rust-analyzer.inlayHints.enable": false,
     "rust-analyzer.checkOnSave.enable": true,
 
+    "[rust]": {
+        "editor.rulers": [
+            100
+        ]
+    },
+
     "editor.semanticTokenColorCustomizations": {
         "[Gruvbox Dark Medium]": {
             "rules": {

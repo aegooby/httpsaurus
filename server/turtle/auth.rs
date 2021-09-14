@@ -12,10 +12,8 @@ pub struct Claims {
 pub trait Token {
     fn new(lifetime: usize, path: String) -> Self;
     fn expiry(lifetime: usize) -> usize {
-        let now =
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
-        (now.expect("Failed to get system time").as_secs() + lifetime as u64)
-            as usize
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
+        (now.expect("Failed to get system time").as_secs() + lifetime as u64) as usize
     }
     fn private(&self) -> String;
     fn public(&self) -> String;
@@ -28,11 +26,8 @@ pub trait Token {
         let algorithm = jsonwebtoken::Algorithm::RS256;
         let validation = jsonwebtoken::Validation::new(algorithm);
         let public_key = self.public();
-        let key =
-            jsonwebtoken::DecodingKey::from_rsa_pem(public_key.as_bytes())?;
-        let claims =
-            jsonwebtoken::decode::<Claims>(token.as_str(), &key, &validation)?
-                .claims;
+        let key = jsonwebtoken::DecodingKey::from_rsa_pem(public_key.as_bytes())?;
+        let claims = jsonwebtoken::decode::<Claims>(token.as_str(), &key, &validation)?.claims;
         Ok(claims)
     }
 }
@@ -86,8 +81,7 @@ impl Token for AccessToken {
         let private_key = self.private();
         let mut claims = claims.clone();
         claims.exp = AccessToken::expiry(self.lifetime);
-        let key =
-            jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes())?;
+        let key = jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes())?;
         Ok(jsonwebtoken::encode(&header, &claims, &key)?)
     }
 }
@@ -159,11 +153,9 @@ impl AuthContext {
         crate::console_log!("Creating authentication context...");
 
         let access_lifetime = 60 * 15;
-        let access =
-            AccessToken::new(access_lifetime, "/jwt/access".to_string());
+        let access = AccessToken::new(access_lifetime, "/jwt/access".to_string());
         let refresh_lifetime = 60 * 60 * 24 * 7;
-        let refresh =
-            RefreshToken::new(refresh_lifetime, "/jwt/refresh".to_string());
+        let refresh = RefreshToken::new(refresh_lifetime, "/jwt/refresh".to_string());
         Self { access, refresh }
     }
 }

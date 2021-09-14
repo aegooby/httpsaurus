@@ -31,9 +31,7 @@ impl Server {
         let make_service_fn = move |conn: &hyper::server::conn::AddrStream| {
             let context = context.clone();
             let address = conn.remote_addr();
-            let service_fn = move |request| {
-                handler::handle(request, address, context.clone())
-            };
+            let service_fn = move |request| handler::handle(request, address, context.clone());
             let service = hyper::service::service_fn(service_fn);
 
             async move { Ok::<_, std::convert::Infallible>(service) }

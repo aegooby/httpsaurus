@@ -311,10 +311,7 @@ impl FTCreateParameters {
             stopwords: self.stopwords.clone(),
         }
     }
-    pub fn prefix(
-        &self,
-        value: Vec<FTCreateParametersPrefix>,
-    ) -> FTCreateParameters {
+    pub fn prefix(&self, value: Vec<FTCreateParametersPrefix>) -> FTCreateParameters {
         FTCreateParameters {
             filter: self.filter.clone(),
             payload_field: self.payload_field.clone(),
@@ -409,10 +406,7 @@ impl FTCreateParameters {
             stopwords: self.stopwords.clone(),
         }
     }
-    pub fn stopwords(
-        &self,
-        value: FTCreateParametersStopwords,
-    ) -> FTCreateParameters {
+    pub fn stopwords(&self, value: FTCreateParametersStopwords) -> FTCreateParameters {
         FTCreateParameters {
             filter: self.filter.clone(),
             payload_field: self.payload_field.clone(),
@@ -939,10 +933,7 @@ impl FTSearchParameters {
             limit: self.limit.clone(),
         }
     }
-    pub fn filter(
-        &self,
-        value: FTSearchParametersFilter,
-    ) -> FTSearchParameters {
+    pub fn filter(&self, value: FTSearchParametersFilter) -> FTSearchParameters {
         FTSearchParameters {
             no_content: self.no_content,
             verbatim: self.verbatim,
@@ -968,10 +959,7 @@ impl FTSearchParameters {
             limit: self.limit.clone(),
         }
     }
-    pub fn geo_filter(
-        &self,
-        value: FTSearchParametersGeoFilter,
-    ) -> FTSearchParameters {
+    pub fn geo_filter(&self, value: FTSearchParametersGeoFilter) -> FTSearchParameters {
         FTSearchParameters {
             no_content: self.no_content,
             verbatim: self.verbatim,
@@ -997,10 +985,7 @@ impl FTSearchParameters {
             limit: self.limit.clone(),
         }
     }
-    pub fn in_keys(
-        &self,
-        value: FTSearchParametersInKeys,
-    ) -> FTSearchParameters {
+    pub fn in_keys(&self, value: FTSearchParametersInKeys) -> FTSearchParameters {
         FTSearchParameters {
             no_content: self.no_content,
             verbatim: self.verbatim,
@@ -1026,10 +1011,7 @@ impl FTSearchParameters {
             limit: self.limit.clone(),
         }
     }
-    pub fn in_fields(
-        &self,
-        value: FTSearchParametersInFields,
-    ) -> FTSearchParameters {
+    pub fn in_fields(&self, value: FTSearchParametersInFields) -> FTSearchParameters {
         FTSearchParameters {
             no_content: self.no_content,
             verbatim: self.verbatim,
@@ -1055,10 +1037,7 @@ impl FTSearchParameters {
             limit: self.limit.clone(),
         }
     }
-    pub fn return_param(
-        &self,
-        value: FTSearchParametersReturnParam,
-    ) -> FTSearchParameters {
+    pub fn return_param(&self, value: FTSearchParametersReturnParam) -> FTSearchParameters {
         FTSearchParameters {
             no_content: self.no_content,
             verbatim: self.verbatim,
@@ -1084,10 +1063,7 @@ impl FTSearchParameters {
             limit: self.limit.clone(),
         }
     }
-    pub fn summarize(
-        &self,
-        value: FTSearchParametersSummarize,
-    ) -> FTSearchParameters {
+    pub fn summarize(&self, value: FTSearchParametersSummarize) -> FTSearchParameters {
         FTSearchParameters {
             no_content: self.no_content,
             verbatim: self.verbatim,
@@ -1113,10 +1089,7 @@ impl FTSearchParameters {
             limit: self.limit.clone(),
         }
     }
-    pub fn highlight(
-        &self,
-        value: FTSearchParametersHighlight,
-    ) -> FTSearchParameters {
+    pub fn highlight(&self, value: FTSearchParametersHighlight) -> FTSearchParameters {
         FTSearchParameters {
             no_content: self.no_content,
             verbatim: self.verbatim,
@@ -1324,10 +1297,7 @@ impl FTSearchParameters {
             limit: self.limit.clone(),
         }
     }
-    pub fn sort_by(
-        &self,
-        value: FTSearchParametersSortBy,
-    ) -> FTSearchParameters {
+    pub fn sort_by(&self, value: FTSearchParametersSortBy) -> FTSearchParameters {
         FTSearchParameters {
             no_content: self.no_content,
             verbatim: self.verbatim,
@@ -1457,9 +1427,7 @@ impl redis::FromRedisValue for FTSearchResult {
                         match item {
                             redis::Value::Int(_) => (),
                             redis::Value::Data(data) => {
-                                if let Ok(key) =
-                                    String::from_utf8(data.to_vec())
-                                {
+                                if let Ok(key) = String::from_utf8(data.to_vec()) {
                                     results_vec.push(FTSearchResultItem {
                                         key,
                                         path: "".to_string(),
@@ -1481,18 +1449,10 @@ impl redis::FromRedisValue for FTSearchResult {
                                         Some(redis::Value::Data(value)),
                                     ) = (path, value)
                                     {
-                                        if let Some(last) =
-                                            results_vec.last_mut()
-                                        {
-                                            let path_str = String::from_utf8(
-                                                path.to_vec(),
-                                            );
-                                            let value_str = String::from_utf8(
-                                                value.to_vec(),
-                                            );
-                                            if let (Ok(path), Ok(value)) =
-                                                (path_str, value_str)
-                                            {
+                                        if let Some(last) = results_vec.last_mut() {
+                                            let path_str = String::from_utf8(path.to_vec());
+                                            let value_str = String::from_utf8(value.to_vec());
+                                            if let (Ok(path), Ok(value)) = (path_str, value_str) {
                                                 last.path = path;
                                                 last.value = value;
                                             } else {
@@ -1835,13 +1795,10 @@ impl RedisContext {
             Ok(url) => url,
             Err(_error) => "redis://0.0.0.0:6379".to_string(),
         };
-        let client =
-            redis::Client::open(url).expect("Failed to connect to Redis");
+        let client = redis::Client::open(url).expect("Failed to connect to Redis");
         Self { client }
     }
-    pub async fn main(
-        &self,
-    ) -> Result<redis::aio::MultiplexedConnection, redis::RedisError> {
+    pub async fn main(&self) -> Result<redis::aio::MultiplexedConnection, redis::RedisError> {
         Ok(self.client.get_multiplexed_tokio_connection().await?)
     }
     pub async fn search(&self) -> Result<Search, redis::RedisError> {

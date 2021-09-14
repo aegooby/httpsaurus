@@ -26,7 +26,8 @@ mod jwt {
                 context.auth.refresh.create(user.clone(), message)?;
                 *message.response.status_mut() = hyper::StatusCode::OK;
                 let access_token = context.auth.access.create(user, message)?;
-                *message.response.body_mut() = hyper::Body::from(access_token);
+                let json = serde_json::json!({ "token": access_token });
+                *message.response.body_mut() = hyper::Body::from(json.to_string());
             }
         }
         Ok(())
@@ -38,8 +39,7 @@ mod jwt {
         match *message.request.method() {
             hyper::Method::POST => post(message, context).await,
             _ => {
-                *message.response.status_mut() =
-                    hyper::StatusCode::METHOD_NOT_ALLOWED;
+                *message.response.status_mut() = hyper::StatusCode::METHOD_NOT_ALLOWED;
                 *message.response.body_mut() = hyper::Body::empty();
                 Ok(())
             }
@@ -61,11 +61,10 @@ mod gql {
         message: &mut message::Message,
         context: context::Context,
     ) -> Result<(), error::Error> {
-        let juniper_context =
-            std::sync::Arc::new(graphql::JuniperContext::new(
-                message.clone().await,
-                context.clone(),
-            ));
+        let juniper_context = std::sync::Arc::new(graphql::JuniperContext::new(
+            message.clone().await,
+            context.clone(),
+        ));
         let response = juniper_hyper::graphql(
             context.graphql.root_node,
             juniper_context,
@@ -83,8 +82,7 @@ mod gql {
             hyper::Method::GET => get(message, context).await,
             hyper::Method::POST => post(message, context).await,
             _ => {
-                *message.response.status_mut() =
-                    hyper::StatusCode::METHOD_NOT_ALLOWED;
+                *message.response.status_mut() = hyper::StatusCode::METHOD_NOT_ALLOWED;
                 *message.response.body_mut() = hyper::Body::empty();
                 Ok(())
             }
@@ -109,7 +107,6 @@ mod web {
         let path = match std::fs::metadata(dist_root.join(pathname)) {
             Ok(metadata) => {
                 if metadata.is_file() {
-                    /* @todo: add content-type */
                     dist_root.join(pathname)
                 } else {
                     dist_root.join("index.html")
@@ -117,9 +114,20 @@ mod web {
             }
             Err(_error) => dist_root.join("index.html"),
         };
-        let file = tokio::fs::File::open(path).await?;
+        let file = tokio::fs::File::open(path.clone()).await?;
         let stream = tokio_util::io::ReaderStream::new(file);
         *message.response.body_mut() = hyper::Body::wrap_stream(stream);
+
+        /* Guess "content-type" header. */
+        let content_type = match mime_guess::from_path(path).first() {
+            Some(guess) => hyper::http::HeaderValue::from_str(guess.to_string().as_str()),
+            None => hyper::http::HeaderValue::from_str(mime::TEXT_PLAIN_UTF_8.to_string().as_str()),
+        }?;
+        message
+            .response
+            .headers_mut()
+            .insert(hyper::header::CONTENT_TYPE, content_type);
+
         *message.response.status_mut() = hyper::StatusCode::OK;
         Ok(())
     }
@@ -130,8 +138,7 @@ mod web {
         match *message.request.method() {
             hyper::Method::GET => get(message, context).await,
             _ => {
-                *message.response.status_mut() =
-                    hyper::StatusCode::METHOD_NOT_ALLOWED;
+                *message.response.status_mut() = hyper::StatusCode::METHOD_NOT_ALLOWED;
                 *message.response.body_mut() = hyper::Body::empty();
                 Ok(())
             }
@@ -171,8 +178,7 @@ pub async fn handle(
     match handle_message(&mut message, context).await {
         Ok(()) => (),
         Err(_error) => {
-            *message.response.status_mut() =
-                hyper::StatusCode::INTERNAL_SERVER_ERROR;
+            *message.response.status_mut() = hyper::StatusCode::INTERNAL_SERVER_ERROR;
             *message.response.body_mut() = hyper::Body::empty();
         }
     }

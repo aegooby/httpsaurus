@@ -54,3 +54,8 @@ impl From<std::io::Error> for Error {
         Self::new(format!("IO error: {}", error))
     }
 }
+impl From<hyper::header::InvalidHeaderValue> for Error {
+    fn from(error: hyper::header::InvalidHeaderValue) -> Self {
+        Self::new(format!("Hyper header error: {}", error))
+    }
+}
