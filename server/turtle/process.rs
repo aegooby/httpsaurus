@@ -7,6 +7,9 @@ pub async fn file(
     let file = tokio::fs::File::open(path.clone()).await?;
     let stream = tokio_util::io::ReaderStream::new(file);
     *message.response.body_mut() = hyper::Body::wrap_stream(stream);
+
+    /* @todo: add compresion */
+
     Ok(())
 }
 
@@ -30,3 +33,5 @@ pub async fn content_type(message: &mut message::Message) -> Result<(), error::E
         .insert(hyper::header::CONTENT_TYPE, content_type);
     Ok(())
 }
+
+/* @todo: add ETag processing */
