@@ -119,7 +119,7 @@ pub mod web {
             }
         };
 
-        process::file(message, &path).await?;
+        process::file::send(message, &path).await?;
 
         *message.response.status_mut() = hyper::StatusCode::OK;
         Ok(())

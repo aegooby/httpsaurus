@@ -64,3 +64,24 @@ impl From<hyper::http::uri::InvalidUriParts> for Error {
         Self::new(format!("Hyper URI parts error: {}", error))
     }
 }
+impl From<hyper::header::ToStrError> for Error {
+    fn from(error: hyper::header::ToStrError) -> Self {
+        Self::new(format!("Hyper header conversion error: {}", error))
+    }
+}
+impl From<std::num::ParseIntError> for Error {
+    fn from(error: std::num::ParseIntError) -> Self {
+        Self::new(format!("Int parse error: {}", error))
+    }
+}
+impl From<std::time::SystemTimeError> for Error {
+    fn from(error: std::time::SystemTimeError) -> Self {
+        Self::new(format!("System time error: {}", error))
+    }
+}
+// chrono::ParseError
+impl From<chrono::ParseError> for Error {
+    fn from(error: chrono::ParseError) -> Self {
+        Self::new(format!("Chrono parse error: {}", error))
+    }
+}

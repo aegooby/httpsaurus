@@ -36,6 +36,11 @@ required-features = []
 
 [dependencies.regex]
 version = "1.5.4"
+[dependencies.strum]
+version = "0.21"
+features = ["derive"]
+[dependencies.chrono]
+version = "0.4.19"
 
 [dependencies.hyper]
 version = "0.14.12" 
@@ -52,6 +57,7 @@ version = "2.0.3"
 version = "0.6.2"
 [dependencies.async-compression]
 version = "0.3.8"
+features = ["brotli", "deflate", "gzip", "tokio"]
 
 [dependencies.cookie]
 version = "0.15.1"
