@@ -420,7 +420,7 @@ export class CLI
                 return;
             }
             const bundle = CLI.bundleSnowpack();
-            const result = await bundle({ _: [], url: "https://localhost:3443/" });
+            const result = await bundle({ _: [], url: "http://localhost:3080/" });
             if (result)
                 return;
 
@@ -437,8 +437,8 @@ export class CLI
                     }
                     catch { undefined; }
                 }
-                await opener.open("https://localhost:3443/");
-                await bundle({ _: [], url: "https://localhost:3443/", watch: true });
+                await opener.open("http://localhost:3080/");
+                await bundle({ _: [], url: "http://localhost:3080/", watch: true });
             };
             ready();
 
@@ -466,7 +466,7 @@ export class CLI
                         "deno", "run", "--unstable", "--watch", "--allow-all",
                         "--import-map", "import-map.json", "server/daemon.tsx",
                         "--hostname", "localhost", "--domain", "localhost",
-                        "--tls", "cert/localhost/", ...devtools
+                        // "--tls", "cert/localhost/", ...devtools
                     ],
                 env: { DENO_DIR: ".cache/" }
             };
