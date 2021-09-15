@@ -1,13 +1,16 @@
 use crate::core::{error, message};
+use crate::custom::jwt;
+
 use rsa::{pkcs8::ToPrivateKey, pkcs8::ToPublicKey};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
-    pub ajd: String,         /* Additional JSON Data claim. */
-    pub jti: Option<String>, /* JWT receipt. */
+    pub ajd: jwt::AdditionalData, /* Additional JSON Data claim. */
+    pub jti: Option<String>,      /* JWT receipt. */
 }
+
 pub trait Token {
     fn new(lifetime: usize, path: String) -> Result<Self, error::Error>
     where
