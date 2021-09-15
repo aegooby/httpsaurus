@@ -109,23 +109,12 @@ pub mod web {
                 if metadata.is_file() {
                     dist_root.join(pathname)
                 } else {
-                    let content_type = hyper::http::HeaderValue::from_str(
-                        mime::TEXT_HTML_UTF_8.to_string().as_str(),
-                    )?;
-                    message
-                        .response
-                        .headers_mut()
-                        .append(hyper::header::CONTENT_TYPE, content_type);
+                    process::content_type::html(message).await?;
                     dist_root.join("index.html")
                 }
             }
             Err(_error) => {
-                let content_type =
-                    hyper::http::HeaderValue::from_str(mime::TEXT_HTML_UTF_8.to_string().as_str())?;
-                message
-                    .response
-                    .headers_mut()
-                    .append(hyper::header::CONTENT_TYPE, content_type);
+                process::content_type::html(message).await?;
                 dist_root.join("index.html")
             }
         };

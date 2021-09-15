@@ -14,24 +14,36 @@ pub async fn file(
 }
 
 /** Guess "content-type" header. */
-pub async fn content_type(message: &mut message::Message) -> Result<(), error::Error> {
-    if message
-        .response
-        .headers()
-        .contains_key(hyper::header::CONTENT_TYPE)
-    {
-        return Ok(());
+pub mod content_type {
+    use super::*;
+    pub async fn html(message: &mut message::Message) -> Result<(), error::Error> {
+        let content_type =
+            hyper::http::HeaderValue::from_str(mime::TEXT_HTML_UTF_8.to_string().as_str())?;
+        message
+            .response
+            .headers_mut()
+            .append(hyper::header::CONTENT_TYPE, content_type);
+        Ok(())
     }
-    let path = message.request.uri().path();
-    let content_type = match mime_guess::from_path(path).first() {
-        Some(guess) => hyper::http::HeaderValue::from_str(guess.to_string().as_str()),
-        None => hyper::http::HeaderValue::from_str(mime::TEXT_PLAIN_UTF_8.to_string().as_str()),
-    }?;
-    message
-        .response
-        .headers_mut()
-        .insert(hyper::header::CONTENT_TYPE, content_type);
-    Ok(())
+    pub async fn guess(message: &mut message::Message) -> Result<(), error::Error> {
+        if message
+            .response
+            .headers()
+            .contains_key(hyper::header::CONTENT_TYPE)
+        {
+            return Ok(());
+        }
+        let path = message.request.uri().path();
+        let content_type = match mime_guess::from_path(path).first() {
+            Some(guess) => hyper::http::HeaderValue::from_str(guess.to_string().as_str()),
+            None => hyper::http::HeaderValue::from_str(mime::TEXT_PLAIN_UTF_8.to_string().as_str()),
+        }?;
+        message
+            .response
+            .headers_mut()
+            .insert(hyper::header::CONTENT_TYPE, content_type);
+        Ok(())
+    }
 }
 
 /* @todo: add ETag processing */

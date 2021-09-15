@@ -25,7 +25,7 @@ async fn handle_message(
     context: context::Context,
 ) -> Result<(), error::Error> {
     route(message, context).await?;
-    process::content_type(message).await?;
+    process::content_type::guess(message).await?;
     Ok(())
 }
 
