@@ -2,7 +2,13 @@ mod turtle;
 
 #[tokio::main]
 pub async fn main() {
-    let context = turtle::context::Context::new();
-    let mut server = turtle::server::Server::new(context);
-    server.serve().await;
+    match turtle::context::Context::new() {
+        Ok(context) => {
+            let mut server = turtle::server::Server::new(context);
+            server.serve().await;
+        }
+        Err(error) => {
+            crate::console_error!("Failed to create context with error: {}", error);
+        }
+    }
 }

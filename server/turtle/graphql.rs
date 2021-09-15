@@ -1,4 +1,4 @@
-use super::{context, message};
+use super::{context, error, message};
 pub struct JuniperContext {
     pub message: message::Message,
     pub context: context::Context,
@@ -30,13 +30,20 @@ pub struct GraphQLContext {
     >,
 }
 impl GraphQLContext {
-    pub fn new() -> Self {
-        Self {
-            root_node: std::sync::Arc::new(juniper::RootNode::new(
-                Query {},
-                juniper::EmptyMutation::<JuniperContext>::new(),
-                juniper::EmptySubscription::<JuniperContext>::new(),
-            )),
-        }
+    pub fn new() -> Result<Self, error::Error> {
+        crate::console_log!("Creating GraphQL context...");
+
+        let root_node = juniper::RootNode::new(
+            Query {},
+            juniper::EmptyMutation::<JuniperContext>::new(),
+            juniper::EmptySubscription::<JuniperContext>::new(),
+        );
+        let schema = root_node.as_schema_language();
+        let schema_path = std::path::Path::new(".").join("graphql").join("schema.gql");
+        std::fs::write(schema_path, schema)?;
+        let instance = Self {
+            root_node: std::sync::Arc::new(root_node),
+        };
+        Ok(instance)
     }
 }

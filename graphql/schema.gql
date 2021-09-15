@@ -1,42 +1,7 @@
-
-directive @secret(name: String!, type: String!) on OBJECT
-directive @index(name: String!, prefix: String!) on OBJECT | INTERFACE
-directive @tag on FIELD_DEFINITION
-
-interface Node
-@index(name: "nodes", prefix: "nodes:")
-{ 
-    id: ID! @tag
+type Query {
+  request: String!
 }
 
-type Error { message: String! }
-
-interface UserJWT
-{
-    id: ID!
-    email: String!
-    receipt: String
-}
-type User implements Node & UserJWT 
-@secret(name: "password", type: "string")
-@index(name: "users", prefix: "nodes:users:")
-{
-    id: ID!
-    email: String! @tag
-    receipt: String
-}
-
-type Query 
-{
-    node(id: ID!): Node
-
-    readUser(email: String!): User
-    readCurrentUser: User
-}
-type Mutation
-{
-    createUser(email: String!, password: String!): User!
-    loginUser(email: String!, password: String!): String!
-    logoutUser: Boolean!
-    revokeUser(id: ID!): Boolean!
+schema {
+  query: Query
 }

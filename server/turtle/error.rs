@@ -79,9 +79,18 @@ impl From<std::time::SystemTimeError> for Error {
         Self::new(format!("System time error: {}", error))
     }
 }
-// chrono::ParseError
 impl From<chrono::ParseError> for Error {
     fn from(error: chrono::ParseError) -> Self {
         Self::new(format!("Chrono parse error: {}", error))
+    }
+}
+impl From<rsa::errors::Error> for Error {
+    fn from(error: rsa::errors::Error) -> Self {
+        Self::new(format!("RSA error: {}", error))
+    }
+}
+impl From<rsa::pkcs8::Error> for Error {
+    fn from(error: rsa::pkcs8::Error) -> Self {
+        Self::new(format!("RSA PKCS8 error: {}", error))
     }
 }

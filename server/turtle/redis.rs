@@ -1,3 +1,4 @@
+use super::error;
 pub use redis::AsyncCommands;
 
 pub struct JSONGetParameters {
@@ -1788,15 +1789,16 @@ pub struct RedisContext {
 }
 #[allow(dead_code)]
 impl RedisContext {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, error::Error> {
         crate::console_log!("Creating Redis context...");
 
         let url = match std::env::var("REDIS_URL") {
             Ok(url) => url,
             Err(_error) => "redis://0.0.0.0:6379".to_string(),
         };
-        let client = redis::Client::open(url).expect("Failed to connect to Redis");
-        Self { client }
+        let client = redis::Client::open(url)?;
+        let instance = Self { client };
+        Ok(instance)
     }
     pub async fn main(&self) -> Result<redis::aio::MultiplexedConnection, redis::RedisError> {
         Ok(self.client.get_multiplexed_tokio_connection().await?)
