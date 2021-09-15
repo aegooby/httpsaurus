@@ -1,5 +1,4 @@
-use super::context;
-use super::message;
+use super::{context, message};
 pub struct JuniperContext {
     pub message: message::Message,
     pub context: context::Context,

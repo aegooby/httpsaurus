@@ -59,3 +59,8 @@ impl From<hyper::header::InvalidHeaderValue> for Error {
         Self::new(format!("Hyper header error: {}", error))
     }
 }
+impl From<hyper::http::uri::InvalidUriParts> for Error {
+    fn from(error: hyper::http::uri::InvalidUriParts) -> Self {
+        Self::new(format!("Hyper URI parts error: {}", error))
+    }
+}

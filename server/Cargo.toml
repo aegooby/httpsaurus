@@ -50,6 +50,8 @@ version = "2.0.3"
 
 [dependencies.html_parser]
 version = "0.6.2"
+[dependencies.async-compression]
+version = "0.3.8"
 
 [dependencies.cookie]
 version = "0.15.1"

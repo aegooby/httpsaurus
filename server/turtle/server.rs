@@ -1,5 +1,4 @@
-use super::context;
-use super::handler;
+use super::{context, handler};
 
 pub struct Server {
     context: context::Context,

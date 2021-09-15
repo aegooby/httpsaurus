@@ -1,5 +1,4 @@
-use super::error;
-use super::message;
+use super::{error, message};
 use rsa::{pkcs8::ToPrivateKey, pkcs8::ToPublicKey};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

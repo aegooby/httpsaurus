@@ -1,6 +1,4 @@
-use super::auth;
-use super::graphql;
-use super::redis;
+use super::{auth, graphql, redis};
 
 #[derive(Clone)]
 pub struct Context {
