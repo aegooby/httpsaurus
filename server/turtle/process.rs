@@ -55,7 +55,7 @@ pub mod file {
     fn encodings(message: &mut message::Message) -> Result<EncodingSet, error::Error> {
         let mut set = EncodingSet::new();
         for value in message
-            .response
+            .request
             .headers()
             .get_all(hyper::header::ACCEPT_ENCODING)
         {
@@ -72,7 +72,6 @@ pub mod file {
         encoding: Encoding,
         stream: tokio_util::io::ReaderStream<tokio::fs::File>,
     ) -> hyper::Body {
-        //-> tokio_util::io::ReaderStream {
         let reader = tokio_util::io::StreamReader::new(stream);
         match encoding {
             Encoding::Deflate => {
