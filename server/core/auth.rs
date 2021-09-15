@@ -1,4 +1,4 @@
-use super::{error, message};
+use crate::core::{error, message};
 use rsa::{pkcs8::ToPrivateKey, pkcs8::ToPublicKey};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

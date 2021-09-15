@@ -1,4 +1,4 @@
-use super::{auth, error, graphql, redis};
+use crate::core::{auth, error, graphql, redis};
 
 #[derive(Clone)]
 pub struct Context {

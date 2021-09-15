@@ -1,10 +1,11 @@
-mod turtle;
+mod core;
+mod custom;
 
 #[tokio::main]
 pub async fn main() {
-    match turtle::context::Context::new() {
+    match core::context::Context::new() {
         Ok(context) => {
-            let mut server = turtle::server::Server::new(context);
+            let mut server = core::server::Server::new(context);
             server.serve().await;
         }
         Err(error) => {

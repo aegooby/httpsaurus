@@ -1,4 +1,8 @@
-use super::{context, error, message};
+use crate::core::{context, error, message};
+use crate::custom::schema;
+
+use schema::New;
+
 pub struct JuniperContext {
     pub message: message::Message,
     pub context: context::Context,
@@ -10,23 +14,10 @@ impl JuniperContext {
 }
 impl juniper::Context for JuniperContext {}
 
-pub struct Query;
-#[juniper::graphql_object(context = JuniperContext)]
-impl Query {
-    pub fn request() -> &'static str {
-        return "response";
-    }
-}
-
 #[derive(Clone)]
 pub struct GraphQLContext {
     pub root_node: std::sync::Arc<
-        juniper::RootNode<
-            'static,
-            Query,
-            juniper::EmptyMutation<JuniperContext>,
-            juniper::EmptySubscription<JuniperContext>,
-        >,
+        juniper::RootNode<'static, schema::Query, schema::Mutation, schema::Subscription>,
     >,
 }
 impl GraphQLContext {
@@ -34,13 +25,15 @@ impl GraphQLContext {
         crate::console_log!("Creating GraphQL context...");
 
         let root_node = juniper::RootNode::new(
-            Query {},
-            juniper::EmptyMutation::<JuniperContext>::new(),
-            juniper::EmptySubscription::<JuniperContext>::new(),
+            schema::Query::new(),
+            schema::Mutation::new(),
+            schema::Subscription::new(),
         );
+
         let schema = root_node.as_schema_language();
         let schema_path = std::path::Path::new(".").join("graphql").join("schema.gql");
         std::fs::write(schema_path, schema)?;
+
         let instance = Self {
             root_node: std::sync::Arc::new(root_node),
         };

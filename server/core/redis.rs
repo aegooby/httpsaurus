@@ -1,4 +1,4 @@
-use super::error;
+use crate::core::error;
 pub use redis::AsyncCommands;
 
 pub struct JSONGetParameters {

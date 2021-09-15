@@ -1,4 +1,4 @@
-use super::error;
+use crate::core::error;
 #[derive(Debug)]
 pub struct Message {
     pub request: hyper::Request<hyper::Body>,

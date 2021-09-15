@@ -1,4 +1,4 @@
-use super::{error, message};
+use crate::core::{error, message};
 
 pub mod etag {
     pub fn calculate(metadata: &std::fs::Metadata) -> String {
