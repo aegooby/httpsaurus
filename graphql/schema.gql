@@ -1,5 +1,15 @@
 type Query {
   request: String!
+  node(id: ID!): Node!
+}
+
+interface Node {
+  id: ID!
+}
+
+type User implements Node {
+  id: ID!
+  email: String!
 }
 
 schema {
