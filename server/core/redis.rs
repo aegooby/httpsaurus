@@ -16,17 +16,13 @@ impl JSON {
     fn new(connection: redis::aio::MultiplexedConnection) -> Self {
         Self { connection }
     }
-    pub async fn del(
-        &mut self,
-        key: String,
-        path: Option<String>,
-    ) -> Result<i32, redis::RedisError> {
+    pub async fn del(&mut self, key: String, path: Option<String>) -> Result<i32, error::Error> {
         let mut cmd = redis::cmd("JSON.DEL");
         cmd.arg(key);
         if let Some(path) = path {
             cmd.arg(path);
         }
-        cmd.query_async(&mut self.connection).await
+        Ok(cmd.query_async(&mut self.connection).await?)
     }
     pub async fn set(
         &mut self,
@@ -34,20 +30,20 @@ impl JSON {
         path: String,
         json: String,
         condition: Option<String>,
-    ) -> Result<String, redis::RedisError> {
+    ) -> Result<String, error::Error> {
         let mut cmd = redis::cmd("JSON.SET");
         cmd.arg(key).arg(path).arg(json);
         if let Some(condition) = condition {
             cmd.arg(condition);
         }
-        cmd.query_async(&mut self.connection).await
+        Ok(cmd.query_async(&mut self.connection).await?)
     }
     pub async fn get(
         &mut self,
         key: String,
         path: Option<String>,
         parameters: Option<JSONGetParameters>,
-    ) -> Result<String, redis::RedisError> {
+    ) -> Result<String, error::Error> {
         let mut cmd = redis::cmd("JSON.GET");
         cmd.arg(key);
         if let Some(parameters) = parameters {
@@ -74,13 +70,14 @@ impl JSON {
         if let Some(path) = path {
             cmd.arg(path);
         }
-        cmd.query_async(&mut self.connection).await
+
+        Ok(cmd.query_async(&mut self.connection).await?)
     }
     pub async fn mget(
         &mut self,
         keys: Vec<String>,
         path: Option<String>,
-    ) -> Result<Vec<String>, redis::RedisError> {
+    ) -> Result<Vec<String>, error::Error> {
         let mut cmd = redis::cmd("JSON.MGET");
         for key in keys {
             cmd.arg(key);
@@ -88,14 +85,14 @@ impl JSON {
         if let Some(path) = path {
             cmd.arg(path);
         }
-        cmd.query_async(&mut self.connection).await
+        Ok(cmd.query_async(&mut self.connection).await?)
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct FTCreateParametersPrefix {
-    count: i32,
-    name: String,
+    pub count: i32,
+    pub name: String,
 }
 #[derive(Clone, Debug)]
 pub struct FTCreateParametersStopwords {
@@ -312,7 +309,7 @@ impl FTCreateParameters {
             stopwords: self.stopwords.clone(),
         }
     }
-    pub fn prefix(&self, value: Vec<FTCreateParametersPrefix>) -> FTCreateParameters {
+    pub fn prefix(&self, value: &[FTCreateParametersPrefix]) -> FTCreateParameters {
         FTCreateParameters {
             filter: self.filter.clone(),
             payload_field: self.payload_field.clone(),
@@ -323,7 +320,7 @@ impl FTCreateParameters {
             no_fields: self.no_fields.clone(),
             no_freqs: self.no_freqs.clone(),
             skip_initial_scan: self.skip_initial_scan,
-            prefix: Some(value),
+            prefix: Some(value.to_vec()),
             language: self.language.clone(),
             language_field: self.language_field.clone(),
             score: self.score.clone(),
@@ -1493,7 +1490,7 @@ impl Search {
         index_type: String,
         schema_fields: Vec<FTSchemaField>,
         parameters: Option<FTCreateParameters>,
-    ) -> Result<String, redis::RedisError> {
+    ) -> Result<String, error::Error> {
         let mut cmd = redis::cmd("FT.CREATE");
         cmd.arg(index).arg("ON").arg(index_type);
         if let Some(parameters) = parameters {
@@ -1582,14 +1579,14 @@ impl Search {
                 }
             }
         }
-        cmd.query_async(&mut self.connection).await
+        Ok(cmd.query_async(&mut self.connection).await?)
     }
     pub async fn search(
         &mut self,
         index: String,
         query: String,
         parameters: Option<FTSearchParameters>,
-    ) -> Result<FTSearchResult, redis::RedisError> {
+    ) -> Result<FTSearchResult, error::Error> {
         let mut cmd = redis::cmd("FT.SEARCH");
         cmd.arg(index).arg(query);
 
@@ -1717,7 +1714,7 @@ impl Search {
                     .arg(limit.num.to_string());
             }
         }
-        cmd.query_async(&mut self.connection).await
+        Ok(cmd.query_async(&mut self.connection).await?)
     }
     pub async fn alter(
         &mut self,
@@ -1725,7 +1722,7 @@ impl Search {
         field: String,
         field_type: String,
         options: Option<FTFieldOptions>,
-    ) -> Result<String, redis::RedisError> {
+    ) -> Result<String, error::Error> {
         let mut cmd = redis::cmd("FT.ALTER");
         cmd.arg(index)
             .arg("SCHEMA")
@@ -1758,28 +1755,28 @@ impl Search {
                 cmd.arg("WEIGHT").arg(weight.to_string());
             }
         }
-        cmd.query_async(&mut self.connection).await
+        Ok(cmd.query_async(&mut self.connection).await?)
     }
     pub async fn dropindex(
         &mut self,
         index: String,
         delete_hash: bool,
-    ) -> Result<String, redis::RedisError> {
+    ) -> Result<String, error::Error> {
         let mut cmd = redis::cmd("FT.DROPINDEX");
         cmd.arg(index);
         if delete_hash {
             cmd.arg("DD");
         }
-        cmd.query_async(&mut self.connection).await
+        Ok(cmd.query_async(&mut self.connection).await?)
     }
     pub async fn tagvals(
         &mut self,
         index: String,
         field: String,
-    ) -> Result<Vec<String>, redis::RedisError> {
+    ) -> Result<Vec<String>, error::Error> {
         let mut cmd = redis::cmd("FT.TAGVALS");
         cmd.arg(index).arg(field);
-        cmd.query_async(&mut self.connection).await
+        Ok(cmd.query_async(&mut self.connection).await?)
     }
 }
 
@@ -1800,13 +1797,13 @@ impl RedisContext {
         let instance = Self { client };
         Ok(instance)
     }
-    pub async fn main(&self) -> Result<redis::aio::MultiplexedConnection, redis::RedisError> {
+    pub async fn main(&self) -> Result<redis::aio::MultiplexedConnection, error::Error> {
         Ok(self.client.get_multiplexed_tokio_connection().await?)
     }
-    pub async fn search(&self) -> Result<Search, redis::RedisError> {
+    pub async fn search(&self) -> Result<Search, error::Error> {
         Ok(Search::new(self.main().await?.clone()))
     }
-    pub async fn json(&self) -> Result<JSON, redis::RedisError> {
+    pub async fn json(&self) -> Result<JSON, error::Error> {
         Ok(JSON::new(self.main().await?.clone()))
     }
 }

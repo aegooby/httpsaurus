@@ -1,8 +1,6 @@
 use crate::core::{context, error, message};
 use crate::custom::schema;
 
-use schema::New;
-
 pub struct JuniperContext {
     pub message: message::Message,
     pub context: context::Context,

@@ -1,6 +1,7 @@
-use crate::core::{error, message};
+use crate::core::{context, error, message};
 use crate::custom::jwt;
 
+use redis::AsyncCommands;
 use rsa::{pkcs8::ToPrivateKey, pkcs8::ToPublicKey};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -162,5 +163,45 @@ impl AuthContext {
 
         let instance = Self { access, refresh };
         Ok(instance)
+    }
+}
+
+pub mod util {
+    use super::*;
+    pub fn authenticate(
+        message: &mut message::Message,
+        context: &context::Context,
+    ) -> Result<Claims, error::Error> {
+        if let Some(authorization) = message.request.headers().get("authorization") {
+            let token = authorization
+                .to_str()?
+                .to_string()
+                .replace("Bearer ", "")
+                .replace("bearer ", "");
+            context.auth.access.verify(token)
+        } else {
+            Err(error::Error::new(
+                "\"Authorization\" header not present".to_string(),
+            ))
+        }
+    }
+    pub async fn rate_limit(
+        message: &mut message::Message,
+        context: &context::Context,
+        limit: usize,
+        expiry: usize,
+    ) -> Result<(), error::Error> {
+        let key = format!("rate-limit:{}", message.address.ip().to_string());
+        let mut redis_main = context.redis.main().await?;
+        let count = redis_main
+            .incr::<'_, _, _, usize>(key.clone(), 1_usize)
+            .await?;
+
+        if count > limit {
+            *message.response.status_mut() = hyper::StatusCode::TOO_MANY_REQUESTS;
+        } else if 1 >= count {
+            redis_main.expire(key, expiry).await?;
+        }
+        Ok(())
     }
 }
