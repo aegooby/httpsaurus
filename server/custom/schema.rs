@@ -1,53 +1,25 @@
-use crate::core::{error, graphql, redis};
+use crate::core::{error, graphql};
+use crate::custom::redis;
 
-trait RedisIndex {
-    fn name() -> String;
-    fn prefix() -> String;
-    fn tag() -> Option<(String, String)>;
-
-    fn index() -> (
-        String,
-        Vec<redis::FTSchemaField>,
-        Option<redis::FTCreateParameters>,
-    ) {
-        let schema_fields = match Self::tag() {
-            Some((tag_name, tag_as)) => {
-                let schema_field = redis::FTSchemaField::build()
-                    .name(tag_name.into())
-                    .field_type("TAG".into())
-                    .field_as(tag_as);
-                vec![schema_field]
-            }
-            None => vec![],
-        };
-        let prefix = redis::FTCreateParametersPrefix {
-            count: 1,
-            name: Self::prefix(),
-        };
-        let create_parameters = redis::FTCreateParameters::build().prefix(&[prefix]);
-        (Self::name(), schema_fields, Some(create_parameters))
-    }
-}
+use self::redis::RedisIndex;
 
 #[derive(juniper::GraphQLObject)]
-struct Error {
+pub struct Error {
     message: String,
 }
 
 #[juniper::graphql_interface(for = [User])]
-trait Node {
+pub trait Node {
     fn id(&self) -> juniper::ID;
 }
 
-// juniper::GraphQLObject,
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct User {
+pub struct User {
     id: juniper::ID,
     email: String,
     password: String,
 }
-#[juniper::graphql_object]
-#[graphql(impl = NodeValue)]
+#[juniper::graphql_object(impl = NodeValue)]
 impl User {
     fn email(&self) -> String {
         self.email.clone()
@@ -57,19 +29,6 @@ impl User {
 impl Node for User {
     fn id(&self) -> juniper::ID {
         self.id.clone()
-    }
-}
-impl RedisIndex for User {
-    fn name() -> String {
-        "users".into()
-    }
-
-    fn prefix() -> String {
-        "nodes:users:".into()
-    }
-
-    fn tag() -> Option<(String, String)> {
-        Some(("$.email".into(), "email".into()))
     }
 }
 

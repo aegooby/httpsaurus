@@ -7,7 +7,7 @@ interface Node {
   id: ID!
 }
 
-type User {
+type User implements Node {
   email: String!
 }
 
