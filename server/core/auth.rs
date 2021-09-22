@@ -169,7 +169,7 @@ impl AuthContext {
 pub mod util {
     use super::*;
     pub fn authenticate(
-        message: &mut message::Message,
+        message: &message::Message,
         context: &context::Context,
     ) -> Result<Claims, error::Error> {
         if let Some(authorization) = message.request.headers().get("authorization") {
@@ -180,8 +180,8 @@ pub mod util {
                 .replace("bearer ", "");
             context.auth.access.verify(token)
         } else {
-            Err(error::Error::new(
-                "\"Authorization\" header not present".to_string(),
+            Err(error::Error::new_str(
+                "\"Authorization\" header not present",
             ))
         }
     }

@@ -1,6 +1,7 @@
 type Query {
   request: String!
   node(id: ID!): Node!
+  readUser(email: String!): User!
 }
 
 interface Node {

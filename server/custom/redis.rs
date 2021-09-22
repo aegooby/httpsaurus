@@ -2,7 +2,7 @@ use crate::core::{context, error, redis};
 use crate::custom::schema;
 
 pub trait RedisIndex {
-    fn name() -> String;
+    fn index_name() -> String;
     fn prefix() -> String;
     fn tag() -> Option<(String, String)>;
 
@@ -26,12 +26,12 @@ pub trait RedisIndex {
             name: Self::prefix(),
         };
         let create_parameters = redis::FTCreateParameters::build().prefix(&[prefix]);
-        (Self::name(), schema_fields, Some(create_parameters))
+        (Self::index_name(), schema_fields, Some(create_parameters))
     }
 }
 
 impl RedisIndex for schema::User {
-    fn name() -> String {
+    fn index_name() -> String {
         "users".into()
     }
 
