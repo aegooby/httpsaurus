@@ -82,6 +82,7 @@ impl Query {
             "@email:{{{}}}",
             email.replace("@", "\\@").replace(".", "\\.")
         );
+        /* @todo: get this shit working */
         // let mut redis_search = context.global.redis.search().await?;
         // let search_result = redis_search.search(User::index_name(), query, None).await?;
         // if search_result.results.len() > 1 {
