@@ -147,7 +147,7 @@ impl Token for RefreshToken {
     }
 }
 impl RefreshToken {
-    fn reset(&self, message: &mut message::Message) {
+    pub fn reset(&self, message: &mut message::Message) {
         let cookie = cookie::Cookie::build("refresh", "")
             .http_only(true)
             .path(self.path.clone())

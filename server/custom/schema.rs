@@ -67,51 +67,51 @@ impl Query {
         let error_message = format!("No node found with id {}", id);
         Err(error::Error::new_string(error_message).into())
     }
-
     pub async fn read_user(
         email: String,
         context: &graphql::JuniperContext,
     ) -> juniper::FieldResult<User> {
-        let message = context.message.try_read()?;
-        let claims = auth::util::authenticate(&message, &context.global)?;
-        if claims.ajd.email != email {
-            let message = format!("Failed to authenticate user with email {}", email);
-            return Err(error::Error::new_string(message).into());
+        {
+            let message = context.message.try_read()?;
+            let claims = auth::util::authenticate(&message, &context.global)?;
+            if claims.ajd.email != email {
+                let message = format!("Failed to authenticate user with email {}", email);
+                return Err(error::Error::new_string(message).into());
+            }
         }
         let query = format!(
             "@email:{{{}}}",
             email.replace("@", "\\@").replace(".", "\\.")
         );
-        /* @todo: get this shit working */
-        // let mut redis_search = context.global.redis.search().await?;
-        // let search_result = redis_search.search(User::index_name(), query, None).await?;
-        // if search_result.results.len() > 1 {
-        //     let message = format!("More than one user found with email {}", email);
-        //     return Err(error::Error::new_string(message).into());
-        // }
-        // match search_result.results.first() {
-        //     Some(result) => {
-        //         let user = serde_json::from_str::<User>(result.value.as_str())?;
-        //         Ok(user)
-        //     }
-        //     None => {
-        //         let message = format!("No user found with email {}", email);
-        //         Err(error::Error::new_string(message).into())
-        //     }
-        // }
-        Err(error::Error::new_str("").into())
+        let mut redis_search = context.global.redis.search().await?;
+        let search_result = redis_search.search(User::index_name(), query, None).await?;
+        if search_result.results.len() > 1 {
+            let message = format!("More than one user found with email {}", email);
+            return Err(error::Error::new_string(message).into());
+        }
+        match search_result.results.first() {
+            Some(result) => {
+                let user = serde_json::from_str::<User>(result.value.as_str())?;
+                Ok(user)
+            }
+            None => {
+                let message = format!("No user found with email {}", email);
+                Err(error::Error::new_string(message).into())
+            }
+        }
     }
-
-    // pub async fn read_current_user(
-    //     context: &graphql::JuniperContext,
-    // ) -> juniper::FieldResult<User> {
-    //     let message = &*context.message.try_read()?;
-    //     let claims = auth::util::authenticate(message, &context.context)?;
-    //     let mut redis_json = context.context.redis.json().await?;
-    //     let json_result = redis_json.get(claims.sub, None, None).await?;
-    //     let user = serde_json::from_str::<User>(json_result.as_str())?;
-    //     Ok(user)
-    // }
+    pub async fn read_current_user(
+        context: &graphql::JuniperContext,
+    ) -> juniper::FieldResult<User> {
+        let claims = {
+            let message = context.message.try_read()?;
+            auth::util::authenticate(&message, &context.global)?
+        };
+        let mut redis_json = context.global.redis.json().await?;
+        let json_result = redis_json.get(claims.sub, None, None).await?;
+        let user = serde_json::from_str::<User>(json_result.as_str())?;
+        Ok(user)
+    }
 }
 impl Query {
     pub fn new() -> Self {
@@ -159,7 +159,7 @@ impl Mutation {
     pub async fn login_user(
         email: String,
         password: String,
-        context: &mut graphql::JuniperContext,
+        context: &graphql::JuniperContext,
     ) -> juniper::FieldResult<String> {
         use scrypt::password_hash::PasswordVerifier;
 
@@ -178,7 +178,7 @@ impl Mutation {
                 let user = serde_json::from_str::<User>(result.value.as_str())?;
                 let parsed_hash = scrypt::password_hash::PasswordHash::new(user.password.as_str())?;
                 if scrypt::Scrypt
-                    .verify_password(user.password.as_bytes(), &parsed_hash)
+                    .verify_password(password.as_bytes(), &parsed_hash)
                     .is_ok()
                 {
                     let message = format!("Incorrect password for user with email {}", email);
@@ -188,9 +188,11 @@ impl Mutation {
                         user.id.to_string(),
                         jwt::AdditionalData::new(user.email),
                     );
-                    // let message = &mut (context.message);
-                    // let token = context.context.auth.access.create(claims, message)?;
-                    Ok("".into())
+                    let token = {
+                        let mut message = context.message.try_write()?;
+                        context.global.auth.access.create(claims, &mut message)?
+                    };
+                    Ok(token)
                 }
             }
             None => {
@@ -198,6 +200,22 @@ impl Mutation {
                 Err(error::Error::new_string(message).into())
             }
         }
+    }
+    pub async fn logout_user(context: &graphql::JuniperContext) -> juniper::FieldResult<bool> {
+        {
+            let mut message = context.message.try_write()?;
+            context.global.auth.refresh.reset(&mut message);
+        }
+        Ok(true)
+    }
+    pub async fn revoke_user(
+        id: juniper::ID,
+        context: &graphql::JuniperContext,
+    ) -> juniper::FieldResult<bool> {
+        let receipt = util::uuid();
+        let mut redis_json = context.global.redis.json().await?;
+        /* @todo: implement */
+        Ok(true)
     }
 }
 impl Mutation {
