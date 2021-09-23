@@ -2,12 +2,15 @@ use crate::core::{context, error, message};
 use crate::custom::schema;
 
 pub struct JuniperContext {
-    pub message: message::Message,
-    pub context: context::Context,
+    pub message: std::sync::Arc<std::sync::RwLock<message::Message>>,
+    pub global: context::Context,
 }
 impl JuniperContext {
-    pub fn new(message: message::Message, context: context::Context) -> Self {
-        Self { message, context }
+    pub fn new(
+        message: std::sync::Arc<std::sync::RwLock<message::Message>>,
+        global: context::Context,
+    ) -> Self {
+        Self { message, global }
     }
 }
 impl juniper::Context for JuniperContext {}

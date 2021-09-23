@@ -99,3 +99,8 @@ impl From<rsa::pkcs8::Error> for Error {
         Self::new_string(format!("RSA PKCS8 error: {}", error))
     }
 }
+impl From<scrypt::password_hash::Error> for Error {
+    fn from(error: scrypt::password_hash::Error) -> Self {
+        Self::new_string(format!("Scrypt error: {}", error))
+    }
+}

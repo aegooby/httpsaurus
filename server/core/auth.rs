@@ -11,6 +11,16 @@ pub struct Claims {
     pub ajd: jwt::AdditionalData, /* Additional JSON Data claim. */
     pub jti: Option<String>,      /* JWT receipt. */
 }
+impl Claims {
+    pub fn new(sub: String, ajd: jwt::AdditionalData) -> Self {
+        Self {
+            sub,
+            exp: 0,
+            ajd,
+            jti: None,
+        }
+    }
+}
 
 pub trait Token {
     fn new(lifetime: usize, path: String) -> Result<Self, error::Error>
@@ -26,7 +36,7 @@ pub trait Token {
     fn public(&self) -> String;
     fn create(
         &self,
-        payload: Claims,
+        claims: Claims,
         message: &mut message::Message,
     ) -> Result<String, error::Error>;
     fn verify(&self, token: String) -> Result<Claims, error::Error> {
@@ -151,6 +161,7 @@ impl RefreshToken {
 pub struct AuthContext {
     pub access: AccessToken,
     pub refresh: RefreshToken,
+    pub salt: scrypt::password_hash::SaltString,
 }
 impl AuthContext {
     pub fn new() -> Result<Self, error::Error> {
@@ -161,7 +172,15 @@ impl AuthContext {
         let refresh_lifetime = 60 * 60 * 24 * 7;
         let refresh = RefreshToken::new(refresh_lifetime, "/jwt/refresh".to_string())?;
 
-        let instance = Self { access, refresh };
+        let salt = scrypt::password_hash::SaltString::generate(
+            &mut scrypt::password_hash::rand_core::OsRng,
+        );
+
+        let instance = Self {
+            access,
+            refresh,
+            salt,
+        };
         Ok(instance)
     }
 }

@@ -1,7 +1,12 @@
+type Mutation {
+  createUser(email: String!, password: String!): User!
+}
+
 type Query {
   request: String!
   node(id: ID!): Node!
   readUser(email: String!): User!
+  readCurrentUser: User!
 }
 
 interface Node {
@@ -14,4 +19,5 @@ type User implements Node {
 
 schema {
   query: Query
+  mutation: Mutation
 }

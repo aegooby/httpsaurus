@@ -64,7 +64,7 @@ pub mod gql {
         context: context::Context,
     ) -> Result<(), error::Error> {
         let juniper_context = std::sync::Arc::new(graphql::JuniperContext::new(
-            message.clone().await,
+            std::sync::Arc::new(std::sync::RwLock::new(message.clone().await)),
             context.clone(),
         ));
         let response = juniper_hyper::graphql(
