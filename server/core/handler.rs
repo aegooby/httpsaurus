@@ -6,7 +6,7 @@ async fn route(
 ) -> Result<(), error::Error> {
     let jwt_regex = regex::Regex::new("/jwt/refresh/?$")?;
     if jwt_regex.is_match(message.request.uri().path()) {
-        routes::jwt::handle(message, context).await?;
+        routes::jwt_refresh::handle(message, context).await?;
         return Ok(());
     }
 
@@ -40,7 +40,8 @@ pub async fn handle(
 
     match handle_message(&mut message, context).await {
         Ok(()) => (),
-        Err(_error) => {
+        Err(error) => {
+            crate::console_warn!("500: {}", error);
             *message.response.status_mut() = hyper::StatusCode::INTERNAL_SERVER_ERROR;
             *message.response.body_mut() = hyper::Body::empty();
         }

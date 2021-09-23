@@ -19,9 +19,15 @@ pub struct User {
     id: juniper::ID,
     email: String,
     password: String,
+
+    pub jti: Option<String>,
+    pub sub: String,
 }
 #[juniper::graphql_object(impl = NodeValue)]
 impl User {
+    fn id(&self) -> juniper::ID {
+        self.id.clone()
+    }
     fn email(&self) -> String {
         self.email.clone()
     }
@@ -148,6 +154,9 @@ impl Mutation {
             id: id.clone().into(),
             email,
             password: hashed_password,
+
+            jti: None,
+            sub: id.clone(),
         };
         let mut redis_json = context.global.redis.json().await?;
         redis_json
@@ -179,18 +188,28 @@ impl Mutation {
                 let parsed_hash = scrypt::password_hash::PasswordHash::new(user.password.as_str())?;
                 if scrypt::Scrypt
                     .verify_password(password.as_bytes(), &parsed_hash)
-                    .is_ok()
+                    .is_err()
                 {
                     let message = format!("Incorrect password for user with email {}", email);
                     Err(error::Error::new_string(message).into())
                 } else {
-                    let claims = auth::Claims::new(
-                        user.id.to_string(),
-                        jwt::AdditionalData::new(user.email),
-                    );
+                    let claims = jwt::Payload {
+                        id: user.id,
+                        jti: user.jti,
+                        email: user.email,
+                    };
                     let token = {
                         let mut message = context.message.try_write()?;
-                        context.global.auth.access.create(claims, &mut message)?
+                        context
+                            .global
+                            .auth
+                            .refresh
+                            .create(claims.clone(), &mut message)?;
+                        context
+                            .global
+                            .auth
+                            .access
+                            .create(claims.clone(), &mut message)?
                     };
                     Ok(token)
                 }
@@ -208,15 +227,7 @@ impl Mutation {
         }
         Ok(true)
     }
-    pub async fn revoke_user(
-        id: juniper::ID,
-        context: &graphql::JuniperContext,
-    ) -> juniper::FieldResult<bool> {
-        let receipt = util::uuid();
-        let mut redis_json = context.global.redis.json().await?;
-        /* @todo: implement */
-        Ok(true)
-    }
+    /* @todo: implement revoke_user(id, context) -> bool */
 }
 impl Mutation {
     pub fn new() -> Self {

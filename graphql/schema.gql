@@ -1,5 +1,7 @@
 type Mutation {
   createUser(email: String!, password: String!): User!
+  loginUser(email: String!, password: String!): String!
+  logoutUser: Boolean!
 }
 
 type Query {
@@ -14,6 +16,7 @@ interface Node {
 }
 
 type User implements Node {
+  id: ID!
   email: String!
 }
 

@@ -11,13 +11,14 @@ pub struct Claims {
     pub ajd: jwt::AdditionalData, /* Additional JSON Data claim. */
     pub jti: Option<String>,      /* JWT receipt. */
 }
+
 impl Claims {
-    pub fn new(sub: String, ajd: jwt::AdditionalData) -> Self {
+    fn from(payload: jwt::Payload, exp: usize) -> Self {
         Self {
-            sub,
-            exp: 0,
-            ajd,
-            jti: None,
+            sub: payload.id.to_string(),
+            exp,
+            ajd: jwt::AdditionalData::new(payload.email),
+            jti: payload.jti,
         }
     }
 }
@@ -36,7 +37,7 @@ pub trait Token {
     fn public(&self) -> String;
     fn create(
         &self,
-        claims: Claims,
+        payload: jwt::Payload,
         message: &mut message::Message,
     ) -> Result<String, error::Error>;
     fn verify(&self, token: String) -> Result<Claims, error::Error> {
@@ -86,14 +87,13 @@ impl Token for AccessToken {
     }
     fn create(
         &self,
-        claims: Claims,
+        payload: jwt::Payload,
         _message: &mut message::Message,
     ) -> Result<String, error::Error> {
         let algorithm = jsonwebtoken::Algorithm::RS256;
         let header = jsonwebtoken::Header::new(algorithm);
         let private_key = self.private();
-        let mut claims = claims.clone();
-        claims.exp = AccessToken::expiry(self.lifetime)?;
+        let claims = Claims::from(payload, AccessToken::expiry(self.lifetime)?);
         let key = jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes())?;
         Ok(jsonwebtoken::encode(&header, &claims, &key)?)
     }
@@ -121,14 +121,13 @@ impl Token for RefreshToken {
     }
     fn create(
         &self,
-        claims: Claims,
+        payload: jwt::Payload,
         message: &mut message::Message,
     ) -> Result<String, error::Error> {
         let algorithm = jsonwebtoken::Algorithm::RS256;
         let header = jsonwebtoken::Header::new(algorithm);
         let private_key = self.private();
-        let mut claims = claims.clone();
-        claims.exp = AccessToken::expiry(self.lifetime)?;
+        let claims = Claims::from(payload, AccessToken::expiry(self.lifetime)?);
 
         match jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes()) {
             Ok(key) => {
@@ -204,6 +203,8 @@ pub mod util {
             ))
         }
     }
+    /* @todo: use rate limiting */
+    #[allow(dead_code)]
     pub async fn rate_limit(
         message: &mut message::Message,
         context: &context::Context,

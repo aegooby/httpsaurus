@@ -1,5 +1,7 @@
 use crate::core::{auth, context, error, graphql, message, process};
-pub mod jwt {
+use crate::custom::jwt;
+
+pub mod jwt_refresh {
     use super::*;
     use auth::Token;
     async fn post(
@@ -9,24 +11,28 @@ pub mod jwt {
         match message.cookies.get("refresh") {
             Some(refresh) => {
                 /* Extract claims found in the cookie. */
-                let claims = context.auth.refresh.verify(refresh.to_string())?;
+                match context.auth.refresh.verify(refresh.value().to_string()) {
+                    Ok(claims) => {
+                        /* Extract claims from Redis */
+                        let mut json = context.redis.json().await?;
+                        let result = json.get(claims.sub.clone(), None, None).await?;
+                        let user = serde_json::from_str::<jwt::Payload>(result.as_str())?;
 
-                /* Extract claims from Redis */
-                let mut json = context.redis.json().await?;
-                let path = Some("$".to_string());
-                let result = json.get(claims.sub.clone(), path, None).await?;
-                let user = serde_json::from_str::<auth::Claims>(result.as_str())?;
-
-                /* If the refresh token is valid, then create an access token. */
-                let access_token = if user.jti == claims.jti {
-                    context.auth.refresh.create(user.clone(), message)?;
-                    *message.response.status_mut() = hyper::StatusCode::OK;
-                    context.auth.access.create(user, message)?
-                } else {
-                    "".to_string()
+                        /* If the refresh token is valid, then create an access token. */
+                        let access_token = if user.jti == claims.jti {
+                            context.auth.refresh.create(user.clone(), message)?;
+                            *message.response.status_mut() = hyper::StatusCode::OK;
+                            context.auth.access.create(user, message)?
+                        } else {
+                            "".to_string()
+                        };
+                        let json = serde_json::json!({ "token": access_token });
+                        *message.response.body_mut() = hyper::Body::from(json.to_string());
+                    }
+                    Err(_error) => {
+                        *message.response.status_mut() = hyper::StatusCode::FORBIDDEN;
+                    }
                 };
-                let json = serde_json::json!({ "token": access_token });
-                *message.response.body_mut() = hyper::Body::from(json.to_string());
             }
             None => {
                 *message.response.status_mut() = hyper::StatusCode::UNAUTHORIZED;
@@ -69,10 +75,16 @@ pub mod gql {
         ));
         let response = juniper_hyper::graphql(
             context.graphql.root_node,
-            juniper_context,
+            juniper_context.clone(),
             message.clone().await.request,
         )
         .await;
+        {
+            let juniper_message = juniper_context.message.try_read()?;
+            for cookie in juniper_message.cookies.delta() {
+                message.cookies.add(cookie.clone());
+            }
+        }
         message.response = response;
         Ok(())
     }

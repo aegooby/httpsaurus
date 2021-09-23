@@ -7,3 +7,10 @@ impl AdditionalData {
         Self { email }
     }
 }
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct Payload {
+    pub id: juniper::ID,
+    pub jti: Option<String>,
+    pub email: String,
+}

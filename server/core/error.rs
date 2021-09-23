@@ -104,3 +104,8 @@ impl From<scrypt::password_hash::Error> for Error {
         Self::new_string(format!("Scrypt error: {}", error))
     }
 }
+impl<Inner> From<std::sync::TryLockError<Inner>> for Error {
+    fn from(error: std::sync::TryLockError<Inner>) -> Self {
+        Self::new_string(format!("Try-lock error: {}", error))
+    }
+}
