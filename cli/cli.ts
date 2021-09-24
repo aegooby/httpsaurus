@@ -1,4 +1,4 @@
-import { std, opener, yargs } from "../deps.ts";
+import { std, yargs } from "../deps.ts";
 import type { Arguments } from "../deps.ts";
 
 import { Console } from "./console.ts";
@@ -423,8 +423,7 @@ export class CLI
                 return;
             }
             const bundle = CLI.bundleSnowpack();
-            const result = await bundle({ _: [], url: "https://localhost:3443/" });
-            if (result)
+            if (await bundle({ _: [], url: "http://localhost:3080/" }))
                 return;
 
             const ready = async function (): Promise<void>
@@ -434,18 +433,15 @@ export class CLI
                     try
                     {
                         await std.async.delay(750);
-                        const init = { headers: { "x-http-only": "" } };
-                        await fetch("http://localhost:3080/", init);
+                        await fetch("http://localhost:3080/");
                         break;
                     }
                     catch { undefined; }
                 }
-                await opener.open("https://localhost:3443/");
-                await bundle({ _: [], url: "https://localhost:3443/", watch: true });
+                await bundle({ _: [], url: "http://localhost:3080/", watch: true });
             };
             ready();
 
-            const devtools = args.devtools ? ["--devtools"] : [];
             const promises = [];
             if (args.devtools)
             {
@@ -464,14 +460,7 @@ export class CLI
             }
             const serverRunOptions: Deno.RunOptions =
             {
-                cmd:
-                    [
-                        "deno", "run", "--unstable", "--watch", "--allow-all",
-                        "--import-map", "import-map.json", "server/daemon.tsx",
-                        "--hostname", "localhost", "--domain", "localhost",
-                        "--tls", "cert/localhost/", ...devtools
-                    ],
-                env: { DENO_DIR: ".cache/" }
+                cmd: ["cargo", "run"],
             };
             Console.log("Starting server");
             const serverProcess = Deno.run(serverRunOptions);
@@ -507,14 +496,7 @@ export class CLI
             }
             const serverRunOptions: Deno.RunOptions =
             {
-                cmd:
-                    [
-                        "deno", "run", "--unstable", "--allow-all",
-                        "--import-map", "import-map.json", "server/daemon.tsx",
-                        "--hostname", "0.0.0.0", "--domain", args.domain,
-                        "--proxy"
-                    ],
-                env: { DENO_DIR: ".cache/" }
+                cmd: ["cargo", "run", "--release"],
             };
             Console.log("Starting server");
             const serverProcess = Deno.run(serverRunOptions);
