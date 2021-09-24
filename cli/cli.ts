@@ -399,7 +399,7 @@ export class CLI
                 cmd:
                     [
                         "yarn", "run", "snowpack", "--config",
-                        "config/snowpack.config.js", "dev", "--secure"
+                        "config/snowpack.config.js", "dev"
                     ],
                 stdout: "null"
             };
