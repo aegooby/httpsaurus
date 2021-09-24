@@ -13,15 +13,8 @@ pub struct Claims {
 }
 
 impl Claims {
-    fn from(payload: jwt::Payload, exp: usize) -> Self {
-        Self {
-            sub: payload.id.to_string(),
-            exp,
-            ajd: jwt::AdditionalData {
-                email: payload.email,
-            },
-            jti: payload.jti,
-        }
+    fn from(payload: &jwt::Payload, exp: usize) -> Self {
+        jwt::convert(payload, exp)
     }
 }
 
@@ -95,7 +88,7 @@ impl Token for AccessToken {
         let algorithm = jsonwebtoken::Algorithm::RS256;
         let header = jsonwebtoken::Header::new(algorithm);
         let private_key = self.private();
-        let claims = Claims::from(payload, AccessToken::expiry(self.lifetime)?);
+        let claims = Claims::from(&payload, AccessToken::expiry(self.lifetime)?);
         let key = jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes())?;
         Ok(jsonwebtoken::encode(&header, &claims, &key)?)
     }
@@ -129,7 +122,7 @@ impl Token for RefreshToken {
         let algorithm = jsonwebtoken::Algorithm::RS256;
         let header = jsonwebtoken::Header::new(algorithm);
         let private_key = self.private();
-        let claims = Claims::from(payload, AccessToken::expiry(self.lifetime)?);
+        let claims = Claims::from(&payload, AccessToken::expiry(self.lifetime)?);
 
         match jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes()) {
             Ok(key) => {

@@ -4,7 +4,7 @@ macro_rules! console_log {
     () => (print!("\n"));
     ($($arg:tt)*) => ({
         use colored::Colorize;
-        print!("{} ", "[*]".bold().cyan());
+        print!("  {}\t", "log".bold().cyan());
         println!($($arg)*);
     })
 }
@@ -21,7 +21,7 @@ macro_rules! console_warn {
     () => (print!("\n"));
     ($($arg:tt)*) => ({
         use colored::Colorize;
-        print!("{} ", "[?]".bold().yellow());
+        print!("  {}\t", "warn".bold().yellow());
         println!($($arg)*);
     })
 }
@@ -37,7 +37,7 @@ macro_rules! console_error {
     () => (eprint!("\n"));
     ($($arg:tt)*) => ({
         use colored::Colorize;
-        eprint!("{} ", "[!]".bold().red());
+        eprint!("  {}\t", "error".bold().red());
         eprintln!($($arg)*);
     })
 }
@@ -47,7 +47,7 @@ macro_rules! console_error {
 macro_rules! console_time {
     ($call:expr, $title:expr) => {{
         use colored::Colorize;
-        print!("{} ", "[@]".bold().magenta());
+        print!("  {}\t", "time".bold().magenta());
         print!("{}:\t", $title.italic());
         let time = std::time::SystemTime::now();
         let result = $call;
