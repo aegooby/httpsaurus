@@ -2,6 +2,7 @@ import { std, yargs } from "../deps.ts";
 import type { Arguments } from "../deps.ts";
 
 import { Console } from "./console.ts";
+export { Console };
 
 Deno.env.set("DENO_DIR", ".cache/");
 const [args, command] = [Deno.args, "turtle"];
