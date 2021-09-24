@@ -1,0 +1,86 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "turtle"
+path = "daemon.rs"
+test = true
+doctest = true
+bench = true
+doc = true
+plugin = false
+proc-macro = false
+harness = true
+edition = "2018"
+required-features = []
+
+[dependencies]
+
+[dependencies.regex]
+version = "1.5.4"
+[dependencies.strum]
+version = "0.21"
+features = ["derive"]
+[dependencies.chrono]
+version = "0.4.19"
+
+[dependencies.hyper]
+version = "0.14.12" 
+features = ["full"]
+[dependencies.http]
+version = "0.2.4"
+
+[dependencies.mime]
+version = "0.3.16"
+[dependencies.mime_guess]
+version = "2.0.3"
+
+[dependencies.html_parser]
+version = "0.6.2"
+[dependencies.async-compression]
+version = "0.3.8"
+features = ["brotli", "deflate", "gzip", "tokio"]
+
+[dependencies.cookie]
+version = "0.15.1"
+
+[dependencies.serde]
+version = "1.0.130"
+[dependencies.serde_json]
+version = "1.0.67"
+
+[dependencies.jsonwebtoken]
+version = "7.2.0"
+[dependencies.rsa]
+version = "0.5.0"
+[dependencies.rand]
+version = "0.8.4"
+
+[dependencies.juniper]
+version = "0.15.7"
+[dependencies.juniper_hyper]
+version = "0.8.0"
+
+[dependencies.redis]
+version = "0.21.1"
+features = ["tokio-comp", "tokio-native-tls-comp", "cluster"]
+
+[dependencies.tokio]
+version = "1.10.1"
+features = ["full"]
+[dependencies.tokio-util]
+version = "0.6.8"
+
+[dependencies.colored]
+version = "2.0.0"
+
+[dependencies.uuid]
+version = "0.8.2"
+features = ["v1", "v4", "v5"]
+
+[dependencies.scrypt]
+version = "0.8.0"

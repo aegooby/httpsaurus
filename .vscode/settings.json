@@ -75,9 +75,51 @@
     "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": true,
     "javascript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": true,
 
+    "rust.clippy_preference": "on",
+    "rust-client.engine": "rust-analyzer",
+    "rust.all_features": true,
+    "rust-client.updateOnStartup": true,
+
     "rust-analyzer.assist.allowMergingIntoGlobImports": false,
-    "rust-analyzer.assist.importPrefix": "crate",
+    "rust-analyzer.assist.importPrefix": "plain",
     "rust-analyzer.cargo.allFeatures": true,
     "rust-analyzer.debug.engine": "vadimcn.vscode-lldb",
     "rust-analyzer.lens.enable": false,
+    "rust-analyzer.cargo.useRustcWrapperForBuildScripts": true,
+    "rust-analyzer.inlayHints.enable": false,
+    "rust-analyzer.checkOnSave.enable": true,
+
+    "[rust]": {
+        "editor.rulers": [
+            100
+        ]
+    },
+
+    "editor.semanticTokenColorCustomizations": {
+        "[Gruvbox Dark Medium]": {
+            "rules": {
+                "selfKeyword": {
+                    "bold": true,
+                    "foreground": "#fe8019"
+                },
+                "selfParameter": {
+                    "bold": true,
+                    "foreground": "#fe8019"
+                },
+                "namespace": {
+                    "foreground": "#D3869B"
+                },
+                "enumMember": {
+                    "foreground": "#8EC07C",
+                }
+            }
+        },
+        "rules": {
+            "method": { "bold": true },
+            "enumMember": {
+                "bold": true
+            },
+            "*.mutable": { "underline": false },
+        },
+    }
 }

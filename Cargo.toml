@@ -1,0 +1,14 @@
+[workspace]
+
+members = [
+    "server",
+]
+
+[profile.dev]
+opt-level = 2
+debug = true
+debug-assertions = true
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false

@@ -1,7 +1,7 @@
-import { std, opener, yargs } from "../deps.ts";
+import { std, yargs } from "../deps.ts";
 import type { Arguments } from "../deps.ts";
 
-import { Console } from "../server/server.tsx";
+import { Console } from "./console.ts";
 
 Deno.env.set("DENO_DIR", ".cache/");
 const [args, command] = [Deno.args, "turtle"];
@@ -271,38 +271,41 @@ export class CLI
         {
             if (args.help)
             {
-                Console.log(`usage: ${command} bundle:snowpack --url <endpoint> [--watch]`);
+                Console.log(`usage: ${command} bundle:snowpack --url <endpoint> [--watch] [--nocheck]`);
                 return;
             }
             if (!args.url)
             {
-                Console.error(`usage: ${command} bundle:snowpack --url <endpoint> [--watch]`);
+                Console.error(`usage: ${command} bundle:snowpack --url <endpoint> [--watch] [--nocheck]`);
                 return;
             }
             const watch = args.watch ? ["--watch"] : [];
 
-            Console.log("Running type checker");
-            const tsconfig = JSON.parse(await Deno.readTextFile("config/deno.tsconfig.json"));
-            const emitOptions: Deno.EmitOptions =
+            if (!args.nocheck)
             {
-                check: true,
-                compilerOptions: tsconfig.compilerOptions,
-                importMapPath: std.path.resolve("import-map.json"),
-            };
-            const emitResult = await Deno.emit("client/bundle.tsx", emitOptions);
+                Console.log("Running type checker");
+                const tsconfig = JSON.parse(await Deno.readTextFile("config/deno.tsconfig.json"));
+                const emitOptions: Deno.EmitOptions =
+                {
+                    check: true,
+                    compilerOptions: tsconfig.compilerOptions,
+                    importMapPath: std.path.resolve("import-map.json"),
+                };
+                const emitResult = await Deno.emit("client/bundle.tsx", emitOptions);
 
-            const diagnosticsFilter = function (diagnostic: Deno.Diagnostic) 
-            {
-                return diagnostic.fileName?.startsWith("file://");
-            };
-            const diagnostics = emitResult.diagnostics.filter(diagnosticsFilter);
-            if (diagnostics.length > 0)
-            {
-                Console.error("Type check failed");
-                console.error(Deno.formatDiagnostics(diagnostics));
-                return Result.FAILURE;
+                const diagnosticsFilter = function (diagnostic: Deno.Diagnostic) 
+                {
+                    return diagnostic.fileName?.startsWith("file://");
+                };
+                const diagnostics = emitResult.diagnostics.filter(diagnosticsFilter);
+                if (diagnostics.length > 0)
+                {
+                    Console.error("Type check failed");
+                    console.error(Deno.formatDiagnostics(diagnostics));
+                    return Result.FAILURE;
+                }
+                Console.success("Type check succeeded");
             }
-            Console.success("Type check succeeded");
 
             const snowpackRunOptions: Deno.RunOptions =
             {
@@ -420,8 +423,7 @@ export class CLI
                 return;
             }
             const bundle = CLI.bundleSnowpack();
-            const result = await bundle({ _: [], url: "http://localhost:3080/" });
-            if (result)
+            if (await bundle({ _: [], url: "http://localhost:3080/" }))
                 return;
 
             const ready = async function (): Promise<void>
@@ -431,18 +433,15 @@ export class CLI
                     try
                     {
                         await std.async.delay(750);
-                        const init = { headers: { "x-http-only": "" } };
-                        await fetch("http://localhost:3080/", init);
+                        await fetch("http://localhost:3080/");
                         break;
                     }
                     catch { undefined; }
                 }
-                await opener.open("http://localhost:3080/");
                 await bundle({ _: [], url: "http://localhost:3080/", watch: true });
             };
             ready();
 
-            const devtools = args.devtools ? ["--devtools"] : [];
             const promises = [];
             if (args.devtools)
             {
@@ -461,14 +460,7 @@ export class CLI
             }
             const serverRunOptions: Deno.RunOptions =
             {
-                cmd:
-                    [
-                        "deno", "run", "--unstable", "--watch", "--allow-all",
-                        "--import-map", "import-map.json", "server/daemon.tsx",
-                        "--hostname", "localhost", "--domain", "localhost",
-                        // "--tls", "cert/localhost/", ...devtools
-                    ],
-                env: { DENO_DIR: ".cache/" }
+                cmd: ["cargo", "run"],
             };
             Console.log("Starting server");
             const serverProcess = Deno.run(serverRunOptions);
@@ -504,14 +496,7 @@ export class CLI
             }
             const serverRunOptions: Deno.RunOptions =
             {
-                cmd:
-                    [
-                        "deno", "run", "--unstable", "--allow-all",
-                        "--import-map", "import-map.json", "server/daemon.tsx",
-                        "--hostname", "0.0.0.0", "--domain", args.domain,
-                        "--proxy"
-                    ],
-                env: { DENO_DIR: ".cache/" }
+                cmd: ["cargo", "run", "--release"],
             };
             Console.log("Starting server");
             const serverProcess = Deno.run(serverRunOptions);
