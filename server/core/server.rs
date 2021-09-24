@@ -1,17 +1,22 @@
 use crate::core::{context, handler};
 
+type Address = [u8; 4];
+const LOCALHOST: Address = [127, 0, 0, 1];
+
 pub struct Server {
     context: context::Context,
     active: bool,
+    hostname: Address,
 }
 impl Server {
-    pub fn new(context: context::Context) -> Self {
+    pub fn new(context: context::Context, hostname: Address) -> Self {
         Self {
             context,
             active: false,
+            hostname,
         }
     }
-    async fn abort_signal(&mut self) {
+    async fn abort_signal() {
         match tokio::signal::ctrl_c().await {
             Ok(()) => (),
             Err(error) => {
@@ -37,13 +42,31 @@ impl Server {
         };
 
         let make_service = hyper::service::make_service_fn(make_service_fn);
-        let addr = std::net::SocketAddr::from(([127, 0, 0, 1], 3080));
+        let addr = std::net::SocketAddr::from((self.hostname, 3080));
         let future = hyper::Server::bind(&addr)
             .serve(make_service)
-            .with_graceful_shutdown(self.abort_signal());
+            .with_graceful_shutdown(Self::abort_signal());
+
+        let protocol = if self.hostname == LOCALHOST {
+            "http"
+        } else {
+            "https"
+        };
+        let hostname = if self.hostname == LOCALHOST {
+            "localhost".to_string()
+        } else {
+            self.hostname
+                .clone()
+                .iter()
+                .map(|number| number.to_string())
+                .collect::<Vec<String>>()
+                .join(".")
+        };
         crate::console_log!(
             "Server is running on {}",
-            "http://localhost:3080".magenta().underline()
+            format!("{}://{}:3080", protocol, hostname)
+                .magenta()
+                .underline()
         );
         if let Err(error) = future.await {
             crate::console_error!("Failed to start server: {}", error);
