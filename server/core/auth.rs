@@ -17,7 +17,9 @@ impl Claims {
         Self {
             sub: payload.id.to_string(),
             exp,
-            ajd: jwt::AdditionalData::new(payload.email),
+            ajd: jwt::AdditionalData {
+                email: payload.email,
+            },
             jti: payload.jti,
         }
     }
