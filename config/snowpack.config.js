@@ -29,7 +29,7 @@ const config = {
     devOptions: {
         output: "dashboard",
         hmrErrorOverlay: true,
-        port: 3443
+        port: 3080
     },
     buildOptions: {
         out: "../dist/",
