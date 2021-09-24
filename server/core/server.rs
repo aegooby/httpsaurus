@@ -1,7 +1,6 @@
 use crate::core::{context, handler};
 
 type Address = [u8; 4];
-const LOCALHOST: Address = [127, 0, 0, 1];
 
 pub struct Server {
     context: context::Context,
@@ -46,27 +45,9 @@ impl Server {
         let future = hyper::Server::bind(&addr)
             .serve(make_service)
             .with_graceful_shutdown(Self::abort_signal());
-
-        let protocol = if self.hostname == LOCALHOST {
-            "http"
-        } else {
-            "https"
-        };
-        let hostname = if self.hostname == LOCALHOST {
-            "localhost".to_string()
-        } else {
-            self.hostname
-                .clone()
-                .iter()
-                .map(|number| number.to_string())
-                .collect::<Vec<String>>()
-                .join(".")
-        };
         crate::console_log!(
             "Server is running on {}",
-            format!("{}://{}:3080", protocol, hostname)
-                .magenta()
-                .underline()
+            "http://localhost:3080".magenta().underline()
         );
         if let Err(error) = future.await {
             crate::console_error!("Failed to start server: {}", error);
