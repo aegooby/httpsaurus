@@ -42,13 +42,10 @@ impl Node for User {
 pub struct Query;
 #[juniper::graphql_object(context = graphql::JuniperContext)]
 impl Query {
-    pub fn request(_context: &graphql::JuniperContext) -> &'static str {
-        return "response";
-    }
     pub async fn node(
         id: juniper::ID,
         context: &graphql::JuniperContext,
-    ) -> juniper::FieldResult<NodeValue> {
+    ) -> juniper::FieldResult<Option<NodeValue>> {
         let regex = regex::Regex::new("(.*:)*.*")?;
         let id = id.to_string();
         fn prefix(id: &String, regex: &regex::Regex) -> Option<String> {
@@ -67,7 +64,7 @@ impl Query {
                     }
                 }?;
                 let user = serde_json::from_str::<User>(json_data.as_str())?;
-                return Ok(user.into());
+                return Ok(Some(user.into()));
             }
         }
         let error_message = format!("No node found with id {}", id);
@@ -76,7 +73,7 @@ impl Query {
     pub async fn read_user(
         email: String,
         context: &graphql::JuniperContext,
-    ) -> juniper::FieldResult<User> {
+    ) -> juniper::FieldResult<Option<User>> {
         {
             let message = context.message.try_read()?;
             let claims = auth::util::authenticate(&message, &context.global)?;
@@ -98,7 +95,7 @@ impl Query {
         match search_result.results.first() {
             Some(result) => {
                 let user = serde_json::from_str::<User>(result.value.as_str())?;
-                Ok(user)
+                Ok(Some(user))
             }
             None => {
                 let message = format!("No user found with email {}", email);
@@ -108,7 +105,7 @@ impl Query {
     }
     pub async fn read_current_user(
         context: &graphql::JuniperContext,
-    ) -> juniper::FieldResult<User> {
+    ) -> juniper::FieldResult<Option<User>> {
         let claims = {
             let message = context.message.try_read()?;
             auth::util::authenticate(&message, &context.global)?
@@ -116,7 +113,7 @@ impl Query {
         let mut redis_json = context.global.redis.json().await?;
         let json_result = redis_json.get(claims.sub, None, None).await?;
         let user = serde_json::from_str::<User>(json_result.as_str())?;
-        Ok(user)
+        Ok(Some(user))
     }
 }
 impl Query {
